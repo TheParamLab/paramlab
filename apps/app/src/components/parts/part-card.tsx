@@ -21,6 +21,7 @@ import {
   getMaterial,
   type MaterialId,
   ORDER_QUANTITY,
+  partMassFor,
   SERIES_QUANTITY,
 } from "@acme/validators";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,8 +46,10 @@ export function PartCard({ part }: { part: Part }) {
   );
   const [quantity, setQuantity] = useState(part.lastOrder?.quantity ?? 1);
 
+  // Масса зависит от плотности пластика — как и на сервере при оформлении.
+  const massGrams = partMassFor(part, materialId);
   const price = calcPartPrice({
-    massGrams: part.massGrams,
+    massGrams,
     materialId,
     quantity,
   });
@@ -111,7 +114,7 @@ export function PartCard({ part }: { part: Part }) {
             </h3>
             <p className="font-mono text-xs text-muted-foreground">
               {size ? `${size} · ` : ""}
-              {formatNumber(part.massGrams)} г
+              {formatNumber(massGrams)} г
             </p>
           </div>
           <AlertDialog>

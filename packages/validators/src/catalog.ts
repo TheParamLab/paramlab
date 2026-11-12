@@ -60,6 +60,19 @@ export function estimateMassFromVolume(
   return Math.min(PART_MASS.max, Math.max(PART_MASS.min, Math.round(grams)));
 }
 
+/**
+ * Масса детали в выбранном материале, г. Если известен объем модели, масса
+ * пересчитывается по плотности пластика; иначе берется сохраненная.
+ */
+export function partMassFor(
+  part: { massGrams: number; volumeCm3: number | null },
+  materialId: MaterialId,
+) {
+  return part.volumeCm3 == null
+    ? part.massGrams
+    : estimateMassFromVolume(part.volumeCm3, materialId);
+}
+
 export const MIN_ORDER = 1400;
 const MACHINE_START = 400;
 export const SERIES_QUANTITY = 10;

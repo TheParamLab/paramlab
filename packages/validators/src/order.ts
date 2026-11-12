@@ -8,6 +8,9 @@ export type PartFormat = (typeof PART_FORMATS)[number];
 /** Максимальный размер файла модели — 100 МБ. */
 export const PART_FILE_MAX_BYTES = 100 * 1024 * 1024;
 
+/** Максимальный размер PNG-превью — 2 МБ. */
+export const PART_PREVIEW_MAX_BYTES = 2 * 1024 * 1024;
+
 /** Формат модели по имени файла; `null` для неподдерживаемых расширений. */
 export function partFormatFromFileName(fileName: string): PartFormat | null {
   const extension = fileName.split(".").pop()?.toLowerCase();
@@ -31,6 +34,8 @@ export const createPartSchema = z.object({
     ])
     .nullable()
     .default(null),
+  /** Объем модели, см³ — если его удалось прочитать из файла. */
+  volumeCm3: z.number().positive().max(1_000_000).nullable().default(null),
   massGrams: z.number().int().min(PART_MASS.min).max(PART_MASS.max),
   materialId: z.enum(MATERIAL_IDS),
 });

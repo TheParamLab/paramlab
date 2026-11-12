@@ -15,6 +15,13 @@
       "when": 1794414438390,
       "tag": "0001_parts_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794464364587,
+      "tag": "0002_order_item_file_part_volume",
+      "breakpoints": true
     }
   ]
 }

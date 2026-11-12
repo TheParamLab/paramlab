@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import type { Session } from "@acme/auth";
+import { eq, OrderEvent, OrderItem } from "@acme/db";
 import { call } from "@orpc/server";
 
 import { createSession, setupTestApi } from "../../../test/helpers";
@@ -18,7 +19,7 @@ afterAll(() => api.close());
 async function createPart(session: Session, fileName = "bushing.stl") {
   const upload = await call(
     partRouter.requestUpload,
-    { fileName, withPreview: true },
+    { fileName, fileSize: 1024, previewSize: 2048 },
     { context: api.context(session) },
   );
   return call(
@@ -42,7 +43,7 @@ describe("part", () => {
     const session = await createSession(api.db);
     const promise = call(
       partRouter.requestUpload,
-      { fileName: "virus.exe" },
+      { fileName: "virus.exe", fileSize: 10 },
       { context: api.context(session) },
     );
     await expect(promise).rejects.toMatchObject({ code: "BAD_REQUEST" });
@@ -53,7 +54,7 @@ describe("part", () => {
     const thief = await createSession(api.db);
     const upload = await call(
       partRouter.requestUpload,
-      { fileName: "a.step" },
+      { fileName: "a.step", fileSize: 10 },
       { context: api.context(owner) },
     );
     expect(upload.file.key).toStartWith(`parts/${owner.user.id}/`);
@@ -255,5 +256,169 @@ describe("admin.orders.setStatus", () => {
       "paid",
       "shipped",
     ]);
+  });
+});
+
+describe("review fixes", () => {
+  it("signs the declared size and refuses oversized uploads", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "a.stl", fileSize: 4096, previewSize: 512 },
+      { context: api.context(session) },
+    );
+    expect(upload.file.url).toEndWith("?size=4096");
+    expect(upload.preview?.url).toEndWith("?size=512");
+
+    await expect(
+      call(
+        partRouter.requestUpload,
+        { fileName: "a.stl", fileSize: 100 * 1024 * 1024 + 1 },
+        { context: api.context(session) },
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      call(
+        partRouter.requestUpload,
+        { fileName: "a.stl", fileSize: 10, previewSize: 3 * 1024 * 1024 },
+        { context: api.context(session) },
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("recalculates mass for another material from the model volume", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "a.stl", fileSize: 10 },
+      { context: api.context(session) },
+    );
+    // 100 см³: 64 г в PETG, 54 г в ASA.
+    const part = await call(
+      partRouter.create,
+      {
+        name: "Корпус",
+        fileKey: upload.file.key,
+        fileName: "a.stl",
+        fileSize: 10,
+        volumeCm3: 100,
+        massGrams: 64,
+        materialId: "petg",
+      },
+      { context: api.context(session) },
+    );
+    expect(part.volumeCm3).toBe(100);
+
+    const order = await call(
+      orderRouter.create,
+      { partId: part.id, materialId: "asa", quantity: 2 },
+      { context: api.context(session) },
+    );
+    // 400 + 54 г × 2 шт. × 24 ₽ = 2 992 → 2 990 ₽
+    expect(order.totalRub).toBe(2990);
+    const found = await call(
+      orderRouter.byId,
+      { id: order.id },
+      { context: api.context(session) },
+    );
+    expect(found.items[0]?.massGrams).toBe(54);
+  });
+
+  it("keeps a manually corrected mass for every material", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "a.stl", fileSize: 10 },
+      { context: api.context(session) },
+    );
+    const part = await call(
+      partRouter.create,
+      {
+        name: "Корпус",
+        fileKey: upload.file.key,
+        fileName: "a.stl",
+        fileSize: 10,
+        volumeCm3: 100,
+        massGrams: 80,
+        materialId: "petg",
+      },
+      { context: api.context(session) },
+    );
+    expect(part.volumeCm3).toBeNull();
+  });
+
+  it("snapshots the model file on the order item", async () => {
+    const session = await createSession(api.db);
+    const part = await createPart(session);
+    const order = await call(
+      orderRouter.create,
+      { partId: part.id, materialId: "petg", quantity: 1 },
+      { context: api.context(session) },
+    );
+    await call(
+      partRouter.delete,
+      { id: part.id },
+      { context: api.context(session) },
+    );
+
+    const [item] = await api.db
+      .select()
+      .from(OrderItem)
+      .where(eq(OrderItem.orderId, order.id));
+    expect(item).toMatchObject({
+      partId: null,
+      fileKey: part.fileKey,
+      fileName: "bushing.stl",
+    });
+
+    // Клиенту ключ S3 не отдаем.
+    const found = await call(
+      orderRouter.byId,
+      { id: order.id },
+      { context: api.context(session) },
+    );
+    expect(found.items[0]).not.toHaveProperty("fileKey");
+  });
+
+  it("records no event when the order does not exist", async () => {
+    const admin = await createSession(api.db, { role: "admin" });
+    const id = crypto.randomUUID();
+    await expect(
+      call(
+        adminOrdersRouter.setStatus,
+        { id, status: "paid", note: "нет такого" },
+        { context: api.context(admin) },
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(
+      await api.db.select().from(OrderEvent).where(eq(OrderEvent.orderId, id)),
+    ).toEqual([]);
+  });
+
+  it("stores the note with the stage event", async () => {
+    const session = await createSession(api.db);
+    const admin = await createSession(api.db, { role: "admin" });
+    const part = await createPart(session);
+    const order = await call(
+      orderRouter.create,
+      { partId: part.id, materialId: "petg", quantity: 1 },
+      { context: api.context(session) },
+    );
+    const updated = await call(
+      adminOrdersRouter.setStatus,
+      { id: order.id, status: "printing", note: "Стол 2" },
+      { context: api.context(admin) },
+    );
+    expect(updated).toMatchObject({ id: order.id, status: "printing" });
+
+    const found = await call(
+      orderRouter.byId,
+      { id: order.id },
+      { context: api.context(session) },
+    );
+    expect(found.events.at(-1)).toMatchObject({
+      status: "printing",
+      note: "Стол 2",
+    });
   });
 });

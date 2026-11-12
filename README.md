@@ -411,5 +411,3 @@ MIT
 ## Acknowledgments
 
 This starter is inspired by [bun-turbo-starter](https://github.com/bunworks/bun-turbo-starter) and optimized for the Bun ecosystem.
-#   p a r a m l a b  
- 

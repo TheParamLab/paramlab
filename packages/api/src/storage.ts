@@ -6,16 +6,19 @@
  * Тесты подменяют `context.storage` заглушкой.
  */
 export interface Storage {
-  /** Presigned PUT; тело шлется с `Content-Type: application/octet-stream`. */
-  uploadUrl(key: string): Promise<string>;
+  /**
+   * Presigned PUT ровно на `size` байт; тело шлется с
+   * `Content-Type: application/octet-stream`.
+   */
+  uploadUrl(key: string, size: number): Promise<string>;
   /** Presigned GET, действует час. */
   downloadUrl(key: string): Promise<string>;
 }
 
 export const storage: Storage = {
-  async uploadUrl(key) {
+  async uploadUrl(key, size) {
     const { createPresignedUrl } = await import("@acme/storage");
-    return createPresignedUrl(key);
+    return createPresignedUrl(key, size);
   },
   async downloadUrl(key) {
     const { getDownloadUrl } = await import("@acme/storage");

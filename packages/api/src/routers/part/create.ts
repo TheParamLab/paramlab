@@ -1,5 +1,9 @@
 import { Part } from "@acme/db";
-import { createPartSchema, partFormatFromFileName } from "@acme/validators";
+import {
+  createPartSchema,
+  estimateMassFromVolume,
+  partFormatFromFileName,
+} from "@acme/validators";
 
 import { protectedProcedure } from "../../orpc";
 import { partKeyPrefix } from "./request-upload";
@@ -27,6 +31,15 @@ export const create = protectedProcedure
       throw errors.BAD_REQUEST();
     }
 
+    // Объем храним, только если масса совпадает с расчетом по нему: массу,
+    // исправленную вручную, под другой материал не пересчитываем.
+    const volumeCm3 =
+      input.volumeCm3 != null &&
+      estimateMassFromVolume(input.volumeCm3, input.materialId) ===
+        input.massGrams
+        ? input.volumeCm3
+        : null;
+
     const [part] = await context.db
       .insert(Part)
       .values({
@@ -41,6 +54,7 @@ export const create = protectedProcedure
         sizeX: input.size?.[0],
         sizeY: input.size?.[1],
         sizeZ: input.size?.[2],
+        volumeCm3,
         massGrams: input.massGrams,
         materialId: input.materialId,
       })

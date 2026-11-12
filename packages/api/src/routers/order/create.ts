@@ -1,11 +1,15 @@
 import { and, eq, Order, OrderEvent, OrderItem, Part } from "@acme/db";
-import { calcPartPrice, createOrderSchema } from "@acme/validators";
+import {
+  calcPartPrice,
+  createOrderSchema,
+  partMassFor,
+} from "@acme/validators";
 
 import { protectedProcedure } from "../../orpc";
 
 /**
  * Оформить заказ на печать детали из библиотеки. Цена считается на сервере
- * по массе детали и тарифу материала; заказ создается в статусе
+ * по массе детали в выбранном материале и его тарифу; заказ создается в статусе
  * «Ожидает оплаты».
  *
  * @example client.order.create({ partId, materialId: "petg", quantity: 10 })
@@ -22,8 +26,9 @@ export const create = protectedProcedure
 
     if (!part) throw errors.NOT_FOUND();
 
+    const massGrams = partMassFor(part, input.materialId);
     const price = calcPartPrice({
-      massGrams: part.massGrams,
+      massGrams,
       materialId: input.materialId,
       quantity: input.quantity,
     });
@@ -41,9 +46,11 @@ export const create = protectedProcedure
         orderId: order.id,
         partId: part.id,
         partName: part.name,
+        fileKey: part.fileKey,
+        fileName: part.fileName,
         materialId: input.materialId,
         quantity: input.quantity,
-        massGrams: part.massGrams,
+        massGrams,
         priceRub: price.total,
       });
       await context.db

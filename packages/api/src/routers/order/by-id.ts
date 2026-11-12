@@ -19,7 +19,7 @@ export const byId = protectedProcedure
           eq(orders.userId, context.session.user.id),
         ),
       with: {
-        items: true,
+        items: { columns: { fileKey: false } },
         events: { orderBy: (events, { asc }) => [asc(events.createdAt)] },
       },
     });

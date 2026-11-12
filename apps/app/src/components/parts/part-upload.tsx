@@ -98,7 +98,8 @@ export function PartUpload() {
     mutationFn: async (current: Draft) => {
       const upload = await client.part.requestUpload({
         fileName: current.file.name,
-        withPreview: current.preview !== null,
+        fileSize: current.file.size,
+        previewSize: current.preview?.size,
       });
       await putObject(upload.file.url, current.file);
       if (upload.preview && current.preview) {
@@ -111,6 +112,7 @@ export function PartUpload() {
         fileSize: current.file.size,
         previewKey: upload.preview?.key ?? null,
         size: current.size,
+        volumeCm3: current.volumeCm3,
         massGrams,
         materialId,
       });

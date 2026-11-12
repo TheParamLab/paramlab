@@ -45,7 +45,8 @@ export async function setupTestApi() {
     db,
     // Presigned-ссылки без S3: тестам важен только ключ.
     storage: {
-      uploadUrl: async (key: string) => `https://s3.test/put/${key}`,
+      uploadUrl: async (key: string, size: number) =>
+        `https://s3.test/put/${key}?size=${size}`,
       downloadUrl: async (key: string) => `https://s3.test/get/${key}`,
     },
   });

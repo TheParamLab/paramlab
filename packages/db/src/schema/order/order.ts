@@ -32,7 +32,10 @@ export const Order = pgTable(
   (t) => [index("orders_user_id_idx").on(t.userId)],
 );
 
-/** Позиция заказа. Название, масса и цена — снимок на момент оформления. */
+/**
+ * Позиция заказа. Название, файл модели, масса и цена — снимок на момент
+ * оформления: производство печатает по нему, даже если деталь удалена.
+ */
 export const OrderItem = pgTable(
   "order_items",
   (t) => ({
@@ -44,6 +47,9 @@ export const OrderItem = pgTable(
     /** `null`, если клиент удалил деталь из библиотеки. */
     partId: t.uuid().references(() => Part.id, { onDelete: "set null" }),
     partName: t.varchar({ length: 120 }).notNull(),
+    /** Ключ файла модели в S3. */
+    fileKey: t.text().notNull(),
+    fileName: t.varchar({ length: 255 }).notNull(),
     materialId: t.text().$type<MaterialId>().notNull(),
     quantity: t.integer().notNull(),
     massGrams: t.integer().notNull(),
