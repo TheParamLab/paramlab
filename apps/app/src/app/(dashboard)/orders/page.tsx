@@ -1,12 +1,11 @@
 import { paths } from "@acme/config";
-import { Badge, Skeleton } from "@acme/ui";
-import { getMaterial, ORDER_STATUS_LABELS } from "@acme/validators";
+import { Skeleton } from "@acme/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { SiteHeader } from "~/components/layout";
-import { formatDate, formatNumber, formatRub } from "~/lib/format";
+import { OrderList } from "~/components/orders/order-list";
 import { api } from "~/orpc/server";
 
 const PAGE_SIZE = 50;
@@ -46,67 +45,7 @@ async function Orders() {
     );
   }
 
-  return (
-    <>
-      <OrderList orders={orders} />
-      {orders.length === PAGE_SIZE && (
-        <p className="text-center text-sm text-muted-foreground">
-          Показаны последние {PAGE_SIZE} заказов.
-        </p>
-      )}
-    </>
-  );
-}
-
-function OrderList({
-  orders,
-}: {
-  orders: Awaited<ReturnType<typeof api.order.list>>;
-}) {
-  return (
-    <ul className="flex flex-col gap-3">
-      {orders.map((order) => (
-        <li key={order.id}>
-          <Link
-            href={paths.orders.byId(order.id)}
-            className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border p-4 transition-colors outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <div className="min-w-0 flex-1 basis-56">
-              <p className="font-medium">
-                № {order.number}
-                <span className="font-normal text-muted-foreground">
-                  {" "}
-                  · {formatDate(order.createdAt)}
-                </span>
-              </p>
-              <p className="truncate text-sm text-muted-foreground">
-                {order.items
-                  .map(
-                    (item) =>
-                      `${item.partName} — ${formatNumber(item.quantity)} шт., ${getMaterial(item.materialId).code}`,
-                  )
-                  .join("; ")}
-              </p>
-            </div>
-            <Badge
-              variant={
-                order.status === "cancelled"
-                  ? "destructive"
-                  : order.status === "ready_for_pickup"
-                    ? "default"
-                    : "secondary"
-              }
-            >
-              {ORDER_STATUS_LABELS[order.status]}
-            </Badge>
-            <span className="font-mono font-semibold">
-              {formatRub(order.totalRub)}
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
+  return <OrderList initialOrders={orders} pageSize={PAGE_SIZE} />;
 }
 
 function OrdersSkeleton() {

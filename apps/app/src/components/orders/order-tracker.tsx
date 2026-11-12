@@ -189,7 +189,7 @@ export function OrderTracker({ initialOrder }: { initialOrder: Order }) {
                     </a>
                   )}
                   {stage === "shipped" &&
-                    (done || active) &&
+                    (done || active || cancelled) &&
                     order.trackingNumber && (
                       <p className="mt-1 text-sm">
                         {order.carrier ? `${order.carrier} · ` : ""}

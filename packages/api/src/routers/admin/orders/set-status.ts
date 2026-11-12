@@ -53,7 +53,9 @@ export const setStatus = adminProcedure
               status: sql<typeof input.status>`${input.status}`.as("status"),
               note: sql<string | null>`${input.note ?? null}`.as("note"),
               photoKey: sql<string | null>`null`.as("photo_key"),
-              createdAt: sql<Date>`now()`.as("created_at"),
+              // Не now(): нужно время записи, а не начала запроса — тогда
+              // параллельные смены этапа идут в порядке захвата заказа.
+              createdAt: sql<Date>`clock_timestamp()`.as("created_at"),
             })
             .from(updated),
         )
