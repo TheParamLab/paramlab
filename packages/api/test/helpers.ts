@@ -43,6 +43,11 @@ export async function setupTestApi() {
   const context = (session: Session | null = null) => ({
     ...createORPCContext({ headers: new Headers(), session }),
     db,
+    // Presigned-ссылки без S3: тестам важен только ключ.
+    storage: {
+      uploadUrl: async (key: string) => `https://s3.test/put/${key}`,
+      downloadUrl: async (key: string) => `https://s3.test/get/${key}`,
+    },
   });
 
   return { db, close, context };

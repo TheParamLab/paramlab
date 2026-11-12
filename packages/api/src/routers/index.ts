@@ -12,17 +12,24 @@
  *   post.byId       – single post by UUID                      (public)
  *   post.create     – create a post                            (protected)
  *   post.delete     – delete a post                            (admin)
+ *   part.*          – library of the user's 3D parts            (protected)
+ *   order.*         – orders and their tracker stages          (protected)
  *   admin.users.*   – user management                          (admin)
+ *   admin.orders.*  – order stage management                   (admin)
  *   admin.stats.*   – system-wide statistics                   (admin)
  */
 
 import { adminRouter } from "./admin";
+import { orderRouter } from "./order";
+import { partRouter } from "./part";
 import { postRouter } from "./post";
 import { userRouter } from "./user";
 
 export const appRouter = {
   user: userRouter,
   post: postRouter,
+  part: partRouter,
+  order: orderRouter,
   admin: adminRouter,
 };
 

@@ -23,6 +23,7 @@
     "@acme/auth": "workspace:*",
     "@acme/config": "workspace:*",
     "@acme/db": "workspace:*",
+    "@acme/storage": "workspace:*",
     "@acme/validators": "workspace:*",
     "@orpc/server": "2.0.0-beta.50",
     "zod": "4.6.7"

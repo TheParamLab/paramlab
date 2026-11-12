@@ -22,6 +22,8 @@ import { logger } from "@acme/config";
 import { db } from "@acme/db";
 import { os } from "@orpc/server";
 
+import { storage } from "./storage";
+
 export interface CreateORPCContextOptions {
   /** Request headers, kept on the context for procedures that need them. */
   headers: Headers;
@@ -34,6 +36,7 @@ export function createORPCContext(opts: CreateORPCContextOptions) {
     session: opts.session,
     headers: opts.headers,
     db,
+    storage,
   };
 }
 

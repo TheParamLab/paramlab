@@ -1,8 +1,10 @@
 // Re-export all validation schemas from their respective files
 
 export * from "./account";
+export * from "./catalog";
 export * from "./data-table";
 export * from "./login";
+export * from "./order";
 export * from "./otp";
 export * from "./password";
 export * from "./profile";

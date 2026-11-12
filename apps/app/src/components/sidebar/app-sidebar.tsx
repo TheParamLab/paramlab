@@ -13,12 +13,14 @@ import {
 } from "@acme/ui";
 import {
   IconChartBar,
+  IconCube,
   IconDashboard,
   IconDatabase,
   IconFileWord,
   IconFolder,
   IconInnerShadowTop,
   IconListDetails,
+  IconPackage,
   IconReport,
   IconSettings,
   IconUsers,
@@ -34,10 +36,23 @@ import {
 const data = {
   navMain: [
     {
+      title: "Мои детали",
+      url: paths.parts.root,
+      icon: IconCube,
+      isActive: true,
+      items: [{ title: "Библиотека", url: paths.parts.root }],
+    },
+    {
+      title: "Заказы",
+      url: paths.orders.root,
+      icon: IconPackage,
+      isActive: true,
+      items: [{ title: "Все заказы", url: paths.orders.root }],
+    },
+    {
       title: "Панель управления",
       url: paths.dashboard.root,
       icon: IconDashboard,
-      isActive: true,
       items: [
         { title: "Обзор", url: paths.dashboard.root },
         { title: "Аналитика", url: "#" },
