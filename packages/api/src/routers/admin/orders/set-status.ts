@@ -22,7 +22,11 @@ export const setStatus = adminProcedure
       note: z.string().trim().max(500).optional(),
       carrier: z.string().trim().max(60).optional(),
       trackingNumber: z.string().trim().max(60).optional(),
-      trackingUrl: z.url().max(500).optional(),
+      // Только HTTPS: в адресе отслеживания есть номер отправления.
+      trackingUrl: z
+        .url({ protocol: /^https$/ })
+        .max(500)
+        .optional(),
     }),
   )
   .handler(async ({ context, input, errors }) => {

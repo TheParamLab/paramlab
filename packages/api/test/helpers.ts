@@ -40,16 +40,21 @@ export async function createSession(
 export async function setupTestApi() {
   const { db, close } = await createTestDb();
 
+  /** «Загруженные» объекты: ключ → размер. Тест кладет их через `upload`. */
+  const objects = new Map<string, number>();
+  const upload = (key: string, size: number) => objects.set(key, size);
+
   const context = (session: Session | null = null) => ({
     ...createORPCContext({ headers: new Headers(), session }),
     db,
-    // Presigned-ссылки без S3: тестам важен только ключ.
+    // Хранилище без S3: ссылки-заглушки и объекты в памяти.
     storage: {
       uploadUrl: async (key: string, size: number) =>
         `https://s3.test/put/${key}?size=${size}`,
+      objectSize: async (key: string) => objects.get(key) ?? null,
       downloadUrl: async (key: string) => `https://s3.test/get/${key}`,
     },
   });
 
-  return { db, close, context };
+  return { db, close, context, upload };
 }

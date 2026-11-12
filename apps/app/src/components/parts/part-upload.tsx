@@ -11,10 +11,14 @@ import {
 } from "@acme/validators";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileBox, Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { formatFileSize } from "~/lib/format";
-import { parseBinaryStl, renderStlPreview } from "~/lib/stl";
+import {
+  parseBinaryStl,
+  renderStlPreview,
+  STL_PARSE_MAX_BYTES,
+} from "~/lib/stl";
 import { client, orpc } from "~/orpc/react";
 import { MaterialSelect } from "./material-select";
 
@@ -45,7 +49,11 @@ export function PartUpload() {
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
 
+  /** Номер последнего выбора файла: разбор старого не должен его затереть. */
+  const selection = useRef(0);
+
   function reset() {
+    selection.current += 1;
     if (draft?.previewUrl) URL.revokeObjectURL(draft.previewUrl);
     setDraft(null);
     setName("");
@@ -65,9 +73,16 @@ export function PartUpload() {
     }
     setFileError(null);
 
+    selection.current += 1;
+    const current = selection.current;
     const mesh =
-      format === "stl" ? parseBinaryStl(await file.arrayBuffer()) : null;
+      format === "stl" && file.size <= STL_PARSE_MAX_BYTES
+        ? parseBinaryStl(await file.arrayBuffer())
+        : null;
     const preview = mesh ? await renderStlPreview(mesh) : null;
+    // Пока шёл разбор, пользователь выбрал другой файл или убрал этот.
+    if (current !== selection.current) return;
+    if (draft?.previewUrl) URL.revokeObjectURL(draft.previewUrl);
 
     setDraft({
       file,

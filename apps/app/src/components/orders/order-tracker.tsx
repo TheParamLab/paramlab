@@ -31,16 +31,30 @@ const STAGE_HINTS: Partial<Record<OrderStatus, string>> = {
 };
 
 export function OrderTracker({ initialOrder }: { initialOrder: Order }) {
-  const { data: order } = useQuery({
+  const {
+    data: order,
+    isRefetchError,
+    isFetching,
+    dataUpdatedAt,
+    refetch,
+  } = useQuery({
     ...orpc.order.byId.queryOptions({ input: { id: initialOrder.id } }),
     initialData: initialOrder,
     // Этапы меняет производство — подтягиваем без перезагрузки страницы.
     refetchInterval: 30_000,
   });
 
-  const current = TRACKER_STAGES.indexOf(
-    order.status as (typeof TRACKER_STAGES)[number],
-  );
+  const cancelled = order.status === "cancelled";
+  // У отменённого заказа текущего этапа нет: пройденные берём из истории.
+  const current = cancelled
+    ? TRACKER_STAGES.reduce(
+        (reached, stage, index) =>
+          order.events.some((event) => event.status === stage)
+            ? index + 1
+            : reached,
+        0,
+      )
+    : TRACKER_STAGES.indexOf(order.status as (typeof TRACKER_STAGES)[number]);
   const material = order.items[0]
     ? getMaterial(order.items[0].materialId).code
     : null;
@@ -55,6 +69,25 @@ export function OrderTracker({ initialOrder }: { initialOrder: Order }) {
           Этапы заказа
         </h2>
 
+        {isRefetchError && (
+          <div
+            role="alert"
+            className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-destructive/10 px-3 py-2 text-sm"
+          >
+            <span suppressHydrationWarning>
+              Не удалось обновить статус. Показаны данные на{" "}
+              {formatDateTime(new Date(dataUpdatedAt))}.
+            </span>
+            <button
+              type="button"
+              disabled={isFetching}
+              onClick={() => void refetch()}
+              className="font-medium underline underline-offset-4 disabled:opacity-50"
+            >
+              Повторить
+            </button>
+          </div>
+        )}
         {order.status === "pending_payment" && (
           <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm">
             Заказ оформлен и ожидает оплаты. После оплаты он попадёт в очередь
@@ -73,7 +106,7 @@ export function OrderTracker({ initialOrder }: { initialOrder: Order }) {
         <ol className="mt-4 flex flex-col">
           {TRACKER_STAGES.map((stage, index) => {
             const done = current > index;
-            const active = current === index;
+            const active = !cancelled && current === index;
             // Последнее событие этапа: дата, комментарий и фото ОТК.
             const event = order.events.filter((e) => e.status === stage).at(-1);
             const last = index === TRACKER_STAGES.length - 1;

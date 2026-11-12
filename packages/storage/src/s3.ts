@@ -1,6 +1,7 @@
 import { env } from "@acme/config";
 import {
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -98,4 +99,19 @@ export async function getDownloadUrl(key: string): Promise<string> {
   });
 
   return getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+}
+
+/** Размер объекта в байтах; `null`, если объекта нет. */
+export async function getObjectSize(key: string): Promise<number | null> {
+  try {
+    const head = await s3Client.send(
+      new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+    );
+    return head.ContentLength ?? null;
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })
+      .$metadata?.httpStatusCode;
+    if (status === 404) return null;
+    throw error;
+  }
 }

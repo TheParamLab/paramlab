@@ -22,6 +22,8 @@ async function createPart(session: Session, fileName = "bushing.stl") {
     { fileName, fileSize: 1024, previewSize: 2048 },
     { context: api.context(session) },
   );
+  api.upload(upload.file.key, 1024);
+  if (upload.preview) api.upload(upload.preview.key, 2048);
   return call(
     partRouter.create,
     {
@@ -174,9 +176,13 @@ describe("order", () => {
       call(orderRouter.byId, { id: order.id }, { context: api.context(other) }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(
-      await call(orderRouter.list, undefined, {
-        context: api.context(other),
-      }),
+      await call(
+        orderRouter.list,
+        {},
+        {
+          context: api.context(other),
+        },
+      ),
     ).toEqual([]);
   });
 
@@ -293,6 +299,7 @@ describe("review fixes", () => {
       { fileName: "a.stl", fileSize: 10 },
       { context: api.context(session) },
     );
+    api.upload(upload.file.key, 10);
     // 100 см³: 64 г в PETG, 54 г в ASA.
     const part = await call(
       partRouter.create,
@@ -331,6 +338,7 @@ describe("review fixes", () => {
       { fileName: "a.stl", fileSize: 10 },
       { context: api.context(session) },
     );
+    api.upload(upload.file.key, 10);
     const part = await call(
       partRouter.create,
       {
@@ -420,5 +428,126 @@ describe("review fixes", () => {
       status: "printing",
       note: "Стол 2",
     });
+  });
+});
+
+describe("second review round", () => {
+  it("requires the model to be uploaded with the declared size", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "b.stl", fileSize: 10 },
+      { context: api.context(session) },
+    );
+    const input = {
+      name: "Без файла",
+      fileKey: upload.file.key,
+      fileName: "b.stl",
+      fileSize: 10,
+      massGrams: 10,
+      materialId: "petg" as const,
+    };
+    await expect(
+      call(partRouter.create, input, { context: api.context(session) }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    api.upload(upload.file.key, 11);
+    await expect(
+      call(partRouter.create, input, { context: api.context(session) }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    api.upload(upload.file.key, 10);
+    const part = await call(partRouter.create, input, {
+      context: api.context(session),
+    });
+    expect(part.fileSize).toBe(10);
+  });
+
+  it("rejects a file name whose format differs from the uploaded key", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "b.stl", fileSize: 10 },
+      { context: api.context(session) },
+    );
+    api.upload(upload.file.key, 10);
+    await expect(
+      call(
+        partRouter.create,
+        {
+          name: "Подмена",
+          fileKey: upload.file.key,
+          fileName: "b.step",
+          fileSize: 10,
+          massGrams: 10,
+          materialId: "petg",
+        },
+        { context: api.context(session) },
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("drops a preview that was never uploaded", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "b.stl", fileSize: 10, previewSize: 5 },
+      { context: api.context(session) },
+    );
+    api.upload(upload.file.key, 10);
+    const part = await call(
+      partRouter.create,
+      {
+        name: "Без превью",
+        fileKey: upload.file.key,
+        fileName: "b.stl",
+        fileSize: 10,
+        previewKey: upload.preview?.key ?? null,
+        massGrams: 10,
+        materialId: "petg",
+      },
+      { context: api.context(session) },
+    );
+    expect(part.previewKey).toBeNull();
+  });
+
+  it("paginates the order list", async () => {
+    const session = await createSession(api.db);
+    const part = await createPart(session);
+    for (const quantity of [1, 2, 3]) {
+      await call(
+        orderRouter.create,
+        { partId: part.id, materialId: "petg", quantity },
+        { context: api.context(session) },
+      );
+    }
+    const page = await call(
+      orderRouter.list,
+      { limit: 2, offset: 0 },
+      { context: api.context(session) },
+    );
+    const rest = await call(
+      orderRouter.list,
+      { limit: 2, offset: 2 },
+      { context: api.context(session) },
+    );
+    expect(page).toHaveLength(2);
+    expect(rest).toHaveLength(1);
+    expect(page[0]?.items).toHaveLength(1);
+  });
+
+  it("accepts only https tracking links", async () => {
+    const admin = await createSession(api.db, { role: "admin" });
+    await expect(
+      call(
+        adminOrdersRouter.setStatus,
+        {
+          id: crypto.randomUUID(),
+          status: "shipped",
+          trackingUrl: "http://track.example/1",
+        },
+        { context: api.context(admin) },
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

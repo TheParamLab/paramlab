@@ -11,6 +11,12 @@ export interface StlMesh {
   volumeCm3: number;
 }
 
+/**
+ * Разбор идёт синхронно в основном потоке, поэтому файлы крупнее не
+ * разбираем: деталь сохраняется без превью, вес вводится вручную.
+ */
+export const STL_PARSE_MAX_BYTES = 25 * 1024 * 1024;
+
 /** `null`, если это не бинарный STL (например, текстовый ASCII STL). */
 export function parseBinaryStl(buffer: ArrayBuffer): StlMesh | null {
   if (buffer.byteLength < 84) return null;
@@ -29,6 +35,8 @@ export function parseBinaryStl(buffer: ArrayBuffer): StlMesh | null {
     const base = i * 9;
     for (let j = 0; j < 9; j++) {
       const value = view.getFloat32(offset + j * 4, true);
+      // NaN и бесконечность ломают габариты и объём — файл не разобран.
+      if (!Number.isFinite(value)) return null;
       vertices[base + j] = value;
       const axis = j % 3;
       if (value < (min[axis] ?? 0)) min[axis] = value;

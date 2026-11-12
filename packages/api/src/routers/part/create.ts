@@ -10,7 +10,8 @@ import { partKeyPrefix } from "./request-upload";
 
 /**
  * Сохранить загруженную модель в библиотеке деталей пользователя.
- * Ключи файлов должны быть получены из `part.requestUpload`.
+ * Ключи файлов должны быть получены из `part.requestUpload`, а сам файл —
+ * уже загружен: наличие и размер объекта проверяются в хранилище.
  *
  * @example client.part.create({ name, fileKey, fileName, fileSize, massGrams, materialId })
  */
@@ -23,11 +24,25 @@ export const create = protectedProcedure
     const prefix = partKeyPrefix(context.session.user.id);
     const format = partFormatFromFileName(input.fileName);
     // Чужие ключи не принимаем: иначе можно привязать к себе чужой файл.
+    // Расширение ключа задает `requestUpload` — оно должно совпасть с именем.
     if (
       !format ||
       !input.fileKey.startsWith(prefix) ||
-      (input.previewKey && !input.previewKey.startsWith(prefix))
+      !input.fileKey.endsWith(`.${format}`) ||
+      (input.previewKey &&
+        !(
+          input.previewKey.startsWith(prefix) &&
+          input.previewKey.endsWith(".png")
+        ))
     ) {
+      throw errors.BAD_REQUEST();
+    }
+
+    const [fileSize, previewSize] = await Promise.all([
+      context.storage.objectSize(input.fileKey),
+      input.previewKey ? context.storage.objectSize(input.previewKey) : null,
+    ]);
+    if (fileSize == null || fileSize !== input.fileSize) {
       throw errors.BAD_REQUEST();
     }
 
@@ -48,9 +63,10 @@ export const create = protectedProcedure
         source: "upload",
         fileKey: input.fileKey,
         fileName: input.fileName,
-        fileSize: input.fileSize,
+        fileSize,
         format,
-        previewKey: input.previewKey,
+        // Превью необязательно: если оно не загрузилось, деталь без картинки.
+        previewKey: previewSize == null ? null : input.previewKey,
         sizeX: input.size?.[0],
         sizeY: input.size?.[1],
         sizeZ: input.size?.[2],

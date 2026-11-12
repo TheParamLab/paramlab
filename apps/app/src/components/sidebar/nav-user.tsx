@@ -24,6 +24,7 @@ import {
   IconNotification,
   IconUserCircle,
 } from "@tabler/icons-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "~/auth/client";
@@ -50,8 +51,13 @@ export function NavUser({
   const router = useRouter();
   const initials = getInitials(user.name);
 
+  const queryClient = useQueryClient();
+
   const handleLogout = async () => {
     await authClient.signOut();
+    // Кеш запросов живёт до перезагрузки страницы: без очистки следующий
+    // пользователь в этой вкладке увидел бы данные предыдущего.
+    queryClient.clear();
     router.push(paths.auth.login);
   };
 

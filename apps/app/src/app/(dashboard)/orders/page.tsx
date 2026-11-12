@@ -9,6 +9,8 @@ import { SiteHeader } from "~/components/layout";
 import { formatDate, formatNumber, formatRub } from "~/lib/format";
 import { api } from "~/orpc/server";
 
+const PAGE_SIZE = 50;
+
 export const metadata: Metadata = { title: "Заказы" };
 
 export default function OrdersPage() {
@@ -27,7 +29,7 @@ export default function OrdersPage() {
 }
 
 async function Orders() {
-  const orders = await api.order.list();
+  const orders = await api.order.list({ limit: PAGE_SIZE });
 
   if (orders.length === 0) {
     return (
@@ -44,6 +46,23 @@ async function Orders() {
     );
   }
 
+  return (
+    <>
+      <OrderList orders={orders} />
+      {orders.length === PAGE_SIZE && (
+        <p className="text-center text-sm text-muted-foreground">
+          Показаны последние {PAGE_SIZE} заказов.
+        </p>
+      )}
+    </>
+  );
+}
+
+function OrderList({
+  orders,
+}: {
+  orders: Awaited<ReturnType<typeof api.order.list>>;
+}) {
   return (
     <ul className="flex flex-col gap-3">
       {orders.map((order) => (
