@@ -56,6 +56,7 @@ export const setStatus = adminProcedure
               // Не now(): нужно время записи, а не начала запроса — тогда
               // параллельные смены этапа идут в порядке захвата заказа.
               createdAt: sql<Date>`clock_timestamp()`.as("created_at"),
+              seq: sql<number>`nextval('order_events_seq_seq')`.as("seq"),
             })
             .from(updated),
         )

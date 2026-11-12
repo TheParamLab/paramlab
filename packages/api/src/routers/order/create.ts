@@ -78,6 +78,7 @@ export const create = protectedProcedure
               note: sql<string | null>`null::text`.as("note"),
               photoKey: sql<string | null>`null::text`.as("photo_key"),
               createdAt: sql<Date>`now()`.as("created_at"),
+              seq: sql<number>`nextval('order_events_seq_seq')`.as("seq"),
             })
             .from(created),
         )

@@ -551,3 +551,34 @@ describe("second review round", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
+
+describe("event order", () => {
+  it("orders events by write sequence, not by timestamp", async () => {
+    const session = await createSession(api.db);
+    const part = await createPart(session);
+    const order = await call(
+      orderRouter.create,
+      { partId: part.id, materialId: "petg", quantity: 1 },
+      { context: api.context(session) },
+    );
+    // Одинаковое и даже более раннее время не должно менять порядок.
+    const past = new Date(0);
+    await api.db
+      .insert(OrderEvent)
+      .values({ orderId: order.id, status: "paid", createdAt: past });
+    await api.db
+      .insert(OrderEvent)
+      .values({ orderId: order.id, status: "printing", createdAt: past });
+
+    const found = await call(
+      orderRouter.byId,
+      { id: order.id },
+      { context: api.context(session) },
+    );
+    expect(found.events.map((e) => e.status)).toEqual([
+      "pending_payment",
+      "paid",
+      "printing",
+    ]);
+  });
+});

@@ -20,7 +20,7 @@ export const byId = protectedProcedure
         ),
       with: {
         items: { columns: { fileKey: false } },
-        events: { orderBy: (events, { asc }) => [asc(events.createdAt)] },
+        events: { orderBy: (events, { asc }) => [asc(events.seq)] },
       },
     });
 

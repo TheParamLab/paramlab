@@ -75,6 +75,14 @@ export const OrderEvent = pgTable(
     /** Ключ фото в S3 (фотоконтроль на этапе ОТК). */
     photoKey: t.text(),
     createdAt: t.timestamp({ withTimezone: true }).defaultNow().notNull(),
+    /**
+     * Порядок записи событий. Время может совпасть или сдвинуться назад,
+     * поэтому история сортируется по этому номеру.
+     */
+    seq: t
+      .bigint({ mode: "number" })
+      .notNull()
+      .generatedByDefaultAsIdentity({ name: "order_events_seq_seq" }),
   }),
   (t) => [index("order_events_order_id_idx").on(t.orderId)],
 );
