@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { accountFormSchema } from "./account";
+import { calcPartPrice, estimateMassFromVolume } from "./catalog";
 import { loginFormSchema } from "./login";
+import { partFormatFromFileName } from "./order";
 import { otpFormSchema } from "./otp";
 import { changePasswordFormSchema } from "./password";
 import { profileFormSchema } from "./profile";
@@ -141,5 +143,46 @@ describe("changePasswordFormSchema", () => {
     });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0]?.path).toEqual(["newPassword"]);
+  });
+});
+
+describe("catalog pricing", () => {
+  test("applies the minimum order", () => {
+    const price = calcPartPrice({
+      massGrams: 10,
+      materialId: "petg",
+      quantity: 1,
+    });
+    expect(price).toEqual({ total: 1400, series: false, totalMass: 10 });
+  });
+
+  test("gives the series discount from 10 pieces", () => {
+    // 400 + 50 г × 10 шт. × 18 ₽ × 0,8 = 7 600 ₽
+    const price = calcPartPrice({
+      massGrams: 50,
+      materialId: "petg",
+      quantity: 10,
+    });
+    expect(price.total).toBe(7600);
+    expect(price.series).toBe(true);
+  });
+
+  test("estimates mass from volume and clamps it", () => {
+    // 100 см³ × 1,27 г/см³ × 0,5 заполнения
+    expect(estimateMassFromVolume(100, "petg")).toBe(64);
+    expect(estimateMassFromVolume(0, "petg")).toBe(1);
+  });
+});
+
+describe("partFormatFromFileName", () => {
+  test("maps supported extensions, case-insensitively", () => {
+    expect(partFormatFromFileName("Корпус.STL")).toBe("stl");
+    expect(partFormatFromFileName("gear.stp")).toBe("step");
+    expect(partFormatFromFileName("a.b.3mf")).toBe("3mf");
+  });
+
+  test("rejects everything else", () => {
+    expect(partFormatFromFileName("model.obj")).toBeNull();
+    expect(partFormatFromFileName("model")).toBeNull();
   });
 });

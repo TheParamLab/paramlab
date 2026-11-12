@@ -1,6 +1,7 @@
 import { env } from "@acme/config";
 import {
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -20,6 +21,9 @@ if (!accessKeyId || !secretAccessKey) {
 
 const s3Client = new S3Client({
   region: env.AWS_REGION,
+  // Иначе SDK подписывает в presigned PUT контрольную сумму пустого тела,
+  // и загрузка настоящего файла отклоняется хранилищем.
+  requestChecksumCalculation: "WHEN_REQUIRED",
   credentials: {
     accessKeyId,
     secretAccessKey,
@@ -34,14 +38,23 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = env.AWS_S3_BUCKET;
 
-export async function createPresignedUrl(key: string): Promise<string> {
+/**
+ * Presigned PUT. С `contentLength` размер тела входит в подпись: хранилище
+ * отклонит загрузку другого размера. Ссылка живет 15 минут — до ее
+ * истечения по ней можно записать объект повторно.
+ */
+export async function createPresignedUrl(
+  key: string,
+  contentLength?: number,
+): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
     ContentType: "application/octet-stream",
+    ContentLength: contentLength,
   });
 
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+  return getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 minutes
 }
 
 export function generateS3Key(originalKey: string, temporary = false): string {
@@ -87,4 +100,19 @@ export async function getDownloadUrl(key: string): Promise<string> {
   });
 
   return getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+}
+
+/** Размер объекта в байтах; `null`, если объекта нет. */
+export async function getObjectSize(key: string): Promise<number | null> {
+  try {
+    const head = await s3Client.send(
+      new HeadObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+    );
+    return head.ContentLength ?? null;
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })
+      .$metadata?.httpStatusCode;
+    if (status === 404) return null;
+    throw error;
+  }
 }

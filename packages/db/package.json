@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@acme/config": "workspace:*",
+    "@acme/validators": "workspace:*",
     "@neondatabase/serverless": "^1.2.0",
     "drizzle-orm": "0.45.4",
     "drizzle-zod": "0.8.3",

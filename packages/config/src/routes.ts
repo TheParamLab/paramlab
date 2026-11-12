@@ -2,11 +2,20 @@ const ROOTS = {
   DASHBOARD: "/",
   AUTH: "/auth",
   SETTINGS: "/settings",
+  PARTS: "/parts",
+  ORDERS: "/orders",
 } as const;
 
 export const paths = {
   dashboard: {
     root: ROOTS.DASHBOARD,
+  },
+  parts: {
+    root: ROOTS.PARTS,
+  },
+  orders: {
+    root: ROOTS.ORDERS,
+    byId: (id: string) => `${ROOTS.ORDERS}/${id}` as const,
   },
   auth: {
     root: ROOTS.AUTH,

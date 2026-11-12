@@ -9,7 +9,7 @@
     "build": "turbo run build",
     "clean": "bun scripts/clean.mjs",
     "clean:workspaces": "turbo run clean",
-    "auth:generate": "bun --filter @acme/auth generate",
+    "auth:generate": "bun run --cwd packages/auth generate",
     "db:push": "turbo -F @acme/db push",
     "db:generate": "bun run --cwd packages/db generate",
     "db:migrate": "bun run --cwd packages/db migrate",

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, setDefaultTimeout } from "bun:test";
 import { PGlite } from "@electric-sql/pglite";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { drizzle } from "drizzle-orm/pglite";
@@ -11,6 +11,10 @@ import {
   migrationsFolder,
 } from "./migrations";
 import * as schema from "./schema";
+
+// Each test boots PGlite and replays every migration; on a busy CI runner
+// that takes longer than Bun's default 5 s.
+setDefaultTimeout(30_000);
 
 const migrations = readMigrationFiles({ migrationsFolder });
 
