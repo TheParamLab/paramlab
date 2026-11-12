@@ -84,16 +84,20 @@ export function PartUpload() {
     if (current !== selection.current) return;
     if (draft?.previewUrl) URL.revokeObjectURL(draft.previewUrl);
 
+    const volumeCm3 = mesh && mesh.volumeCm3 > 0 ? mesh.volumeCm3 : null;
     setDraft({
       file,
       size: mesh?.size ?? null,
-      volumeCm3: mesh?.volumeCm3 ?? null,
+      // У модели без толщины объём нулевой — вес тогда вводится вручную.
+      volumeCm3: volumeCm3,
       preview,
       previewUrl: preview ? URL.createObjectURL(preview) : null,
     });
     setName(file.name.replace(/\.[^.]+$/, "").slice(0, 120));
     setMass(
-      mesh ? String(estimateMassFromVolume(mesh.volumeCm3, materialId)) : "",
+      volumeCm3 != null
+        ? String(estimateMassFromVolume(volumeCm3, materialId))
+        : "",
     );
   }
 

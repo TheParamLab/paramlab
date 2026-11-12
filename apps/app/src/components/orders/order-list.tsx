@@ -23,14 +23,17 @@ export function OrderList({
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [hasMore, setHasMore] = useState(initialOrders.length === pageSize);
+  // Смещение считаем по полученным строкам, а не по показанным: повторы
+  // отбрасываются, и длина списка могла бы не вырасти.
+  const [offset, setOffset] = useState(initialOrders.length);
 
   const loadMore = useMutation({
-    mutationFn: () =>
-      client.order.list({ limit: pageSize, offset: orders.length }),
+    mutationFn: () => client.order.list({ limit: pageSize, offset }),
     onSuccess: (page) => {
       // Пока список открыт, мог появиться новый заказ и сдвинуть страницы.
       const known = new Set(orders.map((order) => order.id));
       setOrders([...orders, ...page.filter((order) => !known.has(order.id))]);
+      setOffset(offset + page.length);
       setHasMore(page.length === pageSize);
     },
     onError: (error) => {

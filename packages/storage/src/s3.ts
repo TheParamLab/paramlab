@@ -40,7 +40,8 @@ const BUCKET_NAME = env.AWS_S3_BUCKET;
 
 /**
  * Presigned PUT. С `contentLength` размер тела входит в подпись: хранилище
- * отклонит загрузку другого размера.
+ * отклонит загрузку другого размера. Ссылка живет 15 минут — до ее
+ * истечения по ней можно записать объект повторно.
  */
 export async function createPresignedUrl(
   key: string,
@@ -53,7 +54,7 @@ export async function createPresignedUrl(
     ContentLength: contentLength,
   });
 
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+  return getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 minutes
 }
 
 export function generateS3Key(originalKey: string, temporary = false): string {
