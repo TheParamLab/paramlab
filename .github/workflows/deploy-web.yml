@@ -77,13 +77,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Checkout infra manifests
-        uses: actions/checkout@v5
-        with:
-          repository: TheParamLab/infra
-          path: infra
-          token: ${{ secrets.INFRA_PAT || secrets.GITHUB_TOKEN }}
-
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
