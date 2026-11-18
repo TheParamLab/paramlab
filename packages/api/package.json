@@ -25,7 +25,7 @@
     "@acme/db": "workspace:*",
     "@acme/storage": "workspace:*",
     "@acme/validators": "workspace:*",
-    "@orpc/server": "2.0.0-beta.50",
+    "@orpc/server": "2.0.0-beta.51",
     "zod": "4.6.7"
   },
   "devDependencies": {
