@@ -22,7 +22,8 @@ env:
   IMAGE_NAME: theparamlab/web
   NAMESPACE: paramlab
   DEPLOYMENT: web
-  KUBE_CONTEXT: ${{ vars.KUBE_CONTEXT || 'default' }}
+  KUBE_CONTEXT: default
+  NEXT_PUBLIC_APP_URL: https://app.paramlab.ru
 
 permissions:
   contents: read
@@ -67,7 +68,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL || 'https://app.paramlab.ru' }}
+            NEXT_PUBLIC_APP_URL=${{ env.NEXT_PUBLIC_APP_URL }}
 
   deploy:
     name: Deploy to k3s
@@ -88,9 +89,8 @@ jobs:
           printf '%s' '${{ secrets.KUBECONFIG }}' > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Apply manifests and roll out image
+      - name: Roll out new image
         run: |
           kubectl config use-context "${{ env.KUBE_CONTEXT }}"
-          kubectl apply -f infra/web.yml
           kubectl set image deployment/${{ env.DEPLOYMENT }} web="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment/${{ env.DEPLOYMENT }} -n ${{ env.NAMESPACE }} --timeout=300s
