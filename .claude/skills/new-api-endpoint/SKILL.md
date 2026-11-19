@@ -1,6 +1,6 @@
 ---
 name: new-api-endpoint
-description: Add an oRPC procedure to packages/api end to end — input schema, handler, router wiring, and client usage in apps/app. Use when the user asks for a new API endpoint, query, mutation, or procedure.
+description: Add an oRPC procedure to packages/api end to end — input schema, handler, router wiring, and client usage in apps/web. Use when the user asks for a new API endpoint, query, mutation, or procedure.
 argument-hint: "<domain>.<procedure> [public|protected|admin]"
 ---
 
@@ -76,7 +76,7 @@ without an ownership check.
 2. New domain → add it to `appRouter` in `packages/api/src/routers/index.ts`
    and update the route map comment at the top of that file.
 
-## 5. Use it in apps/app
+## 5. Use it in apps/web
 
 - Server Component: `const data = await api.<domain>.<proc>(input)` from
   `~/orpc/server`.
@@ -87,5 +87,5 @@ without an ownership check.
 
 ## 6. Verify
 
-`bun turbo typecheck -F @acme/api -F @acme/app` then `bun check`. If you added
+`bun turbo typecheck -F @acme/api -F @acme/web` then `bun check`. If you added
 validators, `bun test packages/validators`.

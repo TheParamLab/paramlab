@@ -15,5 +15,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|auth|favicon.ico|icon.svg).*)"],
+  // Только кабинет требует сессии: лендинг и /auth остаются публичными.
+  matcher: ["/cabinet/:path*"],
 };

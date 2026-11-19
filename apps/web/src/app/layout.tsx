@@ -1,8 +1,10 @@
-import { cn, ThemeProvider } from "@acme/ui";
+import { cn, ThemeProvider, Toaster } from "@acme/ui";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { SITE_URL } from "~/components/landing/data";
+import { ORPCReactProvider } from "~/orpc/react";
 
 import "~/app/styles.css";
 
@@ -15,7 +17,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title,
   description,
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "ru_RU",
@@ -53,7 +54,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           geistMono.variable,
         )}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ORPCReactProvider>{children}</ORPCReactProvider>
+          <Toaster />
+        </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

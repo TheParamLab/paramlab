@@ -18,7 +18,7 @@ import { registerOTel } from "@vercel/otel";
 
 export function register() {
   registerOTel({
-    serviceName: "acme-app",
+    serviceName: "paramlab-web",
     // "auto" keeps @vercel/otel's defaults (fetch); oRPC is added on top.
     instrumentations: ["auto", new ORPCInstrumentation()],
   });

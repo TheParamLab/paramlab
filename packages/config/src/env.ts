@@ -25,8 +25,6 @@ export const env = createEnv({
 
     // Auth
     AUTH_SECRET: z.string().optional(),
-    AUTH_GOOGLE_ID: z.string().optional(),
-    AUTH_GOOGLE_SECRET: z.string().optional(),
     // Comma-separated list of emails granted `adminProcedure` access
     ADMIN_EMAILS: z.string().optional(),
 
@@ -59,8 +57,6 @@ export const env = createEnv({
     EMAIL_SANDBOX_HOST: process.env.EMAIL_SANDBOX_HOST,
     EMAIL_FROM: process.env.EMAIL_FROM,
     AUTH_SECRET: process.env.AUTH_SECRET,
-    AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
-    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
     HATCHET_CLIENT_TOKEN: process.env.HATCHET_CLIENT_TOKEN,
     AWS_S3_ENDPOINT: process.env.AWS_S3_ENDPOINT,

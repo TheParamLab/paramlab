@@ -131,7 +131,7 @@ bun-turbo-starter/
 
 ### Key Packages
 
-- **apps/app** — main Next.js application
+- **apps/web** — Next.js application (landing + personal account)
 - **packages/api** — tRPC API endpoints
 - **packages/db** — database schemas and migrations
 - **packages/ui** — reusable UI components
