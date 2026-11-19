@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { CalculatorProvider } from "~/components/landing/calculator-context";
 import { NAV_LINKS } from "~/components/landing/data";
 import { Faq } from "~/components/landing/faq";
@@ -14,6 +15,11 @@ import { structuredData } from "~/components/landing/structured-data";
 
 // `<` экранируем, чтобы текст данных не мог закрыть тег <script>.
 const jsonLd = JSON.stringify(structuredData).replace(/</g, "\\u003c");
+
+// canonical только у лендинга: /cabinet и /auth не должны ссылаться на `/`.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function HomePage() {
   return (

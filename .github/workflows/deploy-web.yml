@@ -5,9 +5,8 @@ on:
     branches: [main]
     paths:
       - "apps/web/**"
-      - "packages/ui/**"
-      - "tooling/tailwind/**"
-      - "tooling/typescript/**"
+      - "packages/**"
+      - "tooling/**"
       - ".github/workflows/deploy-web.yml"
       - "bun.lock"
       - "package.json"
@@ -23,7 +22,7 @@ env:
   NAMESPACE: paramlab
   DEPLOYMENT: web
   KUBE_CONTEXT: default
-  NEXT_PUBLIC_APP_URL: https://app.paramlab.ru
+  NEXT_PUBLIC_APP_URL: https://paramlab.ru
 
 permissions:
   contents: read

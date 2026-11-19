@@ -10,8 +10,8 @@ Run from the repo root. **Use `bun run <script>` for `build` and `test`**: bare
 package scripts.
 
 ```bash
-bun dev                  # Next.js app on :3000 (turbo watch, @acme/app + deps)
-bun dev:web              # landing paramlab.ru on :3001 (@acme/web + deps)
+bun dev                  # Next.js app on :3000 (turbo watch, @acme/web + deps)
+bun dev:web              # то же самое: лендинг + кабинет на одном домене
 bun jobs:dev             # Hatchet worker (watch); needs HATCHET_CLIENT_TOKEN
 bun run build            # turbo build of everything
 bun typecheck            # tsc across all workspaces (needs ^build)
@@ -21,7 +21,7 @@ bun test                 # Bun's test runner over all *.test.ts (fast)
 bun test packages/api    # single package / file
 bun lint:ws              # sherif: workspace package.json consistency
 bun lint:deps            # knip: unused files / deps, unlisted deps
-bun e2e                  # Playwright (apps/app/e2e); needs Postgres + db:migrate
+bun e2e                  # Playwright (apps/web/e2e); needs Postgres + db:migrate
 ```
 
 Scope turbo to one workspace with `-F`: `bun turbo typecheck -F @acme/api`.
@@ -50,13 +50,13 @@ CI fails if `src/schema` has changes with no committed migration.
 ## Layout
 
 ```
-apps/app            Next.js 16 App Router (RSC). Serves the API itself.
+apps/web            Next.js 16 App Router (RSC): marketing landing (paramlab.ru)
+                    + personal account under /cabinet + /auth, all on one domain.
+  src/app/           landing `/`, cabinet `/cabinet/*`, auth `/auth/*`
   src/app/api/orpc  oRPC HTTP handler    src/app/api/auth  Better Auth handler
   src/orpc/server.ts  RSC caller `api` (server-only)
   src/orpc/react.tsx  browser client + `orpc` TanStack Query utils
-  src/proxy.ts      optimistic auth redirect (Next 16 "proxy", ex-middleware)
-apps/web            Next.js 16 marketing landing (paramlab.ru), static. Depends
-                    only on @acme/ui; links to apps/app via NEXT_PUBLIC_APP_URL.
+  src/proxy.ts      optimistic auth redirect for /cabinet (Next 16 "proxy")
   src/components/landing  calculator (pricing.ts), sections, JSON-LD data
 packages/api        oRPC procedures + router (`appRouter`)
 packages/auth       Better Auth `initAuth()` — single source of auth config
@@ -82,7 +82,7 @@ and run `tsc` by hand, build them first.
   `packages/ui` and `tooling` are excluded from Biome — don't reformat them.
 - Files kebab-case; components PascalCase; functions camelCase.
 - Internal imports use workspace names (`@acme/db`, `@acme/ui`); inside
-  `apps/app` use the `~/` alias for `src/`.
+  `apps/web` use the `~/` alias for `src/`.
 - Server Components by default; add `"use client"` only when needed.
 - Next config: **Cache Components** (PPR), `typedRoutes`, `reactCompiler`.
   Request-time reads (`getSession()`, `api.*` from `~/orpc/server`,
@@ -98,12 +98,12 @@ and run `tsc` by hand, build them first.
   prerendered components.
   Don't hand-write `useMemo`/`useCallback` for performance.
 - Env vars: add to the Zod schema in `packages/config/src/env.ts` (or
-  `apps/app/src/env.ts` for app-only / `NEXT_PUBLIC_*`), to `runtimeEnv`, to
+  `apps/web/src/env.ts` for app-only / `NEXT_PUBLIC_*`), to `runtimeEnv`, to
   `.env.example`, and to `globalEnv` in `turbo.json` if it affects builds.
   Never read `process.env` directly in new code.
 - Log with `logger` from `@acme/config`, not `console.log`. Lines inside a
   request carry `trace_id` / `span_id` from the active OpenTelemetry span.
-  Tracing is wired in `apps/app/src/instrumentation.ts` (`@vercel/otel` +
+  Tracing is wired in `apps/web/src/instrumentation.ts` (`@vercel/otel` +
   `ORPCInstrumentation` from `@orpc/opentelemetry`, the v2 beta of
   `@orpc/otel`): every oRPC call gets spans under Next's request span. Set
   `OTEL_EXPORTER_OTLP_ENDPOINT` to ship them; Vercel collects them itself.
@@ -167,6 +167,6 @@ and run `tsc` by hand, build them first.
 - Bun uses the **isolated** linker (`bunfig.toml`): a package can only import
   what its own `package.json` declares. "Cannot find module" after adding an
   import means a missing dependency, not a broken install. PostCSS plugins
-  resolve from `apps/app`, so `@tailwindcss/postcss` is declared there too.
+  resolve from `apps/web`, so `@tailwindcss/postcss` is declared there too.
 - Test files (`*.test.ts`) are excluded from package `tsconfig`s, so
   `bun typecheck` does not cover them.

@@ -1,9 +1,9 @@
 const ROOTS = {
-  DASHBOARD: "/",
+  DASHBOARD: "/cabinet",
   AUTH: "/auth",
-  SETTINGS: "/settings",
-  PARTS: "/parts",
-  ORDERS: "/orders",
+  SETTINGS: "/cabinet/settings",
+  PARTS: "/cabinet/parts",
+  ORDERS: "/cabinet/orders",
 } as const;
 
 export const paths = {

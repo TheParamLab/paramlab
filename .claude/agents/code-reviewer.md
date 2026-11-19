@@ -17,7 +17,7 @@ Check, in priority order:
 1. **Auth & data exposure** — procedures in `packages/api` use the right base
    (`publicProcedure` / `protectedProcedure` / `adminProcedure`); protected
    handlers check ownership before returning or mutating another user's rows;
-   nothing relies on `apps/app/src/proxy.ts` for security; no secrets or
+   nothing relies on `apps/web/src/proxy.ts` for security; no secrets or
    `.env` values in code, logs, or client bundles (`NEXT_PUBLIC_*` only for
    public values).
 2. **Correctness** — Drizzle queries (missing `where` on update/delete,

@@ -13,7 +13,6 @@
       "!**/.next",
       "!**/packages/ui/**/*",
       "!**/tooling/**/*",
-      "!**/apps/app/**/*.css",
       "!**/apps/web/**/*.css",
       "!**/.claude/**/*.md",
       "!**/packages/db/migrations"

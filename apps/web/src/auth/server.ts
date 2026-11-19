@@ -16,16 +16,10 @@ const vercelUrl =
       : undefined;
 
 const baseUrl = vercelUrl ?? env.APP_URL;
-const productionUrl = env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : env.APP_URL;
 
 export const auth = initAuth({
   baseUrl,
-  productionUrl,
   secret: env.AUTH_SECRET,
-  googleClientId: env.AUTH_GOOGLE_ID,
-  googleClientSecret: env.AUTH_GOOGLE_SECRET,
   extraPlugins: [nextCookies()],
   // Send emails after the response. `after` only works inside a request
   // (route handler, server action); elsewhere the promise, which Better Auth

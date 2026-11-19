@@ -27,6 +27,17 @@
   background-size: 40px 40px;
 }
 
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
 @utility bg-blueprint-fine {
   background-image:
     linear-gradient(to right, var(--border) 1px, transparent 1px),

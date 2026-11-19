@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("redirects anonymous visitors to the login page", async ({ page }) => {
+test("landing page is public and renders", async ({ page }) => {
   await page.goto("/");
+
+  await expect(page.getByText("PARAMLAB").first()).toBeVisible();
+});
+
+test("redirects anonymous visitors to the login page", async ({ page }) => {
+  await page.goto("/cabinet");
 
   await expect(page).toHaveURL(/\/auth\/login$/);
 });

@@ -314,7 +314,7 @@ This project is optimized for **zero-config deployment** on Vercel.
 
 1. Push your code to GitHub
 2. Import project on [Vercel](https://vercel.com/new)
-3. Select `apps/app` as root directory
+3. Select `apps/web` as root directory
 4. Add environment variables (see below)
 5. Deploy! 🎉
 
@@ -328,8 +328,6 @@ POSTGRES_URL=postgresql://user:pass@host/db
 
 # Authentication
 AUTH_SECRET=your-secret-key
-AUTH_GOOGLE_ID=optional-google-oauth-id
-AUTH_GOOGLE_SECRET=optional-google-oauth-secret
 
 # Email (optional)
 RESEND_API_KEY=re_your_api_key
@@ -342,7 +340,7 @@ RESEND_API_KEY=re_your_api_key
 
 This starter can be deployed to any platform that supports Next.js:
 
-- **Netlify** — Add `apps/app` as base directory
+- **Netlify** — Add `apps/web` as base directory
 - **Railway** — Auto-detects Next.js configuration
 - **Fly.io** — Use provided Dockerfile
 - **Self-hosted** — Run `bun build` and serve the output
@@ -353,9 +351,7 @@ This starter can be deployed to any platform that supports Next.js:
 
 ```
 ├── apps/
-│   ├── app/              # Next.js application (serves the API itself)
-│   ├── app-server/       # Optional standalone API server (Hono)
-│   └── docs/             # Documentation site
+│   └── web/              # Next.js application: landing, /cabinet, /auth (serves the API itself)
 ├── packages/
 │   ├── api/              # oRPC router & procedures
 │   ├── auth/             # Authentication logic (better-auth)
