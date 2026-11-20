@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { SITE_URL } from "~/components/landing/data";
+import { YandexMetrika } from "~/components/landing/yandex-metrika";
 
 import "~/app/styles.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         )}
       >
         <ThemeProvider>{children}</ThemeProvider>
+        <YandexMetrika />
       </body>
     </html>
   );
