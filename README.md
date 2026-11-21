@@ -60,7 +60,7 @@ packages
   ├─ emails
   │   └─ Email templates with React Email + Yandex Postbox / Resend / nodemailer
   ├─ storage
-  │   └─ S3-compatible storage (AWS SDK v3, works with MinIO locally)
+  │   └─ S3-compatible storage (AWS SDK v3, Yandex Object Storage)
   ├─ ui
   │   └─ UI package for the webapp using shadcn-ui
   └─ validators
@@ -163,7 +163,7 @@ bun install
 ### Setup
 
 > [!NOTE]
-> The database driver is selected automatically: a `*.neon.tech` URL uses the Neon HTTP driver, anything else (local Docker Postgres, Supabase, self-hosted) uses `node-postgres`. Override with `DB_DRIVER=node|neon-http`. A local Postgres, MinIO (S3) and inbucket (email) are provided via `docker-compose.yml`.
+> The database driver is selected automatically: a `*.neon.tech` URL uses the Neon HTTP driver, anything else (local Docker Postgres, Supabase, self-hosted) uses `node-postgres`. Override with `DB_DRIVER=node|neon-http`. A local Postgres and inbucket (email) are provided via `docker-compose.yml`; files live in Yandex Object Storage (`YANDEX_STORAGE_*`).
 
 **Step 1: Install dependencies & configure environment**
 

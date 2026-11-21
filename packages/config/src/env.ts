@@ -38,13 +38,14 @@ export const env = createEnv({
     // Hatchet (background jobs). Unset: @paramlab/jobs runs work inline.
     HATCHET_CLIENT_TOKEN: z.string().optional(),
 
-    // AWS S3
-    AWS_S3_ENDPOINT: z.string().optional(),
-    AWS_S3_FORCE_PATH_STYLE: z.string().optional(),
-    AWS_ACCESS_KEY_ID: z.string().optional(),
-    AWS_SECRET_ACCESS_KEY: z.string().optional(),
-    AWS_REGION: z.string().default("us-east-1"),
-    AWS_S3_BUCKET: z.string().default("acme-bucket"),
+    // Storage: Yandex Object Storage (S3-compatible, static key auth)
+    YANDEX_STORAGE_ACCESS_KEY_ID: z.string().optional(),
+    YANDEX_STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
+    YANDEX_STORAGE_ENDPOINT: z
+      .string()
+      .default("https://storage.yandexcloud.net"),
+    YANDEX_STORAGE_REGION: z.string().default("ru-central1"),
+    YANDEX_STORAGE_BUCKET: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_NAME: z.string().default("ParamLab"),
@@ -71,12 +72,12 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
     HATCHET_CLIENT_TOKEN: process.env.HATCHET_CLIENT_TOKEN,
-    AWS_S3_ENDPOINT: process.env.AWS_S3_ENDPOINT,
-    AWS_S3_FORCE_PATH_STYLE: process.env.AWS_S3_FORCE_PATH_STYLE,
-    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-    AWS_REGION: process.env.AWS_REGION,
-    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+    YANDEX_STORAGE_ACCESS_KEY_ID: process.env.YANDEX_STORAGE_ACCESS_KEY_ID,
+    YANDEX_STORAGE_SECRET_ACCESS_KEY:
+      process.env.YANDEX_STORAGE_SECRET_ACCESS_KEY,
+    YANDEX_STORAGE_ENDPOINT: process.env.YANDEX_STORAGE_ENDPOINT,
+    YANDEX_STORAGE_REGION: process.env.YANDEX_STORAGE_REGION,
+    YANDEX_STORAGE_BUCKET: process.env.YANDEX_STORAGE_BUCKET,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
     NEXT_PUBLIC_APP_SHORT_NAME: process.env.NEXT_PUBLIC_APP_SHORT_NAME,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
