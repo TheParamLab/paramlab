@@ -1,5 +1,4 @@
-
-**
+/**
  * 1. CONTEXT
  *
  * This section defines the "contexts" that are available in the backend API.
@@ -17,11 +16,11 @@
  * @see https://orpc.dev/docs/server/context
  */
 
+import { os } from "@orpc/server";
 import type { Session } from "@paramlab/auth";
 import { isAdmin } from "@paramlab/auth/roles";
 import { logger } from "@paramlab/config";
 import { db } from "@paramlab/db";
-import { os } from "@orpc/server";
 
 import { storage } from "./storage";
 
