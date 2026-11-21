@@ -1,5 +1,5 @@
-import { Skeleton } from "@paramlab/ui";
 import { ORPCError } from "@orpc/server";
+import { Skeleton } from "@paramlab/ui";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";

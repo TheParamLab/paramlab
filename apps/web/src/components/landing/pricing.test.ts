@@ -54,7 +54,13 @@ describe("calcPrice", () => {
 
 describe("estimateMass", () => {
   test("grows with dimensions for every part type", () => {
-    for (const type of ["adapter", "bushing", "din-box", "end-cap"] as const) {
+    for (const type of [
+      "adapter",
+      "bushing",
+      "gear",
+      "din-box",
+      "end-cap",
+    ] as const) {
       const small = estimateMass(type, { d1: 50, d2: 35, h: 30 }, 1.2);
       const large = estimateMass(type, { d1: 100, d2: 35, h: 30 }, 1.2);
       expect(small).toBeGreaterThan(0);

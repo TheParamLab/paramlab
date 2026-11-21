@@ -1,7 +1,7 @@
-import { appRouter, createORPCContext } from "@paramlab/api";
-import { logger } from "@paramlab/config";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
+import { appRouter, createORPCContext } from "@paramlab/api";
+import { logger } from "@paramlab/config";
 
 const handler = new RPCHandler(appRouter, {
   interceptors: [

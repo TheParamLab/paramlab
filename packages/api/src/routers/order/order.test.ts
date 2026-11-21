@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { call } from "@orpc/server";
 import type { Session } from "@paramlab/auth";
 import { eq, OrderEvent, OrderItem } from "@paramlab/db";
-import { call } from "@orpc/server";
 
 import { createSession, setupTestApi } from "../../../test/helpers";
 import { adminOrdersRouter } from "../admin/orders";

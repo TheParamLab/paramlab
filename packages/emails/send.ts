@@ -1,9 +1,9 @@
-import { logger } from "@paramlab/config";
 import {
   SESv2Client,
   SendEmailCommand,
   type SendEmailCommandInput,
 } from "@aws-sdk/client-sesv2";
+import { logger } from "@paramlab/config";
 import { render } from "@react-email/components";
 import nodemailer from "nodemailer";
 import type Mail from "nodemailer/lib/mailer";

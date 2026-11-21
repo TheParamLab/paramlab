@@ -60,6 +60,13 @@ export function estimateMass(
       volume = (body + flange) * 0.6;
       break;
     }
+    case "gear": {
+      const bore = clampBore(d1, d2);
+      const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
+      // Учет впадин зубьев и силового заполнения ~68 %.
+      volume = body * 0.68;
+      break;
+    }
     case "din-box":
       volume = 2 * (d1 * d2 + d1 * h + d2 * h) * WALL;
       break;

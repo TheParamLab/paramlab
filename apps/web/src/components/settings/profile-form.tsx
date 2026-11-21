@@ -1,12 +1,12 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { isDefinedError } from "@orpc/client";
 import { Button, Input, Label, Textarea, toast } from "@paramlab/ui";
 import {
   type ProfileFormValues,
   profileFormSchema,
 } from "@paramlab/validators";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { isDefinedError } from "@orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { User } from "lucide-react";
 import Image from "next/image";
