@@ -9,7 +9,6 @@ import {
   Delivery,
   Generators,
   Pricing,
-  Products,
 } from "~/components/landing/sections";
 import { structuredData } from "~/components/landing/structured-data";
 
@@ -34,7 +33,6 @@ export default function HomePage() {
         <Hero />
         <Generators />
         <Capabilities />
-        <Products />
         <Delivery />
         <Pricing />
         <Faq />

@@ -19,16 +19,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { CalculatorTrigger } from "./calculator-context";
-import {
-  DELIVERY_STEPS,
-  GENERATORS,
-  type PartTypeId,
-  PRODUCTS,
-  TARIFFS,
-} from "./data";
-import { APP_LINKS } from "./links";
-
-const price = new Intl.NumberFormat("ru-RU");
+import { DELIVERY_STEPS, GENERATORS, type PartTypeId, TARIFFS } from "./data";
 
 export function Section({
   id,
@@ -318,73 +309,13 @@ export function Capabilities() {
   );
 }
 
-export function Products() {
-  return (
-    <Section
-      id="products"
-      eyebrow="03 · Серийные приборы"
-      title="Собственные разработки лаборатории ParamLab"
-      subtitle="Серийные приборы автоматизации и контроля в корпусах из ударопрочного инженерного пластика ASA/PETG."
-    >
-      <div className="grid gap-4 lg:grid-cols-3">
-        {PRODUCTS.map((product) => (
-          <article
-            key={product.name}
-            className="bg-card flex flex-col rounded-2xl border"
-          >
-            <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-mono text-sm font-semibold">
-                  {product.name}
-                </p>
-                <span className="flex items-center gap-1.5 text-xs whitespace-nowrap">
-                  <span className="bg-success size-1.5 rounded-full" />
-                  {product.availability}
-                </span>
-              </div>
-              <h3 className="text-lg leading-snug font-semibold tracking-tight">
-                {product.title}
-              </h3>
-              <ul className="flex flex-wrap gap-1.5">
-                {product.specs.map((spec) => (
-                  <li
-                    key={spec}
-                    className="rounded-md border px-1.5 py-0.5 font-mono text-xs"
-                  >
-                    {spec}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-muted-foreground text-sm text-pretty">
-                {product.text}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t p-6">
-              <p className="font-mono text-2xl font-semibold tracking-tight">
-                {product.pricePrefix}
-                {price.format(product.price)} ₽
-              </p>
-              <a
-                href={APP_LINKS.signup}
-                className="bg-primary text-primary-foreground hover:bg-primary/85 inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium transition-colors"
-              >
-                {product.cta}
-              </a>
-            </div>
-          </article>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
 const STEP_ICONS = [Calculator, MapPin, Camera, ScanBarcode];
 
 export function Delivery() {
   return (
     <Section
       id="delivery"
-      eyebrow="04 · Логистика и оплата"
+      eyebrow="03 · Логистика и оплата"
       title="4 шага до получения детали в пункте выдачи"
       muted
     >
@@ -422,7 +353,7 @@ export function Pricing() {
   return (
     <Section
       id="pricing"
-      eyebrow="05 · Тарифы и условия"
+      eyebrow="04 · Тарифы и условия"
       title="Цены и сроки — до заказа, без звонка менеджеру"
     >
       <div className="bg-border grid gap-px overflow-hidden rounded-2xl border md:grid-cols-2 lg:grid-cols-4">

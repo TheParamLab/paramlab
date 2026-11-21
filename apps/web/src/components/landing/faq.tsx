@@ -9,7 +9,7 @@ import { Section } from "./sections";
 
 export function Faq() {
   return (
-    <Section id="faq" eyebrow="06 · Вопросы" title="Частые вопросы">
+    <Section id="faq" eyebrow="05 · Вопросы" title="Частые вопросы">
       <Accordion className="max-w-3xl rounded-2xl border px-5">
         {FAQ.map((item) => (
           <AccordionItem
