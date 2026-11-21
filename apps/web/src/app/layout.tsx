@@ -1,5 +1,4 @@
 import { cn, ThemeProvider, Toaster } from "@paramlab/ui";
-import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Onest } from "next/font/google";
 import type { ReactNode } from "react";
@@ -58,7 +57,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ORPCReactProvider>{children}</ORPCReactProvider>
           <Toaster />
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );
