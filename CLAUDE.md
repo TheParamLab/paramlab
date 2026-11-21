@@ -27,7 +27,8 @@ bun e2e                  # Playwright (apps/web/e2e); needs Postgres + db:migrat
 Scope turbo to one workspace with `-F`: `bun turbo typecheck -F @paramlab/api`.
 
 Database / auth (need `.env` with `POSTGRES_URL`; local services via
-`docker compose up -d` — Postgres :5432, MinIO :9001/:9002, inbucket :9000):
+`docker compose up -d` — Postgres :5432, inbucket :9000; файлы — в Yandex
+Object Storage, ключи в `YANDEX_STORAGE_*`):
 
 ```bash
 bun db:generate          # schema diff → new SQL migration in packages/db/migrations
@@ -63,7 +64,7 @@ packages/auth       Better Auth `initAuth()` — single source of auth config
 packages/config     @t3-oss/env-core `env`, structured `logger`, `paths`
 packages/db         Drizzle schema, env-aware client (node-postgres / Neon HTTP)
 packages/emails     React Email templates + send (Yandex Postbox primary, Resend fallback, nodemailer sandbox)
-packages/storage    S3 helpers (MinIO locally)
+packages/storage    S3 helpers (Yandex Object Storage)
 packages/jobs       Hatchet tasks + worker (background jobs, emails)
 packages/ui         shadcn/ui components (Base UI), `cn`
 packages/validators shared Zod form schemas (+ bun:test tests)
