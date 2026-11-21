@@ -36,8 +36,8 @@
       "Read(./.env)",
       "Read(./.env.local)",
       "Read(./.env.*.local)",
-      "Bash(bun --filter @acme/db drop*)",
-      "Bash(bun turbo -F @acme/db drop*)",
+      "Bash(bun --filter @paramlab/db drop*)",
+      "Bash(bun turbo -F @paramlab/db drop*)",
       "Bash(git push --force*)",
       "Bash(git push -f*)"
     ]

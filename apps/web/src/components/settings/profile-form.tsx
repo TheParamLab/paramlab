@@ -1,7 +1,8 @@
+
 "use client";
 
-import { Button, Input, Label, Textarea, toast } from "@acme/ui";
-import { type ProfileFormValues, profileFormSchema } from "@acme/validators";
+import { Button, Input, Label, Textarea, toast } from "@paramlab/ui";
+import { type ProfileFormValues, profileFormSchema } from "@paramlab/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isDefinedError } from "@orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

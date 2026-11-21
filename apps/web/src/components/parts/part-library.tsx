@@ -1,6 +1,6 @@
 "use client";
 
-import type { RouterOutputs } from "@acme/api";
+import type { RouterOutputs } from "@paramlab/api";
 import { useQuery } from "@tanstack/react-query";
 
 import { orpc } from "~/orpc/react";

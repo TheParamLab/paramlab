@@ -18,8 +18,8 @@ import {
   SelectValue,
   ToggleGroup,
   ToggleGroupItem,
-} from "@acme/ui";
-import { useIsMobile } from "@acme/ui/hooks";
+} from "@paramlab/ui";
+import { useIsMobile } from "@paramlab/ui/hooks";
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 

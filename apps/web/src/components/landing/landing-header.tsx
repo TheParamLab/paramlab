@@ -1,6 +1,6 @@
 "use client";
 
-import { buttonVariants, cn, ThemeToggle } from "@acme/ui";
+import { buttonVariants, cn, ThemeToggle } from "@paramlab/ui";
 import { Menu, User, X } from "lucide-react";
 import { useState } from "react";
 import { CalculatorTrigger } from "./calculator-context";

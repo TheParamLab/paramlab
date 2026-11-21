@@ -1,5 +1,5 @@
 {
-  "name": "@acme/ui",
+  "name": "@paramlab/ui",
   "private": true,
   "type": "module",
   "exports": {
@@ -36,7 +36,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
-    "@acme/tsconfig": "workspace:*",
+    "@paramlab/tsconfig": "workspace:*",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "react": "19.3.1",

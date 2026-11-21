@@ -37,28 +37,28 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@acme/ui";
-import { useIsMobile } from "@acme/ui/hooks";
-import { Badge } from "@acme/ui/reui/badge";
+} from "@paramlab/ui";
+import { useIsMobile } from "@paramlab/ui/hooks";
+import { Badge } from "@paramlab/ui/reui/badge";
 import {
   DataGrid,
   type DataGridFeatures,
   dataGridFeatures,
-} from "@acme/ui/reui/data-grid/data-grid";
-import { DataGridColumnHeader } from "@acme/ui/reui/data-grid/data-grid-column-header";
-import { DataGridColumnVisibility } from "@acme/ui/reui/data-grid/data-grid-column-visibility";
-import type { DataGridI18nOverrides } from "@acme/ui/reui/data-grid/data-grid-i18n";
-import { DataGridPagination } from "@acme/ui/reui/data-grid/data-grid-pagination";
-import { DataGridScrollArea } from "@acme/ui/reui/data-grid/data-grid-scroll-area";
+} from "@paramlab/ui/reui/data-grid/data-grid";
+import { DataGridColumnHeader } from "@paramlab/ui/reui/data-grid/data-grid-column-header";
+import { DataGridColumnVisibility } from "@paramlab/ui/reui/data-grid/data-grid-column-visibility";
+import type { DataGridI18nOverrides } from "@paramlab/ui/reui/data-grid/data-grid-i18n";
+import { DataGridPagination } from "@paramlab/ui/reui/data-grid/data-grid-pagination";
+import { DataGridScrollArea } from "@paramlab/ui/reui/data-grid/data-grid-scroll-area";
 import {
   DataGridTableRowSelect,
   DataGridTableRowSelectAll,
-} from "@acme/ui/reui/data-grid/data-grid-table";
+} from "@paramlab/ui/reui/data-grid/data-grid-table";
 import {
   DataGridTableDndRowHandle,
   DataGridTableDndRows,
-} from "@acme/ui/reui/data-grid/data-grid-table-dnd-rows";
-import { Frame, FrameFooter, FramePanel } from "@acme/ui/reui/frame";
+} from "@paramlab/ui/reui/data-grid/data-grid-table-dnd-rows";
+import { Frame, FrameFooter, FramePanel } from "@paramlab/ui/reui/frame";
 import {
   type DataTableItemData,
   dataTableItemSchema,
@@ -66,7 +66,7 @@ import {
   limitFormSchema,
   type TargetFormData,
   targetFormSchema,
-} from "@acme/validators";
+} from "@paramlab/validators";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -93,7 +93,7 @@ import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { toast } from "sonner";
 import type { z } from "zod";
 
-// Use schema from @acme/validators
+// Use schema from @paramlab/validators
 export const schema = dataTableItemSchema;
 type DataTableItem = z.infer<typeof schema>;
 

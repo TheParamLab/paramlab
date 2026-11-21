@@ -5,8 +5,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@acme/ui";
-import { Badge } from "@acme/ui/reui/badge";
+} from "@paramlab/ui";
+import { Badge } from "@paramlab/ui/reui/badge";
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 
 export function SectionCards() {

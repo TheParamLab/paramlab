@@ -2,7 +2,7 @@ import {
   PART_FILE_MAX_BYTES,
   PART_PREVIEW_MAX_BYTES,
   partFormatFromFileName,
-} from "@acme/validators";
+} from "@paramlab/validators";
 import { z } from "zod";
 
 import { protectedProcedure } from "../../orpc";

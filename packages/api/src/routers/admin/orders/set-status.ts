@@ -1,5 +1,5 @@
-import { eq, Order, OrderEvent, sql } from "@acme/db";
-import { ORDER_STATUSES } from "@acme/validators";
+import { eq, Order, OrderEvent, sql } from "@paramlab/db";
+import { ORDER_STATUSES } from "@paramlab/validators";
 import { z } from "zod";
 
 import { adminProcedure } from "../../../orpc";

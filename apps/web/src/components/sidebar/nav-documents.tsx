@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@acme/ui";
+} from "@paramlab/ui";
 import {
   type Icon,
   IconDots,

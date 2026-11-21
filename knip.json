@@ -9,7 +9,7 @@
       "entry": [".claude/hooks/*.ts", "scripts/*.mjs"]
     },
     "apps/web": {
-      "ignoreDependencies": ["@acme/db", "@tailwindcss/postcss"]
+      "ignoreDependencies": ["@paramlab/lab/db", "@tailwindcss/postcss"]
     },
     "packages/auth": {
       "entry": ["script/auth-cli.ts"]

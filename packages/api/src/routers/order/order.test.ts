@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import type { Session } from "@acme/auth";
-import { eq, OrderEvent, OrderItem } from "@acme/db";
+import type { Session } from "@paramlab/auth";
+import { eq, OrderEvent, OrderItem } from "@paramlab/db";
 import { call } from "@orpc/server";
 
 import { createSession, setupTestApi } from "../../../test/helpers";

@@ -1,4 +1,4 @@
-import { and, eq, Part } from "@acme/db";
+import { and, eq, Part } from "@paramlab/db";
 import { z } from "zod";
 
 import { protectedProcedure } from "../../orpc";

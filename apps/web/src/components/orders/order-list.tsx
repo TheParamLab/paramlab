@@ -1,9 +1,9 @@
 "use client";
 
-import type { RouterOutputs } from "@acme/api";
-import { paths } from "@acme/config";
-import { Badge, Button, toast } from "@acme/ui";
-import { getMaterial, ORDER_STATUS_LABELS } from "@acme/validators";
+import type { RouterOutputs } from "@paramlab/api";
+import { paths } from "@paramlab/config";
+import { Badge, Button, toast } from "@paramlab/ui";
+import { getMaterial, ORDER_STATUS_LABELS } from "@paramlab/validators";
 import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";

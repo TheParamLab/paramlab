@@ -15,8 +15,8 @@ COPY . .
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
 
-# Пакеты, которые собираются в dist/ (@acme/config, @acme/emails, ...).
-RUN bun turbo run build -F "@acme/web^..."
+# Пакеты, которые собираются в dist/ (@paramlab/config, @paramlab/emails, ...).
+RUN bun turbo run build -F "@paramlab/web^..."
 
 # NEXT_PUBLIC_* вшиваются в клиентский бандл, поэтому задаются при сборке.
 ARG NEXT_PUBLIC_APP_URL=https://paramlab.ru

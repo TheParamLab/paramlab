@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@acme/ui";
+import { cn } from "@paramlab/ui";
 import {
   ArrowRight,
   FileBox,

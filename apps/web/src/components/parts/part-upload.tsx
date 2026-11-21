@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn, Input, Label, toast } from "@acme/ui";
+import { Button, cn, Input, Label, toast } from "@paramlab/ui";
 import {
   estimateMassFromVolume,
   MATERIALS,
@@ -8,7 +8,7 @@ import {
   PART_FILE_MAX_BYTES,
   PART_MASS,
   partFormatFromFileName,
-} from "@acme/validators";
+} from "@paramlab/validators";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileBox, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";

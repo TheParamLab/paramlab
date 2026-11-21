@@ -1,4 +1,4 @@
-import { Skeleton } from "@acme/ui";
+import { Skeleton } from "@paramlab/ui";
 import { ORPCError } from "@orpc/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

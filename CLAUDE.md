@@ -10,7 +10,7 @@ Run from the repo root. **Use `bun run <script>` for `build` and `test`**: bare
 package scripts.
 
 ```bash
-bun dev                  # Next.js app on :3000 (turbo watch, @acme/web + deps)
+bun dev                  # Next.js app on :3000 (turbo watch, @paramlab/web + deps)
 bun dev:web              # то же самое: лендинг + кабинет на одном домене
 bun jobs:dev             # Hatchet worker (watch); needs HATCHET_CLIENT_TOKEN
 bun run build            # turbo build of everything
@@ -24,7 +24,7 @@ bun lint:deps            # knip: unused files / deps, unlisted deps
 bun e2e                  # Playwright (apps/web/e2e); needs Postgres + db:migrate
 ```
 
-Scope turbo to one workspace with `-F`: `bun turbo typecheck -F @acme/api`.
+Scope turbo to one workspace with `-F`: `bun turbo typecheck -F @paramlab/api`.
 
 Database / auth (need `.env` with `POSTGRES_URL`; local services via
 `docker compose up -d` — Postgres :5432, MinIO :9001/:9002, inbucket :9000):
@@ -81,7 +81,7 @@ and run `tsc` by hand, build them first.
 - Biome style: 2 spaces, double quotes, semicolons, trailing commas, 80 cols.
   `packages/ui` and `tooling` are excluded from Biome — don't reformat them.
 - Files kebab-case; components PascalCase; functions camelCase.
-- Internal imports use workspace names (`@acme/db`, `@acme/ui`); inside
+- Internal imports use workspace names (`@paramlab/db`, `@paramlab/ui`); inside
   `apps/web` use the `~/` alias for `src/`.
 - Server Components by default; add `"use client"` only when needed.
 - Next config: **Cache Components** (PPR), `typedRoutes`, `reactCompiler`.
@@ -101,7 +101,7 @@ and run `tsc` by hand, build them first.
   `apps/web/src/env.ts` for app-only / `NEXT_PUBLIC_*`), to `runtimeEnv`, to
   `.env.example`, and to `globalEnv` in `turbo.json` if it affects builds.
   Never read `process.env` directly in new code.
-- Log with `logger` from `@acme/config`, not `console.log`. Lines inside a
+- Log with `logger` from `@paramlab/config`, not `console.log`. Lines inside a
   request carry `trace_id` / `span_id` from the active OpenTelemetry span.
   Tracing is wired in `apps/web/src/instrumentation.ts` (`@vercel/otel` +
   `ORPCInstrumentation` from `@orpc/opentelemetry`, the v2 beta of
@@ -133,21 +133,21 @@ and run `tsc` by hand, build them first.
   (`authClient.admin.setRole`, bans, impersonation under
   `/api/auth/admin/*`). `ADMIN_EMAILS` is the bootstrap list: those accounts
   get the role on sign-up / sign-in and always pass `adminProcedure`. Role
-  checks live in `@acme/auth/roles` (no better-auth import — usable from
-  `@acme/api`).
+  checks live in `@paramlab/auth/roles` (no better-auth import — usable from
+  `@paramlab/api`).
 - **Background jobs** (Hatchet, `packages/jobs`): declare tasks in
   `src/workflows/` and register them in `src/worker.ts`. App code imports
-  only `@acme/jobs` (e.g. `dispatchEmail`), never `@acme/jobs/workflows` at
+  only `@paramlab/jobs` (e.g. `dispatchEmail`), never `@paramlab/jobs/workflows` at
   module level: creating the Hatchet client throws without
-  HATCHET_CLIENT_TOKEN. Without a token, `@acme/jobs` runs the work inline.
+  HATCHET_CLIENT_TOKEN. Without a token, `@paramlab/jobs` runs the work inline.
   Task inputs must be JSON — emails travel as `TemplateEmail`
   (`template` + `props`, see `packages/emails/templates.ts`).
-- `@acme/api` stays free of the concrete `Auth` type: callers resolve the
+- `@paramlab/api` stays free of the concrete `Auth` type: callers resolve the
   session via `auth.api.getSession` and pass it into `createORPCContext`.
 - **Testing procedures**: `call(procedure, input, { context })` from
   `@orpc/server` against an in-memory PGlite DB — `setupTestApi()` and
   `createSession()` in `packages/api/test/helpers.ts` (built on
-  `createTestDb()` from `@acme/db/testing`). See `routers/post/post.test.ts`.
+  `createTestDb()` from `@paramlab/db/testing`). See `routers/post/post.test.ts`.
   `packages/api/test/setup.ts` is preloaded via `bunfig.toml` (root and
   package) to pin env before modules read it.
 
@@ -158,7 +158,7 @@ and run `tsc` by hand, build them first.
 - `src/proxy.ts` is only an optimistic redirect — always enforce auth in the
   procedure / page (`protectedProcedure`, session check).
 - oRPC is pinned to `2.0.0-beta.*` (npm `beta` tag; plain installs get v1).
-  v2 docs: https://orpc.dev. `RPCLink` takes `origin` + path-only `url`, and
+  v2 docs: <https://orpc.dev>. `RPCLink` takes `origin` + path-only `url`, and
   `RPCHandler` rejects GET by default. v1 clients can't talk to a v2 server.
 - `README.md` mentions `apps/app-server` and `apps/docs`; they are not in this
   repo. `CONTRIBUTING.md` still says tRPC in places — the API is oRPC.

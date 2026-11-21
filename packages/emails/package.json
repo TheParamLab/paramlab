@@ -1,5 +1,5 @@
 {
-  "name": "@acme/emails",
+  "name": "@paramlab/emails",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acme/config": "workspace:*",
+    "@paramlab/config": "workspace:*",
     "@aws-sdk/client-sesv2": "^3.943.0",
     "@radix-ui/colors": "3.0.0",
     "@react-email/components": "1.0.12",
@@ -35,7 +35,7 @@
     "resend": "^6.38.1"
   },
   "devDependencies": {
-    "@acme/tsconfig": "workspace:*",
+    "@paramlab/tsconfig": "workspace:*",
     "@react-email/preview-server": "5.2.10",
     "@types/node": "26.6.6",
     "@types/nodemailer": "^8.0.2",

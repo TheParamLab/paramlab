@@ -1,4 +1,4 @@
-import { Skeleton } from "@acme/ui";
+import { Skeleton } from "@paramlab/ui";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 

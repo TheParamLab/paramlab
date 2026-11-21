@@ -1,5 +1,5 @@
-import { paths } from "@acme/config";
-import { Skeleton } from "@acme/ui";
+import { paths } from "@paramlab/config";
+import { Skeleton } from "@paramlab/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";

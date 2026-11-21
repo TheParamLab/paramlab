@@ -1,13 +1,13 @@
 "use client";
 
-import type { RouterOutputs } from "@acme/api";
-import { cn } from "@acme/ui";
+import type { RouterOutputs } from "@paramlab/api";
+import { cn } from "@paramlab/ui";
 import {
   getMaterial,
   ORDER_STAGES,
   ORDER_STATUS_LABELS,
   type OrderStatus,
-} from "@acme/validators";
+} from "@paramlab/validators";
 import { useQuery } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 

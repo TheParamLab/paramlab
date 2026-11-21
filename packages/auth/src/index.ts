@@ -1,5 +1,5 @@
-import { logger } from "@acme/config";
-import { type Database, db } from "@acme/db";
+import { logger } from "@paramlab/config";
+import { type Database, db } from "@paramlab/db";
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

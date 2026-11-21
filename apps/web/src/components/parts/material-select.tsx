@@ -1,5 +1,5 @@
-import { cn } from "@acme/ui";
-import { MATERIALS, type MaterialId } from "@acme/validators";
+import { cn } from "@paramlab/ui";
+import { MATERIALS, type MaterialId } from "@paramlab/validators";
 
 /** Нативный список материалов с тарифом за грамм. */
 export function MaterialSelect({

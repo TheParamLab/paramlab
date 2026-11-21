@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@acme/root",
+      "name": "@paramlab/root",
       "devDependencies": {
         "@biomejs/biome": "^2.6.8",
         "knip": "^6.46.0",
@@ -13,15 +13,15 @@
       },
     },
     "apps/web": {
-      "name": "@acme/web",
+      "name": "@paramlab/web",
       "dependencies": {
-        "@acme/api": "workspace:*",
-        "@acme/auth": "workspace:*",
-        "@acme/config": "workspace:*",
-        "@acme/db": "workspace:*",
-        "@acme/jobs": "workspace:*",
-        "@acme/ui": "workspace:*",
-        "@acme/validators": "workspace:*",
+        "@paramlab/api": "workspace:*",
+        "@paramlab/auth": "workspace:*",
+        "@paramlab/config": "workspace:*",
+        "@paramlab/db": "workspace:*",
+        "@paramlab/jobs": "workspace:*",
+        "@paramlab/ui": "workspace:*",
+        "@paramlab/validators": "workspace:*",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@hookform/resolvers": "^7.0.5",
@@ -49,8 +49,8 @@
         "zod": "4.6.7",
       },
       "devDependencies": {
-        "@acme/tailwind-config": "workspace:*",
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tailwind-config": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@playwright/test": "1.65.0",
         "@tailwindcss/postcss": "4.3.5",
         "@types/bun": "1.4.5",
@@ -64,32 +64,32 @@
       },
     },
     "packages/api": {
-      "name": "@acme/api",
+      "name": "@paramlab/api",
       "dependencies": {
-        "@acme/auth": "workspace:*",
-        "@acme/config": "workspace:*",
-        "@acme/db": "workspace:*",
-        "@acme/storage": "workspace:*",
-        "@acme/validators": "workspace:*",
+        "@paramlab/auth": "workspace:*",
+        "@paramlab/config": "workspace:*",
+        "@paramlab/db": "workspace:*",
+        "@paramlab/storage": "workspace:*",
+        "@paramlab/validators": "workspace:*",
         "@orpc/server": "2.0.0-beta.52",
         "zod": "4.6.7",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@types/bun": "1.4.5",
         "@types/node": "26.6.6",
         "typescript": "7.0.2",
       },
     },
     "packages/auth": {
-      "name": "@acme/auth",
+      "name": "@paramlab/auth",
       "dependencies": {
-        "@acme/config": "workspace:*",
-        "@acme/db": "workspace:*",
+        "@paramlab/config": "workspace:*",
+        "@paramlab/db": "workspace:*",
         "better-auth": "1.7.27",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@better-auth/cli": "1.4.21",
         "@types/bun": "1.4.5",
         "@types/node": "26.6.6",
@@ -97,7 +97,7 @@
       },
     },
     "packages/config": {
-      "name": "@acme/config",
+      "name": "@paramlab/config",
       "version": "0.0.0",
       "dependencies": {
         "@opentelemetry/api": "1.10.0",
@@ -105,7 +105,7 @@
         "zod": "4.6.7",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@opentelemetry/context-async-hooks": "3.1.1",
         "@types/bun": "1.4.5",
         "@types/node": "26.6.6",
@@ -114,10 +114,10 @@
       },
     },
     "packages/db": {
-      "name": "@acme/db",
+      "name": "@paramlab/db",
       "dependencies": {
-        "@acme/config": "workspace:*",
-        "@acme/validators": "workspace:*",
+        "@paramlab/config": "workspace:*",
+        "@paramlab/validators": "workspace:*",
         "@neondatabase/serverless": "^1.2.1",
         "drizzle-orm": "0.45.4",
         "drizzle-zod": "0.8.3",
@@ -126,7 +126,7 @@
         "zod": "4.6.7",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@electric-sql/pglite": "^0.5.16",
         "@types/bun": "1.4.5",
         "@types/node": "26.6.6",
@@ -137,10 +137,10 @@
       },
     },
     "packages/emails": {
-      "name": "@acme/emails",
+      "name": "@paramlab/emails",
       "version": "1.0.0",
       "dependencies": {
-        "@acme/config": "workspace:*",
+        "@paramlab/config": "workspace:*",
         "@aws-sdk/client-sesv2": "^3.943.0",
         "@radix-ui/colors": "3.0.0",
         "@react-email/components": "1.0.12",
@@ -151,7 +151,7 @@
         "resend": "^6.38.1",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@react-email/preview-server": "5.2.10",
         "@types/node": "26.6.6",
         "@types/nodemailer": "^8.0.2",
@@ -162,35 +162,35 @@
       },
     },
     "packages/jobs": {
-      "name": "@acme/jobs",
+      "name": "@paramlab/jobs",
       "dependencies": {
-        "@acme/config": "workspace:*",
-        "@acme/emails": "workspace:*",
+        "@paramlab/config": "workspace:*",
+        "@paramlab/emails": "workspace:*",
         "@hatchet-dev/typescript-sdk": "1.46.2",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@types/node": "26.6.6",
         "typescript": "7.0.2",
       },
     },
     "packages/storage": {
-      "name": "@acme/storage",
+      "name": "@paramlab/storage",
       "version": "0.1.0",
       "dependencies": {
-        "@acme/config": "workspace:*",
+        "@paramlab/config": "workspace:*",
         "@aws-sdk/client-s3": "3.1166.0",
         "@aws-sdk/s3-request-presigner": "3.1166.0",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@types/node": "26.6.6",
         "tsdown": "0.23.7",
         "typescript": "7.0.2",
       },
     },
     "packages/ui": {
-      "name": "@acme/ui",
+      "name": "@paramlab/ui",
       "dependencies": {
         "@base-ui/react": "^1.9.0",
         "@dnd-kit/core": "^6.3.1",
@@ -211,7 +211,7 @@
         "vaul": "^1.1.2",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
         "react": "19.3.1",
@@ -221,62 +221,62 @@
       },
     },
     "packages/validators": {
-      "name": "@acme/validators",
+      "name": "@paramlab/validators",
       "dependencies": {
         "zod": "4.6.7",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@types/bun": "1.4.5",
         "typescript": "7.0.2",
       },
     },
     "tooling/github": {
-      "name": "@acme/github",
+      "name": "@paramlab/github",
     },
     "tooling/tailwind": {
-      "name": "@acme/tailwind-config",
+      "name": "@paramlab/tailwind-config",
       "dependencies": {
         "@tailwindcss/postcss": "4.3.5",
         "postcss": "^8.5.32",
         "tailwindcss": "4.3.5",
       },
       "devDependencies": {
-        "@acme/tsconfig": "workspace:*",
+        "@paramlab/tsconfig": "workspace:*",
         "@types/node": "26.6.6",
         "typescript": "7.0.2",
       },
     },
     "tooling/typescript": {
-      "name": "@acme/tsconfig",
+      "name": "@paramlab/tsconfig",
     },
   },
   "packages": {
-    "@acme/api": ["@acme/api@workspace:packages/api"],
+    "@paramlab/api": ["@paramlab/api@workspace:packages/api"],
 
-    "@acme/auth": ["@acme/auth@workspace:packages/auth"],
+    "@paramlab/auth": ["@paramlab/auth@workspace:packages/auth"],
 
-    "@acme/config": ["@acme/config@workspace:packages/config"],
+    "@paramlab/config": ["@paramlab/config@workspace:packages/config"],
 
-    "@acme/db": ["@acme/db@workspace:packages/db"],
+    "@paramlab/db": ["@paramlab/db@workspace:packages/db"],
 
-    "@acme/emails": ["@acme/emails@workspace:packages/emails"],
+    "@paramlab/emails": ["@paramlab/emails@workspace:packages/emails"],
 
-    "@acme/github": ["@acme/github@workspace:tooling/github"],
+    "@paramlab/github": ["@paramlab/github@workspace:tooling/github"],
 
-    "@acme/jobs": ["@acme/jobs@workspace:packages/jobs"],
+    "@paramlab/jobs": ["@paramlab/jobs@workspace:packages/jobs"],
 
-    "@acme/storage": ["@acme/storage@workspace:packages/storage"],
+    "@paramlab/storage": ["@paramlab/storage@workspace:packages/storage"],
 
-    "@acme/tailwind-config": ["@acme/tailwind-config@workspace:tooling/tailwind"],
+    "@paramlab/tailwind-config": ["@paramlab/tailwind-config@workspace:tooling/tailwind"],
 
-    "@acme/tsconfig": ["@acme/tsconfig@workspace:tooling/typescript"],
+    "@paramlab/tsconfig": ["@paramlab/tsconfig@workspace:tooling/typescript"],
 
-    "@acme/ui": ["@acme/ui@workspace:packages/ui"],
+    "@paramlab/ui": ["@paramlab/ui@workspace:packages/ui"],
 
-    "@acme/validators": ["@acme/validators@workspace:packages/validators"],
+    "@paramlab/validators": ["@paramlab/validators@workspace:packages/validators"],
 
-    "@acme/web": ["@acme/web@workspace:apps/web"],
+    "@paramlab/web": ["@paramlab/web@workspace:apps/web"],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.3.0", "", {}, "sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA=="],
 

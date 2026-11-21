@@ -1,4 +1,4 @@
-import { paths } from "@acme/config";
+import { paths } from "@paramlab/config";
 import {
   Sidebar,
   SidebarContent,
@@ -6,7 +6,7 @@ import {
   SidebarProvider,
   Skeleton,
   ThemeToggle,
-} from "@acme/ui";
+} from "@paramlab/ui";
 import { redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
 import { getSession } from "~/auth/server";

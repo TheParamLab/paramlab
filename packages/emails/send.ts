@@ -1,4 +1,4 @@
-import { logger } from "@acme/config";
+import { logger } from "@paramlab/config";
 import {
   SESv2Client,
   SendEmailCommand,

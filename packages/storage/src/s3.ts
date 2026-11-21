@@ -1,4 +1,4 @@
-import { env } from "@acme/config";
+import { env } from "@paramlab/config";
 import {
   GetObjectCommand,
   HeadObjectCommand,

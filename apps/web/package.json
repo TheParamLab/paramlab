@@ -1,5 +1,5 @@
 {
-  "name": "@acme/web",
+  "name": "@paramlab/web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,13 +15,13 @@
     "typecheck": "bun --env-file=../../.env run next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@acme/api": "workspace:*",
-    "@acme/auth": "workspace:*",
-    "@acme/config": "workspace:*",
-    "@acme/db": "workspace:*",
-    "@acme/jobs": "workspace:*",
-    "@acme/ui": "workspace:*",
-    "@acme/validators": "workspace:*",
+    "@paramlab/api": "workspace:*",
+    "@paramlab/auth": "workspace:*",
+    "@paramlab/config": "workspace:*",
+    "@paramlab/db": "workspace:*",
+    "@paramlab/jobs": "workspace:*",
+    "@paramlab/ui": "workspace:*",
+    "@paramlab/validators": "workspace:*",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@hookform/resolvers": "^7.0.5",
@@ -49,8 +49,8 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@acme/tailwind-config": "workspace:*",
-    "@acme/tsconfig": "workspace:*",
+    "@paramlab/tailwind-config": "workspace:*",
+    "@paramlab/tsconfig": "workspace:*",
     "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "4.3.5",
     "@types/bun": "1.4.5",

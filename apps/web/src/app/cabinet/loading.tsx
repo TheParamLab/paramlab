@@ -1,4 +1,4 @@
-import { Skeleton } from "@acme/ui";
+import { Skeleton } from "@paramlab/ui";
 
 export default function DashboardLoading() {
   return (

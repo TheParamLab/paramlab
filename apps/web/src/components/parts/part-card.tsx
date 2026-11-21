@@ -1,7 +1,7 @@
 "use client";
 
-import type { RouterOutputs } from "@acme/api";
-import { paths } from "@acme/config";
+import type { RouterOutputs } from "@paramlab/api";
+import { paths } from "@paramlab/config";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   Badge,
   Button,
   toast,
-} from "@acme/ui";
+} from "@paramlab/ui";
 import {
   calcPartPrice,
   getMaterial,
@@ -23,7 +23,7 @@ import {
   ORDER_QUANTITY,
   partMassFor,
   SERIES_QUANTITY,
-} from "@acme/validators";
+} from "@paramlab/validators";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileBox, Minus, Plus, Repeat, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";

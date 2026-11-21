@@ -12,13 +12,13 @@ import {
   FormMessage,
   PasswordInput,
   toast,
-} from "@acme/ui";
-import { Alert, AlertDescription, AlertTitle } from "@acme/ui/reui/alert";
+} from "@paramlab/ui";
+import { Alert, AlertDescription, AlertTitle } from "@paramlab/ui/reui/alert";
 import {
   type ChangePasswordFormValues,
   changePasswordFormSchema,
   PASSWORD_MIN_LENGTH,
-} from "@acme/validators";
+} from "@paramlab/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleAlert } from "lucide-react";
 import { useState } from "react";

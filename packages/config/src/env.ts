@@ -35,7 +35,7 @@ export const env = createEnv({
     // Comma-separated list of emails granted `adminProcedure` access
     ADMIN_EMAILS: z.string().optional(),
 
-    // Hatchet (background jobs). Unset: @acme/jobs runs work inline.
+    // Hatchet (background jobs). Unset: @paramlab/jobs runs work inline.
     HATCHET_CLIENT_TOKEN: z.string().optional(),
 
     // AWS S3

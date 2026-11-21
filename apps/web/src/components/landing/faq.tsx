@@ -3,7 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@acme/ui";
+} from "@paramlab/ui";
 import { FAQ } from "./data";
 import { Section } from "./sections";
 

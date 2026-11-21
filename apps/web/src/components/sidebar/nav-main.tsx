@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -12,7 +13,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@acme/ui";
+} from "@paramlab/ui";
 import type { Icon } from "@tabler/icons-react";
 import { IconChevronRight } from "@tabler/icons-react";
 
