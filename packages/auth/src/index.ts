@@ -34,6 +34,13 @@ export function initAuth<
     baseURL: options.baseUrl,
     secret: options.secret,
     /**
+     * Origins the site is served from. The browser reports
+     * `Origin: https://paramlab.ru` (the public site, e.g. via a proxy or a
+     * custom domain) while `APP_URL` stays the localhost default, so Better
+     * Auth would otherwise reject the request with "Invalid origin".
+     */
+    trustedOrigins: ["https://paramlab.ru"],
+    /**
      * OTP, password-reset and verification emails go through Better Auth's
      * background tasks: the response no longer waits for the email provider,
      * so a slow or failing provider can't break sign-in, and response time
