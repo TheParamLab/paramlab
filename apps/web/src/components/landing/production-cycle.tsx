@@ -4,8 +4,8 @@ import { cn } from "@paramlab/ui";
 import { CheckCircle2, PackageCheck, SlidersHorizontal } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
-import { PRODUCTION_CYCLE } from "./data";
-import { LayerReveal } from "./layer-reveal";
+import { PRODUCTION_CYCLE } from "~/components/landing/data";
+import { LayerReveal } from "~/components/landing/layer-reveal";
 
 const STEP_ICONS = [SlidersHorizontal, CheckCircle2, PackageCheck];
 
@@ -63,76 +63,80 @@ export function ProductionCycle() {
               const Icon = STEP_ICONS[idx] ?? SlidersHorizontal;
               const isActive = idx <= activeIndex;
               return (
-                <LayerReveal key={item.step} delay={idx * 0.08}>
-                  <li
-                    onPointerEnter={() => setActiveIndex(idx)}
-                    className={cn(
-                      "flex h-full flex-col justify-between gap-5 rounded-[16px] border p-5 transition-all duration-360 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                      idx === activeIndex
-                        ? "border-[#FF5C1A] bg-[#0E1014]"
-                        : "border-[#262B36] bg-[#0E1014]/60 hover:border-[#8A93A2]/50",
-                    )}
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => setActiveIndex(idx)}
-                            className={cn(
-                              "flex size-9 items-center justify-center rounded-lg border font-mono text-sm font-bold tabular-nums transition-colors duration-240",
-                              isActive
-                                ? "border-[#FF5C1A] bg-[#FF5C1A] text-[#0E1014]"
-                                : "border-[#262B36] bg-[#161920] text-[#8A93A2]",
-                            )}
-                          >
-                            {item.step}
-                          </button>
-                          <Icon
-                            className={cn(
-                              "size-5",
-                              idx === activeIndex
-                                ? "text-[#FF5C1A]"
-                                : "text-[#00D1FF]",
-                            )}
-                          />
-                        </div>
-                        <span className="rounded-md border border-[#262B36] bg-[#161920] px-2.5 py-1 font-mono text-xs font-semibold text-[#00D1FF] tabular-nums">
-                          {item.metric}
-                        </span>
+                <LayerReveal
+                  as="li"
+                  key={item.step}
+                  delay={idx * 0.08}
+                  onPointerEnter={() => setActiveIndex(idx)}
+                  className={cn(
+                    "flex h-full flex-col justify-between gap-5 rounded-[16px] border p-5 transition-all duration-360 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    idx === activeIndex
+                      ? "border-[#FF5C1A] bg-[#0E1014]"
+                      : "border-[#262B36] bg-[#0E1014]/60 hover:border-[#8A93A2]/50",
+                  )}
+                >
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          aria-current={
+                            idx === activeIndex ? "step" : undefined
+                          }
+                          onClick={() => setActiveIndex(idx)}
+                          className={cn(
+                            "flex size-9 items-center justify-center rounded-lg border font-mono text-sm font-bold tabular-nums transition-colors duration-240",
+                            isActive
+                              ? "border-[#FF5C1A] bg-[#FF5C1A] text-[#0E1014]"
+                              : "border-[#262B36] bg-[#161920] text-[#8A93A2]",
+                          )}
+                        >
+                          {item.step}
+                        </button>
+                        <Icon
+                          className={cn(
+                            "size-5",
+                            idx === activeIndex
+                              ? "text-[#FF5C1A]"
+                              : "text-[#00D1FF]",
+                          )}
+                        />
                       </div>
-
-                      <div className="flex flex-col gap-2">
-                        <span className="font-mono text-[11px] text-[#8A93A2]">
-                          {item.code}
-                        </span>
-                        <h3 className="text-lg font-bold tracking-tight text-[#F2F4F7]">
-                          {item.title}
-                        </h3>
-                        <p className="text-sm leading-relaxed text-[#8A93A2]">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between border-t border-[#262B36] pt-3 font-mono text-[11px] tabular-nums">
-                      <span className="text-[#8A93A2]">Контроль этапа</span>
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          idx === activeIndex
-                            ? "text-[#FF5C1A]"
-                            : "text-[#10B981]",
-                        )}
-                      >
-                        {idx === 0
-                          ? "CAD → Mesh 0.1 мм"
-                          : idx === 1
-                            ? "Manifold OK"
-                            : "Ozon · СДЭК РФ"}
+                      <span className="rounded-md border border-[#262B36] bg-[#161920] px-2.5 py-1 font-mono text-xs font-semibold text-[#00D1FF] tabular-nums">
+                        {item.metric}
                       </span>
                     </div>
-                  </li>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="font-mono text-[11px] text-[#8A93A2]">
+                        {item.code}
+                      </span>
+                      <h3 className="text-lg font-bold tracking-tight text-[#F2F4F7]">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm leading-relaxed text-[#8A93A2]">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-[#262B36] pt-3 font-mono text-[11px] tabular-nums">
+                    <span className="text-[#8A93A2]">Контроль этапа</span>
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        idx === activeIndex
+                          ? "text-[#FF5C1A]"
+                          : "text-[#10B981]",
+                      )}
+                    >
+                      {idx === 0
+                        ? "CAD → Mesh 0.1 мм"
+                        : idx === 1
+                          ? "Manifold OK"
+                          : "Ozon · СДЭК РФ"}
+                    </span>
+                  </div>
                 </LayerReveal>
               );
             })}

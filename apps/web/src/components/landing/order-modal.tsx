@@ -11,11 +11,15 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
-import { useCalculator } from "./calculator-context";
-import { MATERIALS, PART_TYPES } from "./data";
-import { APP_LINKS } from "./links";
-import { calcPrice, clampBore, estimateMass } from "./pricing";
+import { useEffect, useRef, useState } from "react";
+import { useCalculator } from "~/components/landing/calculator-context";
+import { MATERIALS, PART_TYPES } from "~/components/landing/data";
+import { APP_LINKS } from "~/components/landing/links";
+import {
+  calcPrice,
+  clampBore,
+  estimateMass,
+} from "~/components/landing/pricing";
 
 const CARRIERS = [
   {
@@ -40,6 +44,18 @@ type CarrierId = (typeof CARRIERS)[number]["id"];
 
 const numberFmt = new Intl.NumberFormat("ru-RU");
 
+function focusableSelector(root: HTMLElement): HTMLElement[] {
+  const selectors = [
+    'button:not([disabled]):not([tabindex="-1"])',
+    'a[href]:not([tabindex="-1"])',
+    'input:not([disabled]):not([tabindex="-1"])',
+    'select:not([disabled]):not([tabindex="-1"])',
+    'textarea:not([disabled]):not([tabindex="-1"])',
+    '[tabindex]:not([tabindex="-1"])',
+  ];
+  return Array.from(root.querySelectorAll(selectors.join(",")));
+}
+
 export function OrderSpecModal() {
   const {
     isOrderModalOpen,
@@ -52,16 +68,48 @@ export function OrderSpecModal() {
 
   const [carrierId, setCarrierId] = useState<CarrierId>("ozon");
   const [city, setCity] = useState("Москва, ПВЗ на выбор");
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  // Фокус-менеджмент: перенос при открытии, удержание Tab, восстановление при закрытии.
   useEffect(() => {
     if (!isOrderModalOpen) return;
+
+    lastFocusedRef.current = document.activeElement as HTMLElement | null;
+    // Фокус на кнопку закрытия при открытии (первый видимый элемент заголовка).
+    window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         setOrderModalOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = focusableSelector(panelRef.current);
+      if (focusable.length === 0) return;
+      const first = focusable.at(0);
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      lastFocusedRef.current?.focus();
+    };
   }, [isOrderModalOpen, setOrderModalOpen]);
 
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
@@ -100,19 +148,20 @@ export function OrderSpecModal() {
           />
 
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
             transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 w-full max-w-xl overflow-hidden rounded-[24px] border border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl"
+            className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl"
           >
             {/* Верхняя шапка спецификации */}
-            <div className="flex items-start justify-between gap-4 border-b border-[#262B36] bg-[#0E1014]/70 px-6 py-4">
+            <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-[#262B36] bg-[#0E1014]/70 px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-md border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#10B981]">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-[#00D1FF]/30 bg-[#00D1FF]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#00D1FF]">
                     <ShieldCheck className="size-3.5" />
-                    Manifold OK · Допуск ±0.1 мм
+                    CAD PREVIEW · Допуск ±0.1 мм
                   </span>
                   <span className="font-mono text-xs text-[#8A93A2]">
                     {part.code}
@@ -126,6 +175,7 @@ export function OrderSpecModal() {
                 </h2>
               </div>
               <button
+                ref={closeButtonRef}
                 type="button"
                 aria-label="Закрыть окно спецификации"
                 onClick={() => setOrderModalOpen(false)}
@@ -135,7 +185,7 @@ export function OrderSpecModal() {
               </button>
             </div>
 
-            <div className="flex flex-col gap-5 p-6">
+            <div className="flex flex-col gap-5 overflow-y-auto p-6">
               {/* Карточка параметров детали */}
               <div className="rounded-[12px] border border-[#262B36] bg-[#0E1014] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#262B36] pb-3">

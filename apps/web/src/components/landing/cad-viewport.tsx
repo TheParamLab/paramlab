@@ -1,17 +1,12 @@
 "use client";
 
 import { cn } from "@paramlab/ui";
-import {
-  Box,
-  Grid3X3,
-  Layers,
-  Pause,
-  Play,
-  RotateCcw,
-  ShieldCheck,
-} from "lucide-react";
+import { Box, Grid3X3, Layers, Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCalculator, type ViewportRenderMode } from "./calculator-context";
+import {
+  useCalculator,
+  type ViewportRenderMode,
+} from "~/components/landing/calculator-context";
 import {
   type DimensionKey,
   type Dimensions,
@@ -19,8 +14,8 @@ import {
   type Material,
   PART_TYPES,
   type PartTypeId,
-} from "./data";
-import { clampBore } from "./pricing";
+} from "~/components/landing/data";
+import { clampBore } from "~/components/landing/pricing";
 
 interface Vec3 {
   x: number;
@@ -43,6 +38,17 @@ interface Callout3D {
   start: Vec3;
   end: Vec3;
   labelPos: Vec3;
+}
+
+interface GeometryResult {
+  faces: Face3D[];
+  minY: number;
+  maxY: number;
+  callouts: Callout3D[];
+  layerRadiusAtY?: (y: number) => number;
+  isBoxy?: boolean;
+  halfL?: number;
+  halfW?: number;
 }
 
 function sub(a: Vec3, b: Vec3): Vec3 {
@@ -112,10 +118,10 @@ function addPrismRing(
     const it1: Vec3 = { x: rInnerTop * c1, y: y1, z: rInnerTop * s1 };
     const it0: Vec3 = { x: rInnerTop * c0, y: y1, z: rInnerTop * s0 };
 
-    // Наружная грань
-    faces.push(quadFace(ob0, ob1, ot1, ot0));
-    // Внутренний канал
-    faces.push(quadFace(ib1, ib0, it0, it1, { isInner: true }));
+    // Наружная грань — нормали наружу
+    faces.push(quadFace(ob0, ot0, ot1, ob1));
+    // Внутренний канал — нормали внутрь
+    faces.push(quadFace(ib1, it1, it0, ib0, { isInner: true }));
     // Верхнее кольцо
     faces.push(quadFace(ot0, ot1, it1, it0, { isTop: true }));
     // Нижнее кольцо
@@ -150,15 +156,37 @@ function addBoxWall(
   faces.push(quadFace(b00, b10, b11, b01)); // bottom -Y
 }
 
+function addTriangularRib(
+  faces: Face3D[],
+  xUpright: number,
+  yBase: number,
+  ribSize: number,
+  zCenter: number,
+  thickness: number,
+) {
+  const yTop = yBase + ribSize;
+  const xOut = xUpright + ribSize;
+  const zf = zCenter - thickness / 2;
+  const zb = zCenter + thickness / 2;
+
+  const A: Vec3 = { x: xUpright, y: yBase, z: zf };
+  const B: Vec3 = { x: xUpright, y: yTop, z: zf };
+  const C: Vec3 = { x: xOut, y: yBase, z: zf };
+  const Ab: Vec3 = { x: xUpright, y: yBase, z: zb };
+  const Bb: Vec3 = { x: xUpright, y: yTop, z: zb };
+  const Cb: Vec3 = { x: xOut, y: yBase, z: zb };
+
+  faces.push(quadFace(A, C, B, B)); // front face
+  faces.push(quadFace(Ab, Bb, Cb, Cb)); // back face
+  faces.push(quadFace(A, Ab, Bb, B)); // vertical side along upright
+  faces.push(quadFace(A, C, Cb, Ab)); // bottom side along base top
+  faces.push(quadFace(B, Bb, Cb, C)); // sloped hypotenuse side
+}
+
 function buildGeometry(
   partType: PartTypeId,
   dimensions: Dimensions,
-): {
-  faces: Face3D[];
-  minY: number;
-  maxY: number;
-  callouts: Callout3D[];
-} {
+): GeometryResult {
   const faces: Face3D[] = [];
   const { d1, d2, h } = dimensions;
   const halfH = h / 2;
@@ -172,19 +200,44 @@ function buildGeometry(
     const yBottom = -halfH;
     const yFlangeTop = yBottom + flangeH;
     const yTop = halfH;
+    const segments = 28;
 
-    // Нижний опорный фланец + основной ствол втулки
-    addPrismRing(
-      faces,
-      flangeR,
-      flangeR,
-      rInner,
-      rInner,
-      yBottom,
-      yFlangeTop,
-      28,
-    );
-    addPrismRing(faces, rOuter, rOuter, rInner, rInner, yFlangeTop, yTop, 28);
+    for (let i = 0; i < segments; i++) {
+      const a0 = (i / segments) * Math.PI * 2;
+      const a1 = ((i + 1) / segments) * Math.PI * 2;
+      const c0 = Math.cos(a0);
+      const s0 = Math.sin(a0);
+      const c1 = Math.cos(a1);
+      const s1 = Math.sin(a1);
+
+      const ib0: Vec3 = { x: rInner * c0, y: yBottom, z: rInner * s0 };
+      const ib1: Vec3 = { x: rInner * c1, y: yBottom, z: rInner * s1 };
+      const it1: Vec3 = { x: rInner * c1, y: yTop, z: rInner * s1 };
+      const it0: Vec3 = { x: rInner * c0, y: yTop, z: rInner * s0 };
+
+      const f0b: Vec3 = { x: flangeR * c0, y: yBottom, z: flangeR * s0 };
+      const f1b: Vec3 = { x: flangeR * c1, y: yBottom, z: flangeR * s1 };
+      const f0t: Vec3 = { x: flangeR * c0, y: yFlangeTop, z: flangeR * s0 };
+      const f1t: Vec3 = { x: flangeR * c1, y: yFlangeTop, z: flangeR * s1 };
+
+      const o0b: Vec3 = { x: rOuter * c0, y: yFlangeTop, z: rOuter * s0 };
+      const o1b: Vec3 = { x: rOuter * c1, y: yFlangeTop, z: rOuter * s1 };
+      const o0t: Vec3 = { x: rOuter * c0, y: yTop, z: rOuter * s0 };
+      const o1t: Vec3 = { x: rOuter * c1, y: yTop, z: rOuter * s1 };
+
+      // Внутренняя цилиндрическая поверхность на полную высоту
+      faces.push(quadFace(ib1, it1, it0, ib0, { isInner: true }));
+      // Наружная поверхность фланца
+      faces.push(quadFace(f0b, f0t, f1t, f1b));
+      // Горизонтальный ступенчатый буртик
+      faces.push(quadFace(f0t, f1t, o1b, o0b, { isTop: true }));
+      // Наружная поверхность основного тела
+      faces.push(quadFace(o0b, o0t, o1t, o1b));
+      // Нижняя крышка (rInner..flangeR)
+      faces.push(quadFace(ib0, ib1, f1b, f0b));
+      // Верхняя крышка (rInner..rOuter)
+      faces.push(quadFace(o0t, o1t, it1, it0, { isTop: true }));
+    }
 
     const callouts: Callout3D[] = [
       {
@@ -197,11 +250,11 @@ function buildGeometry(
       },
       {
         key: "d2",
-        code: "T",
-        value: Math.max(2, Math.round((d1 - bore) / 2)),
-        start: { x: rInner, y: yTop + 2, z: 0 },
-        end: { x: rOuter, y: yTop + 2, z: 0 },
-        labelPos: { x: (rInner + rOuter) / 2, y: yTop + 22, z: 12 },
+        code: "d",
+        value: bore,
+        start: { x: -rInner, y: yTop + 3, z: 0 },
+        end: { x: rInner, y: yTop + 3, z: 0 },
+        labelPos: { x: 0, y: yTop + 22, z: 12 },
       },
       {
         key: "h",
@@ -213,18 +266,31 @@ function buildGeometry(
       },
     ];
 
-    return { faces, minY: yBottom, maxY: yTop, callouts };
+    return {
+      faces,
+      minY: yBottom,
+      maxY: yTop,
+      callouts,
+      layerRadiusAtY: (y) => (y <= yFlangeTop ? flangeR : rOuter),
+    };
   }
 
   if (partType === "gear") {
     const pitchR = d1 / 2;
-    const bore = clampBore(d1 - 8, d2);
+    const bore = clampBore(d1, d2);
     const rInner = Math.max(3, bore / 2);
-    const teeth = Math.max(10, Math.min(28, Math.round(d1 / 4.2)));
+    const teeth = Math.max(8, Math.round(d1 / 4));
     const steps = teeth * 4;
-    const toothDepth = Math.max(2.6, Math.min(6.5, d1 * 0.065));
-    const rRoot = Math.max(rInner + 3, pitchR - toothDepth * 0.55);
-    const rTip = pitchR + toothDepth * 0.45;
+    let toothDepth = Math.max(2.6, Math.min(6.5, d1 * 0.065));
+    let rRoot = Math.max(rInner + 3, pitchR - toothDepth * 0.55);
+    let rTip = pitchR + toothDepth * 0.45;
+
+    while (rRoot >= rTip && toothDepth > 0.5) {
+      toothDepth -= 0.2;
+      rRoot = Math.max(rInner + 3, pitchR - toothDepth * 0.55);
+      rTip = pitchR + toothDepth * 0.45;
+    }
+
     const y0 = -halfH;
     const y1 = halfH;
 
@@ -251,8 +317,8 @@ function buildGeometry(
       const it1: Vec3 = { x: rInner * c1, y: y1, z: rInner * s1 };
       const it0: Vec3 = { x: rInner * c0, y: y1, z: rInner * s0 };
 
-      faces.push(quadFace(ob0, ob1, ot1, ot0));
-      faces.push(quadFace(ib1, ib0, it0, it1, { isInner: true }));
+      faces.push(quadFace(ob0, ot0, ot1, ob1));
+      faces.push(quadFace(ib1, it1, it0, ib0, { isInner: true }));
       faces.push(quadFace(ot0, ot1, it1, it0, { isTop: true }));
       faces.push(quadFace(ib0, ib1, ob1, ob0));
     }
@@ -284,7 +350,13 @@ function buildGeometry(
       },
     ];
 
-    return { faces, minY: y0, maxY: y1, callouts };
+    return {
+      faces,
+      minY: y0,
+      maxY: y1,
+      callouts,
+      layerRadiusAtY: () => rTip,
+    };
   }
 
   if (partType === "adapter") {
@@ -355,7 +427,187 @@ function buildGeometry(
       },
     ];
 
-    return { faces, minY: y0, maxY: y3, callouts };
+    return {
+      faces,
+      minY: y0,
+      maxY: y3,
+      callouts,
+      layerRadiusAtY: (y) => {
+        if (y <= y1) return r1;
+        if (y >= y2) return r2;
+        const t = (y - y1) / (y2 - y1);
+        return r1 + (r2 - r1) * t;
+      },
+    };
+  }
+
+  if (partType === "bracket") {
+    const L = d1;
+    const W = d2;
+    const H = h;
+    const halfL = L / 2;
+    const halfW = W / 2;
+    const wall = Math.max(3.2, Math.min(6, Math.min(L, W) * 0.065));
+    const y0 = -H / 2;
+    const y1 = H / 2;
+    const baseTop = y0 + wall;
+    const xUpright = -halfL;
+
+    // Основание
+    addBoxWall(faces, -halfL, halfL, y0, baseTop, -halfW, halfW);
+    // Вертикальная стенка
+    addBoxWall(faces, xUpright, xUpright + wall, baseTop, y1, -halfW, halfW);
+
+    // Треугольные ребра жесткости
+    const ribSize = Math.min((y1 - baseTop) * 0.85, L * 0.35, H * 0.45);
+    const ribThick = Math.min(wall, W * 0.18);
+    if (ribSize > 4 && ribThick > 1.5) {
+      const ribZ1 = halfW * 0.45;
+      const ribZ2 = -halfW * 0.45;
+      addTriangularRib(
+        faces,
+        xUpright + wall,
+        baseTop,
+        ribSize,
+        ribZ1,
+        ribThick,
+      );
+      addTriangularRib(
+        faces,
+        xUpright + wall,
+        baseTop,
+        ribSize,
+        ribZ2,
+        ribThick,
+      );
+    }
+
+    const callouts: Callout3D[] = [
+      {
+        key: "d1",
+        code: "L",
+        value: L,
+        start: { x: -halfL, y: y1 + 7, z: halfW },
+        end: { x: halfL, y: y1 + 7, z: halfW },
+        labelPos: { x: 0, y: y1 + 15, z: halfW },
+      },
+      {
+        key: "d2",
+        code: "W",
+        value: W,
+        start: { x: halfL + 10, y: y0, z: -halfW },
+        end: { x: halfL + 10, y: y0, z: halfW },
+        labelPos: { x: halfL + 20, y: y0, z: 0 },
+      },
+      {
+        key: "h",
+        code: "H",
+        value: H,
+        start: { x: -halfL - 12, y: y0, z: halfW },
+        end: { x: -halfL - 12, y: y1, z: halfW },
+        labelPos: { x: -halfL - 22, y: 0, z: halfW },
+      },
+    ];
+
+    return {
+      faces,
+      minY: y0,
+      maxY: y1,
+      callouts,
+      isBoxy: true,
+      halfL,
+      halfW,
+    };
+  }
+
+  if (partType === "organizer") {
+    const L = d1;
+    const W = d2;
+    const H = h;
+    const halfL = L / 2;
+    const halfW = W / 2;
+    const wall = Math.max(2.8, Math.min(5, Math.min(L, W) * 0.055));
+    const y0 = -H / 2;
+    const y1 = H / 2;
+    const floorY = y0 + wall;
+
+    // Дно
+    addBoxWall(faces, -halfL, halfL, y0, floorY, -halfW, halfW);
+    // Стенки
+    addBoxWall(faces, -halfL, halfL, floorY, y1, halfW - wall, halfW);
+    addBoxWall(faces, -halfL, halfL, floorY, y1, -halfW, -halfW + wall);
+    addBoxWall(
+      faces,
+      -halfL,
+      -halfL + wall,
+      floorY,
+      y1,
+      -halfW + wall,
+      halfW - wall,
+    );
+    addBoxWall(
+      faces,
+      halfL - wall,
+      halfL,
+      floorY,
+      y1,
+      -halfW + wall,
+      halfW - wall,
+    );
+
+    // Внутренние перегородки
+    const innerL = L - 2 * wall;
+    const dividerCount = Math.min(2, Math.max(1, Math.floor(L / 70)));
+    const spacing = innerL / (dividerCount + 1);
+    for (let i = 1; i <= dividerCount; i++) {
+      const x = -halfL + wall + i * spacing;
+      addBoxWall(
+        faces,
+        x - wall / 2,
+        x + wall / 2,
+        floorY,
+        y1,
+        -halfW + wall,
+        halfW - wall,
+      );
+    }
+
+    const callouts: Callout3D[] = [
+      {
+        key: "d1",
+        code: "L",
+        value: L,
+        start: { x: -halfL, y: y1 + 7, z: halfW },
+        end: { x: halfL, y: y1 + 7, z: halfW },
+        labelPos: { x: 0, y: y1 + 15, z: halfW },
+      },
+      {
+        key: "d2",
+        code: "W",
+        value: W,
+        start: { x: halfL + 10, y: y0, z: -halfW },
+        end: { x: halfL + 10, y: y0, z: halfW },
+        labelPos: { x: halfL + 20, y: y0, z: 0 },
+      },
+      {
+        key: "h",
+        code: "H",
+        value: H,
+        start: { x: -halfL - 12, y: y0, z: halfW },
+        end: { x: -halfL - 12, y: y1, z: halfW },
+        labelPos: { x: -halfL - 22, y: 0, z: halfW },
+      },
+    ];
+
+    return {
+      faces,
+      minY: y0,
+      maxY: y1,
+      callouts,
+      isBoxy: true,
+      halfL,
+      halfW,
+    };
   }
 
   // Корпус РЭА ("din-box") или Крепление / Заглушка ("end-cap")
@@ -479,7 +731,15 @@ function buildGeometry(
     },
   ];
 
-  return { faces, minY: y0, maxY: y1, callouts };
+  return {
+    faces,
+    minY: y0,
+    maxY: y1,
+    callouts,
+    isBoxy: true,
+    halfL,
+    halfW,
+  };
 }
 
 function rotatePoint(p: Vec3, yaw: number, pitch: number): Vec3 {
@@ -520,6 +780,36 @@ function shadeColor(
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function intersectEdgeAtY(a: Vec3, b: Vec3, cutY: number): Vec3 {
+  const dy = b.y - a.y;
+  if (Math.abs(dy) < 1e-9) return { x: a.x, y: cutY, z: a.z };
+  const t = (cutY - a.y) / dy;
+  return {
+    x: a.x + (b.x - a.x) * t,
+    y: cutY,
+    z: a.z + (b.z - a.z) * t,
+  };
+}
+
+function clipFaceAtY(face: Face3D, cutY: number): Vec3[] | null {
+  const out: Vec3[] = [];
+  const verts = face.vertices;
+  const n = verts.length;
+
+  for (let i = 0; i < n; i++) {
+    const curr = verts[i];
+    const next = verts[(i + 1) % n];
+    if (!curr || !next) continue;
+    const currIn = curr.y <= cutY;
+    const nextIn = next.y <= cutY;
+
+    if (currIn) out.push(curr);
+    if (currIn !== nextIn) out.push(intersectEdgeAtY(curr, next, cutY));
+  }
+
+  return out.length > 0 ? out : null;
+}
+
 const RENDER_MODES: readonly {
   id: ViewportRenderMode;
   label: string;
@@ -544,12 +834,15 @@ export function CadViewport3D() {
   const rotationRef = useRef({ yaw: -0.62, pitch: 0.44 });
   const dragRef = useRef<{
     active: boolean;
+    pointerId: number | null;
     lastX: number;
     lastY: number;
-  }>({ active: false, lastX: 0, lastY: 0 });
+  }>({ active: false, pointerId: null, lastX: 0, lastY: 0 });
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [printProgress, setPrintProgress] = useState(1);
+  const [viewportVersion, setViewportVersion] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const printStartRef = useRef<number | null>(null);
 
   const material = MATERIALS.find((m) => m.id === materialId) ?? MATERIALS[0];
@@ -560,8 +853,25 @@ export function CadViewport3D() {
     Math.min(totalLayers, Math.round(printProgress * totalLayers)),
   );
 
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   // Анимация послойной печати
   useEffect(() => {
+    if (prefersReducedMotion) {
+      if (isPrinting) {
+        setIsPrinting(false);
+        setPrintProgress(1);
+      }
+      return;
+    }
     if (!isPrinting) return;
     let rafId = 0;
     const durationMs = 5600;
@@ -584,12 +894,16 @@ export function CadViewport3D() {
 
     rafId = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(rafId);
-  }, [isPrinting]);
+  }, [isPrinting, prefersReducedMotion]);
 
   function togglePrintSimulation() {
     if (isPrinting) {
       setIsPrinting(false);
       printStartRef.current = null;
+      setPrintProgress(1);
+      return;
+    }
+    if (prefersReducedMotion) {
       setPrintProgress(1);
       return;
     }
@@ -602,9 +916,11 @@ export function CadViewport3D() {
     rotationRef.current = { yaw: -0.62, pitch: 0.44 };
     setIsPrinting(false);
     setPrintProgress(1);
+    setViewportVersion((v) => v + 1);
   }
 
   // Основной рендер-цикл High-DPI Canvas
+  // biome-ignore lint/correctness/useExhaustiveDependencies: viewportVersion — искусственный триггер перерисовки после сброса ракурса
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -684,22 +1000,69 @@ export function CadViewport3D() {
         ctx.stroke();
       }
 
-      // 2. Расчет высоты активного слоя при печати
+      // 2. Высота активного слоя при печати
       const activeCutY =
         geometry.minY + (geometry.maxY - geometry.minY) * printProgress;
+      const shouldClip = isPrinting && printProgress < 1;
 
-      // Фильтрация и сортировка полигонов (алгоритм художника)
+      // Вспомогательная отрисовка контура сечения на высоте y
+      const drawLayerContour = (
+        ly: number,
+        strokeStyle: string,
+        lineWidth: number,
+      ) => {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+
+        if (
+          geometry.isBoxy &&
+          geometry.halfL != null &&
+          geometry.halfW != null
+        ) {
+          const corners = [
+            { x: -geometry.halfL, y: ly, z: -geometry.halfW },
+            { x: geometry.halfL, y: ly, z: -geometry.halfW },
+            { x: geometry.halfL, y: ly, z: geometry.halfW },
+            { x: -geometry.halfL, y: ly, z: geometry.halfW },
+          ];
+          for (let k = 0; k <= corners.length; k++) {
+            const corner = corners[k % corners.length];
+            if (!corner) continue;
+            const p = project(corner);
+            if (k === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+          }
+        } else if (geometry.layerRadiusAtY) {
+          const r = geometry.layerRadiusAtY(ly);
+          const segs = 28;
+          for (let k = 0; k <= segs; k++) {
+            const ang = (k / segs) * Math.PI * 2;
+            const p = project({
+              x: Math.cos(ang) * r,
+              y: ly,
+              z: Math.sin(ang) * r,
+            });
+            if (k === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+          }
+        }
+
+        ctx.stroke();
+      };
+
+      // 3. Отсечение и сортировка полигонов (алгоритм художника)
       const lightDir = normalize({ x: -0.45, y: 0.75, z: 0.55 });
       const preparedFaces = geometry.faces
-        .filter((face) => face.centerY <= activeCutY + 0.5)
         .map((face) => {
-          const projected = face.vertices.map(project);
+          const clipped = shouldClip
+            ? clipFaceAtY(face, activeCutY)
+            : [...face.vertices];
+          if (!clipped || clipped.length < 3) return null;
+
+          const projected = clipped.map(project);
           const avgZ =
-            ((projected[0]?.z ?? 0) +
-              (projected[1]?.z ?? 0) +
-              (projected[2]?.z ?? 0) +
-              (projected[3]?.z ?? 0)) *
-            0.25;
+            projected.reduce((sum, p) => sum + p.z, 0) / projected.length;
           const rotNormal = rotatePoint(face.normal, yaw, pitch);
           const intensity = Math.max(
             0.18,
@@ -712,18 +1075,21 @@ export function CadViewport3D() {
             intensity,
           };
         })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
         .sort((a, b) => a.avgZ - b.avgZ);
 
-      // 3. Отрисовка 3D-граней детали
+      // 4. Отрисовка 3D-граней детали
       for (const item of preparedFaces) {
-        const [p0, p1, p2, p3] = item.projected;
-        if (!p0 || !p1 || !p2 || !p3) continue;
+        const projected = item.projected;
+        if (projected.length < 3) continue;
 
         ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.lineTo(p3.x, p3.y);
+        for (let k = 0; k < projected.length; k++) {
+          const p = projected[k];
+          if (!p) continue;
+          if (k === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
         ctx.closePath();
 
         if (renderMode === "wireframe") {
@@ -764,45 +1130,20 @@ export function CadViewport3D() {
       // Горизонтальные изолинии слоев для режима "Слои" или во время печати
       if (renderMode === "layers" || isPrinting) {
         const sliceCount = 16;
-        const rSlice = Math.max(dimensions.d1, dimensions.d2) * 0.5;
-        ctx.strokeStyle =
+        const sliceColor =
           renderMode === "layers"
             ? "rgba(255, 92, 26, 0.5)"
             : "rgba(255, 92, 26, 0.28)";
-        ctx.lineWidth = 1;
 
         for (let s = 1; s <= sliceCount; s++) {
           const ly =
             geometry.minY + ((geometry.maxY - geometry.minY) * s) / sliceCount;
           if (ly > activeCutY) break;
-
-          ctx.beginPath();
-          const segs = 28;
-          for (let k = 0; k <= segs; k++) {
-            const ang = (k / segs) * Math.PI * 2;
-            const px =
-              partType === "din-box" || partType === "end-cap"
-                ? Math.max(
-                    -dimensions.d1 / 2,
-                    Math.min(dimensions.d1 / 2, Math.cos(ang) * rSlice * 1.25),
-                  )
-                : Math.cos(ang) * rSlice;
-            const pz =
-              partType === "din-box" || partType === "end-cap"
-                ? Math.max(
-                    -dimensions.d2 / 2,
-                    Math.min(dimensions.d2 / 2, Math.sin(ang) * rSlice * 1.25),
-                  )
-                : Math.sin(ang) * rSlice;
-            const pt = project({ x: px, y: ly, z: pz });
-            if (k === 0) ctx.moveTo(pt.x, pt.y);
-            else ctx.lineTo(pt.x, pt.y);
-          }
-          ctx.stroke();
+          drawLayerContour(ly, sliceColor, 1);
         }
       }
 
-      // 4. Анимация активного сопла (#FF5C1A) при послойной печати
+      // 5. Анимация активного сопла (#FF5C1A) при послойной печати
       if (isPrinting && printProgress < 1) {
         const nozzleAngle = timestamp * 0.0065;
         const orbitR = Math.max(dimensions.d1, dimensions.d2) * 0.36;
@@ -818,21 +1159,8 @@ export function CadViewport3D() {
           z: nozzleWorld.z,
         });
 
-        // glowing contour on active layer
-        ctx.strokeStyle = "#FF5C1A";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let k = 0; k <= 32; k++) {
-          const a = (k / 32) * Math.PI * 2;
-          const lp = project({
-            x: Math.cos(a) * orbitR,
-            y: activeCutY,
-            z: Math.sin(a) * orbitR,
-          });
-          if (k === 0) ctx.moveTo(lp.x, lp.y);
-          else ctx.lineTo(lp.x, lp.y);
-        }
-        ctx.stroke();
+        // Контур активного слоя по реальному сечению
+        drawLayerContour(activeCutY, "#FF5C1A", 2);
 
         // Корпус хотэнда/сопла
         ctx.strokeStyle = "#F2F4F7";
@@ -860,7 +1188,7 @@ export function CadViewport3D() {
         ctx.fill();
       }
 
-      // 5. Динамические CAD-выноски размеров поверх вьюпорта
+      // 6. Динамические CAD-выноски размеров поверх вьюпорта
       ctx.font = '600 11px "JetBrains Mono", monospace';
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -914,7 +1242,7 @@ export function CadViewport3D() {
         ctx.fillText(text, pLabel.x, pLabel.y);
       }
 
-      // 6. Индикатор осей X / Y / Z в левом нижнем углу вьюпорта
+      // 7. Индикатор осей X / Y / Z в левом нижнем углу вьюпорта
       const gizmoOrigin = { x: 46, y: height - 44 };
       const axisLen = 24;
       const axes: readonly { label: string; vec: Vec3; color: string }[] = [
@@ -970,6 +1298,7 @@ export function CadViewport3D() {
     renderMode,
     isPrinting,
     printProgress,
+    viewportVersion,
   ]);
 
   return (
@@ -977,9 +1306,8 @@ export function CadViewport3D() {
       {/* Верхняя панель CAD-вьюпорта */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#262B36] bg-[#0E1014]/75 px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#10B981]">
-            <ShieldCheck className="size-3.5" />
-            Manifold OK
+          <span className="inline-flex items-center rounded-md border border-[#00D1FF]/30 bg-[#00D1FF]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#00D1FF]">
+            CAD PREVIEW
           </span>
           <span className="font-mono text-xs text-[#8A93A2] tabular-nums">
             {part.code}
@@ -1027,12 +1355,18 @@ export function CadViewport3D() {
             e.currentTarget.setPointerCapture(e.pointerId);
             dragRef.current = {
               active: true,
+              pointerId: e.pointerId,
               lastX: e.clientX,
               lastY: e.clientY,
             };
           }}
           onPointerMove={(e) => {
-            if (!dragRef.current.active) return;
+            if (
+              !dragRef.current.active ||
+              e.pointerId !== dragRef.current.pointerId
+            ) {
+              return;
+            }
             const dx = e.clientX - dragRef.current.lastX;
             const dy = e.clientY - dragRef.current.lastY;
             dragRef.current.lastX = e.clientX;
@@ -1044,17 +1378,37 @@ export function CadViewport3D() {
                 Math.min(1.15, rotationRef.current.pitch + dy * 0.009),
               ),
             };
-            // Форсируем перерисовку при вращении
-            setPrintProgress((p) => (p === 1 ? 0.9999 : p));
-            window.requestAnimationFrame(() =>
-              setPrintProgress((p) => (p > 0.999 ? 1 : p)),
-            );
+            setViewportVersion((v) => v + 1);
           }}
-          onPointerUp={() => {
-            dragRef.current.active = false;
+          onPointerUp={(e) => {
+            if (
+              !dragRef.current.active ||
+              e.pointerId !== dragRef.current.pointerId
+            ) {
+              return;
+            }
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            dragRef.current = {
+              ...dragRef.current,
+              active: false,
+              pointerId: null,
+            };
+            setViewportVersion((v) => v + 1);
           }}
-          onPointerCancel={() => {
-            dragRef.current.active = false;
+          onPointerCancel={(e) => {
+            if (
+              !dragRef.current.active ||
+              e.pointerId !== dragRef.current.pointerId
+            ) {
+              return;
+            }
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            dragRef.current = {
+              ...dragRef.current,
+              active: false,
+              pointerId: null,
+            };
+            setViewportVersion((v) => v + 1);
           }}
           className="h-full w-full cursor-grab touch-none active:cursor-grabbing"
         />

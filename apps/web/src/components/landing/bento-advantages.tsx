@@ -1,8 +1,8 @@
 "use client";
 
 import { CheckCircle2, ShieldCheck, Truck } from "lucide-react";
-import { MATERIALS } from "./data";
-import { LayerReveal } from "./layer-reveal";
+import { MATERIALS } from "~/components/landing/data";
+import { LayerReveal } from "~/components/landing/layer-reveal";
 
 /**
  * 1. Микро-визуализация шкалы нониусного штангенциркуля / допусков 0.1 мм.

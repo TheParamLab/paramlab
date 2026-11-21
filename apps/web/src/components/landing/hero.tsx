@@ -13,19 +13,24 @@ import {
   Scale,
   Settings2,
 } from "lucide-react";
-import { useState } from "react";
-import { CadViewport3D } from "./cad-viewport";
-import { useCalculator } from "./calculator-context";
+import { useRef, useState } from "react";
+import { CadViewport3D } from "~/components/landing/cad-viewport";
+import { useCalculator } from "~/components/landing/calculator-context";
 import {
   type DimensionKey,
   HERO_PART_TYPES,
   MATERIALS,
   PART_TYPES,
   type PartTypeId,
-} from "./data";
-import { SpringNumber } from "./layer-reveal";
-import { OrderSpecModal } from "./order-modal";
-import { calcPrice, clampBore, estimateMass, SERIES_QUANTITY } from "./pricing";
+} from "~/components/landing/data";
+import { SpringNumber } from "~/components/landing/layer-reveal";
+import { OrderSpecModal } from "~/components/landing/order-modal";
+import {
+  calcPrice,
+  clampBore,
+  estimateMass,
+  SERIES_QUANTITY,
+} from "~/components/landing/pricing";
 
 const DIMENSION_KEYS: readonly DimensionKey[] = ["d1", "d2", "h"];
 
@@ -35,6 +40,8 @@ const TEMPLATE_ICONS: Record<PartTypeId, typeof Settings2> = {
   gear: Settings2,
   adapter: Layers,
   "end-cap": Cpu,
+  bracket: Settings2,
+  organizer: Layers,
 };
 
 const numberFmt = new Intl.NumberFormat("ru-RU");
@@ -76,14 +83,21 @@ export function Hero() {
   });
 
   // Инженерная валидация параметров (контроль толщины стенки и посадки)
+  const effectiveBore =
+    partType === "bushing" || partType === "gear"
+      ? clampBore(dimensions.d1, dimensions.d2)
+      : dimensions.d2;
+
   const rawWall =
-    partType === "bushing" || partType === "gear" || partType === "adapter"
-      ? (dimensions.d1 - dimensions.d2) / 2
-      : Math.min(dimensions.d1, dimensions.d2) * 0.08;
+    partType === "bushing" || partType === "gear"
+      ? (dimensions.d1 - effectiveBore) / 2
+      : partType === "adapter"
+        ? 2.8
+        : Math.min(dimensions.d1, dimensions.d2) * 0.08;
 
   const isWallClamped =
     (partType === "bushing" || partType === "gear") &&
-    clampBore(dimensions.d1, dimensions.d2) < dimensions.d2;
+    effectiveBore < dimensions.d2;
 
   const isThinWallWarning =
     isWallClamped ||
@@ -95,6 +109,22 @@ export function Hero() {
   const heroTemplates = HERO_PART_TYPES.map(
     (id) => PART_TYPES.find((item) => item.id === id) ?? PART_TYPES[0],
   );
+
+  const templateTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  function handleTemplateKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const currentIndex = heroTemplates.findIndex((t) => t.id === partType);
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex =
+      (currentIndex + direction + heroTemplates.length) % heroTemplates.length;
+    const nextId = heroTemplates[nextIndex]?.id;
+    if (nextId) {
+      setPartType(nextId);
+      templateTabRefs.current[nextIndex]?.focus();
+    }
+  }
 
   return (
     <section
@@ -131,9 +161,11 @@ export function Hero() {
         className="pointer-events-none absolute inset-0"
       />
 
-      <div
+      <section
         id="calculator"
-        className="relative mx-auto max-w-7xl scroll-mt-16 px-4 pt-8 pb-16 sm:px-6 lg:px-8 lg:pt-12 lg:pb-20"
+        tabIndex={-1}
+        aria-label="Параметрический 3D-конфигуратор"
+        className="relative mx-auto max-w-7xl scroll-mt-16 px-4 pt-8 pb-16 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] sm:px-6 lg:px-8 lg:pt-12 lg:pb-20"
       >
         {/* Верхняя техническая строка состояния лаборатории */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -182,14 +214,18 @@ export function Hero() {
                 <div
                   role="tablist"
                   aria-label="Выбор базового шаблона детали"
+                  onKeyDown={handleTemplateKeyDown}
                   className="grid grid-cols-1 gap-2 sm:grid-cols-3"
                 >
-                  {heroTemplates.map((item) => {
+                  {heroTemplates.map((item, idx) => {
                     const Icon = TEMPLATE_ICONS[item.id];
                     const selected = partType === item.id;
                     return (
                       <button
                         key={item.id}
+                        ref={(el) => {
+                          templateTabRefs.current[idx] = el;
+                        }}
                         type="button"
                         role="tab"
                         aria-selected={selected}
@@ -472,7 +508,7 @@ export function Hero() {
             <CadViewport3D />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Модальное окно спецификации и выбора доставки (Ozon / СДЭК) */}
       <OrderSpecModal />

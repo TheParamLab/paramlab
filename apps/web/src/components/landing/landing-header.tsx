@@ -3,9 +3,9 @@
 import { cn } from "@paramlab/ui";
 import { Menu, User, X } from "lucide-react";
 import { useState } from "react";
-import { useCalculator } from "./calculator-context";
-import { NAV_LINKS } from "./data";
-import { APP_LINKS } from "./links";
+import { useCalculator } from "~/components/landing/calculator-context";
+import { NAV_LINKS } from "~/components/landing/data";
+import { APP_LINKS } from "~/components/landing/links";
 
 export function Logo() {
   return (

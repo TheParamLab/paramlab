@@ -63,20 +63,26 @@ export function LayerReveal({
   children,
   delay = 0,
   className,
+  as: Component = "div",
+  onPointerEnter,
 }: {
   children: ReactNode;
   delay?: number;
   className?: string;
+  as?: "div" | "li";
+  onPointerEnter?: React.PointerEventHandler<HTMLElement>;
 }) {
   const prefersReducedMotion = useReducedMotion();
   const [revealed, setRevealed] = useState(false);
 
+  const MotionComponent = Component === "li" ? motion.li : motion.div;
+
   if (prefersReducedMotion) {
-    return <div className={className}>{children}</div>;
+    return <Component className={className}>{children}</Component>;
   }
 
   return (
-    <motion.div
+    <MotionComponent
       initial={{ clipPath: "inset(100% 0% 0% 0%)", opacity: 0.65 }}
       whileInView={{ clipPath: "inset(0% 0% 0% 0%)", opacity: 1 }}
       viewport={{ once: true, amount: 0.16 }}
@@ -86,6 +92,7 @@ export function LayerReveal({
         ease: [0.22, 1, 0.36, 1],
       }}
       onAnimationComplete={() => setRevealed(true)}
+      onPointerEnter={onPointerEnter}
       className={cn("relative", className)}
     >
       {!revealed && (
@@ -103,6 +110,6 @@ export function LayerReveal({
         />
       )}
       {children}
-    </motion.div>
+    </MotionComponent>
   );
 }

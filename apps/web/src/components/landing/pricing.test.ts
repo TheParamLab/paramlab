@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { calcPrice, estimateMass, MIN_ORDER, parseBinaryStl } from "./pricing";
+import {
+  calcPrice,
+  estimateMass,
+  MIN_ORDER,
+  parseBinaryStl,
+} from "~/components/landing/pricing";
 
 describe("calcPrice", () => {
   test("adds the machine start to mass × rate", () => {
@@ -60,6 +65,8 @@ describe("estimateMass", () => {
       "gear",
       "din-box",
       "end-cap",
+      "bracket",
+      "organizer",
     ] as const) {
       const small = estimateMass(type, { d1: 50, d2: 35, h: 30 }, 1.2);
       const large = estimateMass(type, { d1: 100, d2: 35, h: 30 }, 1.2);

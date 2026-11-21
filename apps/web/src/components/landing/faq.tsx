@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@paramlab/ui";
-import { FAQ } from "./data";
+import { FAQ } from "~/components/landing/data";
 
 export function Faq() {
   return (

@@ -135,8 +135,8 @@ export const PART_TYPES = [
         initial: 56,
       },
       d2: {
-        code: "T",
-        label: "Внутренний канал d (стенка T)",
+        code: "d",
+        label: "Внутренний канал d",
         unit: "мм",
         min: 8,
         max: 140,
@@ -193,9 +193,9 @@ export const PART_TYPES = [
   {
     id: "gear",
     shortLabel: "Шестерня",
-    label: "Прямозубая цилиндрическая шестерня (α = 20°)",
+    label: "Прямозубая цилиндрическая шестерня",
     code: "CAD-GR-03",
-    tolerance: "DIN 3962 · Модуль m = 2.0",
+    tolerance: "DIN 3962 · α = 20°",
     dimensions: {
       d1: {
         code: "D",
@@ -298,6 +298,78 @@ export const PART_TYPES = [
       },
     },
   },
+  {
+    id: "bracket",
+    shortLabel: "Кронштейн",
+    label: "Угловой кронштейн с ребрами жесткости",
+    code: "CAD-BRK-06",
+    tolerance: "ISO 2768-mK · Отверстия H8",
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Длина базы L",
+        unit: "мм",
+        min: 30,
+        max: 160,
+        step: 1,
+        initial: 68,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина кронштейна W",
+        unit: "мм",
+        min: 20,
+        max: 120,
+        step: 1,
+        initial: 44,
+      },
+      h: {
+        code: "H",
+        label: "Высота опоры H",
+        unit: "мм",
+        min: 20,
+        max: 120,
+        step: 1,
+        initial: 52,
+      },
+    },
+  },
+  {
+    id: "organizer",
+    shortLabel: "Органайзер",
+    label: "Модульный ложемент с ячейками",
+    code: "CAD-ORG-07",
+    tolerance: "Ячейки ±0.2 мм · R дно",
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Длина лотка L",
+        unit: "мм",
+        min: 40,
+        max: 220,
+        step: 1,
+        initial: 140,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина лотка W",
+        unit: "мм",
+        min: 40,
+        max: 160,
+        step: 1,
+        initial: 95,
+      },
+      h: {
+        code: "H",
+        label: "Глубина ячейки H",
+        unit: "мм",
+        min: 15,
+        max: 90,
+        step: 1,
+        initial: 36,
+      },
+    },
+  },
 ] as const satisfies readonly PartType[];
 
 export type PartTypeId = (typeof PART_TYPES)[number]["id"];
@@ -346,7 +418,7 @@ export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
     params: [
       { code: "D", name: "Делительный Ø", value: "28–160 мм" },
       { code: "H", name: "Ширина венца", value: "10–80 мм" },
-      { code: "Z", name: "Число зубьев", value: "14–64 зуб." },
+      { code: "Z", name: "Число зубьев", value: "по D" },
     ],
     visualKind: "gear",
   },
@@ -403,7 +475,7 @@ export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
   },
   {
     id: "shaft-bracket",
-    partType: "end-cap",
+    partType: "bracket",
     category: "Станочная оснастка",
     code: "TPL-BRK-19",
     title: "Фланцевое крепление вала и профиля",
@@ -412,15 +484,15 @@ export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
     materialCode: "PETG-CF",
     presetDimensions: { d1: 68, d2: 44, h: 32 },
     params: [
-      { code: "D", name: "База крепежа", value: "20–160 мм" },
-      { code: "H", name: "Вылет опоры", value: "15–100 мм" },
+      { code: "L", name: "Длина базы", value: "30–160 мм" },
+      { code: "H", name: "Высота опоры", value: "20–120 мм" },
       { code: "Z", name: "Межцентровое", value: "по размеру" },
     ],
     visualKind: "bracket",
   },
   {
     id: "grid-organizer",
-    partType: "din-box",
+    partType: "organizer",
     category: "Лабораторное хранение",
     code: "TPL-ORG-42",
     title: "Модульный органайзер-ложемент под инструмент",
@@ -429,8 +501,8 @@ export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
     materialCode: "PETG",
     presetDimensions: { d1: 140, d2: 95, h: 36 },
     params: [
-      { code: "D", name: "Матрица L×W", value: "42×42 шаг" },
-      { code: "H", name: "Глубина лотка", value: "20–90 мм" },
+      { code: "L", name: "Длина лотка", value: "40–220 мм" },
+      { code: "W", name: "Ширина лотка", value: "40–160 мм" },
       { code: "Z", name: "Число секций", value: "1–12 ячеек" },
     ],
     visualKind: "organizer",
@@ -448,11 +520,11 @@ export const PRODUCTION_CYCLE = [
   },
   {
     step: "02",
-    code: "STEP_02 // MANIFOLD_VERIFY",
+    code: "STEP_02 // MESH_VERIFY",
     metric: "100% фикс",
     title: "Проверил 3D и цену",
     description:
-      "Точный расчет массы, времени печати и цены без скрытых доплат. Автоматический контроль толщины стенок и замкнутости сетки перед запуском станка.",
+      "Расчетная оценка массы, времени печати и цены без скрытых доплат. Автоматический контроль толщины стенок и замкнутости сетки перед запуском станка.",
   },
   {
     step: "03",

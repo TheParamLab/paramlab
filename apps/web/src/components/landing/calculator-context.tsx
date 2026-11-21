@@ -8,7 +8,7 @@ import {
   type MaterialId,
   PART_TYPES,
   type PartTypeId,
-} from "./data";
+} from "~/components/landing/data";
 
 export type CalculatorTab = "file" | "generator";
 export type ViewportRenderMode = "solid" | "wireframe" | "layers";
@@ -92,9 +92,11 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       );
       if (matched) setMaterialId(matched.id);
     }
-    document
-      .getElementById("calculator")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const calculator = document.getElementById("calculator");
+    calculator?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      calculator?.focus({ preventScroll: true });
+    }, 420);
   }
 
   return (

@@ -3,9 +3,12 @@
 import { cn } from "@paramlab/ui";
 import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import { CalculatorTrigger } from "./calculator-context";
-import { type ParametricTemplateCard, TEMPLATE_SHOWCASE } from "./data";
-import { LayerReveal } from "./layer-reveal";
+import { CalculatorTrigger } from "~/components/landing/calculator-context";
+import {
+  type ParametricTemplateCard,
+  TEMPLATE_SHOWCASE,
+} from "~/components/landing/data";
+import { LayerReveal } from "~/components/landing/layer-reveal";
 
 /**
  * Интерактивный CAD-рендер заготовки:
@@ -293,32 +296,112 @@ function TemplateCadPreview({
           </g>
         )}
 
-        {(kind === "adapter" || kind === "bracket" || kind === "organizer") && (
+        {kind === "adapter" && (
           <g fill="none" stroke="#00D1FF">
+            {/* Нижняя ступень D1 */}
+            <polygon points="76,98 140,122 204,98 140,74" strokeWidth="1.3" />
+            <line x1="76" y1="98" x2="76" y2="70" />
+            <line x1="204" y1="98" x2="204" y2="70" />
+            <line x1="140" y1="122" x2="140" y2="94" />
+            {/* Верхняя ступень D2 */}
+            <polygon points="96,70 140,86 184,70 140,54" strokeWidth="1.3" />
+            <line x1="96" y1="70" x2="96" y2="42" />
+            <line x1="184" y1="70" x2="184" y2="42" />
+            <line x1="140" y1="86" x2="140" y2="58" />
+            {/* Коническая переходная зона */}
+            <line x1="76" y1="70" x2="96" y2="42" />
+            <line x1="204" y1="70" x2="184" y2="42" />
+            <line x1="140" y1="94" x2="140" y2="58" />
+            {/* Центральный канал */}
+            <ellipse
+              cx="140"
+              cy="86"
+              rx="22"
+              ry="7"
+              stroke="#FF5C1A"
+              strokeWidth="1.4"
+            />
+            <ellipse
+              cx="140"
+              cy="58"
+              rx="16"
+              ry="5"
+              stroke="#FF5C1A"
+              strokeDasharray="3 2"
+            />
+          </g>
+        )}
+
+        {kind === "bracket" && (
+          <g fill="none" stroke="#00D1FF">
+            {/* Основание кронштейна */}
             <rect
-              x="76"
+              x="68"
+              y="92"
+              width="144"
+              height="26"
+              rx="3"
+              strokeWidth="1.3"
+            />
+            <line x1="68" y1="105" x2="212" y2="105" strokeOpacity="0.5" />
+            {/* Отверстия крепления на основании */}
+            <circle cx="86" cy="105" r="4" stroke="#FF5C1A" />
+            <circle cx="194" cy="105" r="4" stroke="#FF5C1A" />
+            {/* Вертикальная опора */}
+            <rect
+              x="104"
               y="36"
-              width="128"
-              height="88"
+              width="72"
+              height="56"
+              rx="3"
+              strokeWidth="1.3"
+            />
+            {/* Ребра жесткости */}
+            <polygon points="104,92 128,92 104,70" strokeOpacity="0.7" />
+            <polygon points="176,92 152,92 176,70" strokeOpacity="0.7" />
+            {/* Центральное отверстие опоры */}
+            <circle cx="140" cy="64" r="12" stroke="#FF5C1A" />
+          </g>
+        )}
+
+        {kind === "organizer" && (
+          <g fill="none" stroke="#00D1FF">
+            {/* Внешний лоток */}
+            <rect
+              x="62"
+              y="34"
+              width="156"
+              height="94"
               rx="6"
               strokeWidth="1.3"
             />
+            {/* Дно и перегородки */}
             <rect
-              x="92"
-              y="48"
-              width="96"
-              height="64"
-              rx="4"
+              x="74"
+              y="46"
+              width="132"
+              height="70"
+              rx="3"
               strokeDasharray="4 2"
             />
-            <line x1="76" y1="80" x2="204" y2="80" strokeOpacity="0.5" />
-            <line x1="140" y1="36" x2="140" y2="124" strokeOpacity="0.5" />
-            <circle
-              cx="140"
-              cy="80"
-              r="22"
+            <line x1="118" y1="46" x2="118" y2="116" />
+            <line x1="162" y1="46" x2="162" y2="116" />
+            <line x1="74" y1="81" x2="206" y2="81" />
+            {/* Радиусное дно ячеек (дуги) */}
+            <path
+              d="M 80 95 Q 97 105 114 95"
               stroke="#FF5C1A"
-              strokeWidth="1.4"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M 124 95 Q 141 105 158 95"
+              stroke="#FF5C1A"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M 168 95 Q 185 105 202 95"
+              stroke="#FF5C1A"
+              strokeWidth="1.2"
             />
           </g>
         )}
