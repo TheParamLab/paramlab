@@ -1,4 +1,3 @@
-
 {
   "name": "@paramlab/jobs",
   "private": true,
@@ -28,7 +27,6 @@
     "@hatchet-dev/typescript-sdk": "1.47.4",
     "@paramlab/config": "workspace:*",
     "@paramlab/emails": "workspace:*"
-    
   },
   "devDependencies": {
     "@paramlab/tsconfig": "workspace:*",

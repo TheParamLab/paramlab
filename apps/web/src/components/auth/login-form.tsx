@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { paths } from "@paramlab/config";

@@ -15,7 +15,10 @@ import {
   SelectValue,
   toast,
 } from "@paramlab/ui";
-import { type AccountFormValues, accountFormSchema } from "@paramlab/validators";
+import {
+  type AccountFormValues,
+  accountFormSchema,
+} from "@paramlab/validators";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
