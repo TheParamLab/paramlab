@@ -5,7 +5,7 @@
 
 # Версии совпадают с .nvmrc и packageManager в package.json.
 FROM node:24.11.1-slim AS base
-COPY --from=oven/bun:1.4.4 /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=oven/bun:1.4.5 /usr/local/bin/bun /usr/local/bin/bun
 
 FROM base AS builder
 WORKDIR /repo
