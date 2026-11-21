@@ -1,27 +1,34 @@
 "use client";
 
+import { paths } from "@paramlab/config";
 import { cn } from "@paramlab/ui";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
   Boxes,
   Cpu,
   Flame,
+  LogOut,
   Package,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { authClient } from "~/auth/client";
 import {
   MOCK_ENGINEER_PROFILE,
   MOCK_SUMMARY_METRICS,
+  useDashboardOrders,
+  useDashboardPresets,
 } from "~/lib/mock-dashboard";
 
 interface NavItem {
+  id: "orders" | "parts" | "profile";
   href: Route;
-  matchPrefixes: string[];
+  matchPaths: string[];
   label: string;
   shortLabel: string;
   code: string;
@@ -30,54 +37,88 @@ interface NavItem {
   icon: typeof Package;
 }
 
-const NAV_ITEMS: readonly NavItem[] = [
-  {
-    href: "/orders" as Route,
-    matchPrefixes: ["/orders", "/cabinet/orders"],
-    label: "Заказы и печать",
-    shortLabel: "Заказы",
-    code: "01 // ORDERS",
-    badge: String(MOCK_SUMMARY_METRICS.activeInProduction),
-    badgeAccent: "orange",
-    icon: Package,
-  },
-  {
-    href: "/parts" as Route,
-    matchPrefixes: ["/parts", "/cabinet/parts"],
-    label: "Библиотека деталей",
-    shortLabel: "Детали",
-    code: "02 // PRESETS",
-    badge: String(MOCK_SUMMARY_METRICS.savedPresetsCount),
-    badgeAccent: "cyan",
-    icon: Boxes,
-  },
-  {
-    href: "/profile" as Route,
-    matchPrefixes: ["/profile", "/cabinet/settings"],
-    label: "Профиль и ПВЗ",
-    shortLabel: "Профиль",
-    code: "03 // PROFILE",
-    icon: UserCog,
-  },
-];
-
 function isRouteActive(pathname: string, item: NavItem): boolean {
-  return item.matchPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  return item.matchPaths.some(
+    (prefix) =>
+      pathname === prefix ||
+      (prefix !== "/cabinet" && pathname.startsWith(`${prefix}/`)),
   );
 }
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+export function DashboardShell({
+  children,
+  routePrefix,
+}: {
+  children: ReactNode;
+  routePrefix?: "/cabinet" | "";
+}) {
   const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const orders = useDashboardOrders();
+  const presets = useDashboardPresets();
 
-  const activeNav = NAV_ITEMS.find((item) => isRouteActive(pathname, item)) ?? {
-    href: "/orders" as Route,
-    matchPrefixes: ["/orders"],
+  const activeOrdersCount = orders.filter(
+    (o) => o.category === "active",
+  ).length;
+  const printingOrder = orders.find((o) => o.currentStage === "printing");
+
+  const isCabinetPath =
+    routePrefix === "/cabinet" || pathname.startsWith("/cabinet");
+
+  const navItems: readonly NavItem[] = [
+    {
+      id: "orders",
+      href: (isCabinetPath ? "/cabinet/orders" : "/orders") as Route,
+      matchPaths: ["/cabinet", "/cabinet/orders", "/orders"],
+      label: "Заказы и печать",
+      shortLabel: "Заказы",
+      code: "01 // ORDERS",
+      badge: String(activeOrdersCount),
+      badgeAccent: "orange",
+      icon: Package,
+    },
+    {
+      id: "parts",
+      href: (isCabinetPath ? "/cabinet/parts" : "/parts") as Route,
+      matchPaths: ["/cabinet/parts", "/parts"],
+      label: "Библиотека деталей",
+      shortLabel: "Детали",
+      code: "02 // PRESETS",
+      badge: String(presets.length),
+      badgeAccent: "cyan",
+      icon: Boxes,
+    },
+    {
+      id: "profile",
+      href: (isCabinetPath ? "/cabinet/settings" : "/profile") as Route,
+      matchPaths: ["/cabinet/settings", "/profile"],
+      label: "Профиль и ПВЗ",
+      shortLabel: "Профиль",
+      code: "03 // PROFILE",
+      icon: UserCog,
+    },
+  ];
+
+  const activeNav = navItems.find((item) => isRouteActive(pathname, item)) ?? {
+    id: "orders" as const,
+    href: (isCabinetPath ? "/cabinet/orders" : "/orders") as Route,
+    matchPaths: ["/orders"],
     label: "Заказы и печать",
     shortLabel: "Заказы",
     code: "01 // ORDERS",
     icon: Package,
   };
+
+  async function handleLogout() {
+    try {
+      await authClient.signOut();
+    } catch {
+      // Игнорируем ошибку, если сессия уже закрыта
+    }
+    queryClient.clear();
+    router.push(paths.auth.login);
+  }
 
   return (
     <div className="min-h-screen bg-[#0E1014] text-[#F2F4F7] selection:bg-[#FF5C1A] selection:text-[#0E1014]">
@@ -85,7 +126,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         {/* DESKTOP SIDEBAR */}
         <aside
           aria-label="Навигация личного кабинета"
-          className=" sticky top-0 hidden h-screen w-72 shrink-0 flex-col justify-between border-r border-[#262B36] bg-[#161920] p-4 lg:flex"
+          className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col justify-between border-r border-[#262B36] bg-[#161920] p-4 lg:flex"
         >
           <div className="flex flex-col gap-6">
             {/* Логотип лаборатории */}
@@ -124,20 +165,20 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               </Link>
             </div>
 
-            {/* Навигационные разделы */}
+            {/* Навигационные разделы (строго 3 инженерных раздела без лишнего шума) */}
             <nav
               aria-label="Разделы кабинета"
               className="flex flex-col gap-1.5"
             >
               <span className="px-2.5 pb-1 font-mono text-[10px] tracking-widest text-[#8A93A2] uppercase">
-                Пульт управления
+                Пульт производства
               </span>
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isRouteActive(pathname, item);
                 return (
                   <Link
-                    key={item.href}
+                    key={item.id}
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
@@ -190,7 +231,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#FF5C1A]">
                   <Flame className="size-3.5" />
-                  LIVE · COREXY-CELL-04
+                  LIVE ·{" "}
+                  {printingOrder?.layerTelemetry?.machineId ?? "COREXY-CELL-04"}
                 </span>
                 <span className="rounded bg-[#10B981]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#10B981]">
                   ONLINE
@@ -198,22 +240,36 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               </div>
 
               <p className="mt-2 truncate font-sans text-xs font-medium text-[#F2F4F7]">
-                PL-2604-891 · Силовая втулка PA12
+                {printingOrder
+                  ? `${printingOrder.orderNumber} · ${printingOrder.items[0]?.title ?? "Партия в печати"}`
+                  : "PL-2604-891 · Силовая втулка PA12"}
               </p>
 
               <div className="mt-2 flex items-baseline justify-between text-[11px]">
                 <span className="text-[#8A93A2]">
-                  Слой {MOCK_SUMMARY_METRICS.printingLayersNow}
+                  Слой{" "}
+                  {printingOrder?.layerTelemetry
+                    ? `${printingOrder.layerTelemetry.currentLayer} / ${printingOrder.layerTelemetry.totalLayers}`
+                    : MOCK_SUMMARY_METRICS.printingLayersNow}
                 </span>
-                <span className="font-bold text-[#FF5C1A]">68%</span>
+                <span className="font-bold text-[#FF5C1A]">
+                  {printingOrder?.stageProgressPercent ?? 68}%
+                </span>
               </div>
 
               <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#262B36]">
-                <div className="h-full w-[68%] rounded-full bg-[#FF5C1A]" />
+                <div
+                  className="h-full rounded-full bg-[#FF5C1A]"
+                  style={{
+                    width: `${printingOrder?.stageProgressPercent ?? 68}%`,
+                  }}
+                />
               </div>
 
               <div className="mt-2.5 flex items-center justify-between border-t border-[#262B36] pt-2 text-[10px] text-[#8A93A2]">
-                <span>Камера: 65 °C</span>
+                <span>
+                  Камера: {printingOrder?.layerTelemetry?.chamberTempC ?? 65} °C
+                </span>
                 <span>Допуск: {MOCK_SUMMARY_METRICS.averageAccuracyMm}</span>
               </div>
             </div>
@@ -229,18 +285,30 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <ArrowUpRight className="size-4" />
             </Link>
 
-            <div className="flex items-center gap-3 rounded-[12px] border border-[#262B36] bg-[#0E1014] p-2.5">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#00D1FF]/40 bg-[#00D1FF]/10 font-mono text-xs font-bold text-[#00D1FF]">
-                АС
+            <div className="flex items-center justify-between gap-2 rounded-[12px] border border-[#262B36] bg-[#0E1014] p-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#00D1FF]/40 bg-[#00D1FF]/10 font-mono text-xs font-bold text-[#00D1FF]">
+                  АС
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-semibold text-[#F2F4F7]">
+                    {MOCK_ENGINEER_PROFILE.fullName}
+                  </p>
+                  <p className="truncate font-mono text-[10px] text-[#8A93A2]">
+                    {MOCK_ENGINEER_PROFILE.accountCode}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-[#F2F4F7]">
-                  {MOCK_ENGINEER_PROFILE.fullName}
-                </p>
-                <p className="truncate font-mono text-[10px] text-[#8A93A2]">
-                  {MOCK_ENGINEER_PROFILE.accountCode}
-                </p>
-              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Выйти из аккаунта"
+                aria-label="Выйти из аккаунта"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#262B36] bg-[#161920] text-[#8A93A2] transition-colors hover:border-[#FF5C1A]/50 hover:text-[#FF5C1A]"
+              >
+                <LogOut className="size-3.5" />
+              </button>
             </div>
           </div>
         </aside>
@@ -295,7 +363,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   <Cpu className="size-3.5 text-[#00D1FF]" />
                   <span className="text-[#8A93A2]">Ферма CoreXY:</span>
                   <span className="font-semibold text-[#10B981]">
-                    4 в работе
+                    {activeOrdersCount} в работе
                   </span>
                 </div>
 
@@ -329,12 +397,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[#262B36] bg-[#161920]/95 backdrop-blur-md lg:hidden"
       >
         <div className="grid grid-cols-3 gap-1 px-2 py-1.5">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = isRouteActive(pathname, item);
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(

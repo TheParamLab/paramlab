@@ -1,15 +1,13 @@
 import { ORPCError } from "@orpc/server";
-import { Skeleton } from "@paramlab/ui";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { SiteHeader } from "~/components/layout";
 import { OrderTracker } from "~/components/orders/order-tracker";
 import { formatDate } from "~/lib/format";
 import { api } from "~/orpc/server";
 
-export const metadata: Metadata = { title: "Заказ" };
+export const metadata: Metadata = { title: "Паспорт заказа — ParamLab" };
 
 export default function OrderPage({
   params,
@@ -17,15 +15,16 @@ export default function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <>
-      <SiteHeader title="Заказ" />
-      <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
-        {/* Оболочка пререндерится; параметры и заказ ждут запроса. */}
-        <Suspense fallback={<Skeleton className="h-96 rounded-xl" />}>
-          <OrderDetails params={params} />
-        </Suspense>
-      </div>
-    </>
+    <div className="flex flex-1 flex-col gap-6">
+      {/* Оболочка пререндерится; параметры и заказ ждут запроса. */}
+      <Suspense
+        fallback={
+          <div className="h-96 animate-pulse rounded-[16px] border border-[#262B36] bg-[#161920]" />
+        }
+      >
+        <OrderDetails params={params} />
+      </Suspense>
+    </div>
   );
 }
 
@@ -45,10 +44,10 @@ async function OrderDetails({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="font-mono text-2xl font-bold tracking-tight text-[#F2F4F7] tabular-nums">
           Заказ № {order.number}
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="font-mono text-xs text-[#8A93A2] tabular-nums">
           Оформлен {formatDate(order.createdAt)}
         </p>
       </div>

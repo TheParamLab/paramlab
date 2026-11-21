@@ -9,7 +9,9 @@
 @custom-variant auto (&:where(.auto, .auto *));
 
 /* Dark Engineering Theme — палитра лаборатории paramlab.ru */
-:root {
+:root,
+.dark,
+.light {
   --brand: #ff5c1a;
   --brand-foreground: #0e1014;
   --lab-bg: #0e1014;
@@ -21,6 +23,33 @@
   --lab-cyan: #00d1ff;
   --lab-ready: #10b981;
   --ease-mechanical: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Семантические токены shadcn/ui переведены на Dark Engineering палитру */
+  --background: #0e1014;
+  --foreground: #f2f4f7;
+  --card: #161920;
+  --card-foreground: #f2f4f7;
+  --popover: #161920;
+  --popover-foreground: #f2f4f7;
+  --primary: #ff5c1a;
+  --primary-foreground: #0e1014;
+  --secondary: #1e232d;
+  --secondary-foreground: #f2f4f7;
+  --muted: #161920;
+  --muted-foreground: #8a93a2;
+  --accent: #1e232d;
+  --accent-foreground: #f2f4f7;
+  --border: #262b36;
+  --input: #262b36;
+  --ring: #00d1ff;
+  --sidebar: #161920;
+  --sidebar-foreground: #f2f4f7;
+  --sidebar-primary: #ff5c1a;
+  --sidebar-primary-foreground: #0e1014;
+  --sidebar-accent: #0e1014;
+  --sidebar-accent-foreground: #f2f4f7;
+  --sidebar-border: #262b36;
+  --sidebar-ring: #00d1ff;
 }
 
 @theme inline {

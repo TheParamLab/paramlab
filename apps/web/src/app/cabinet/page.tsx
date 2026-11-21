@@ -1,26 +1,12 @@
-import {
-  ChartAreaInteractive,
-  DataTable,
-  SectionCards,
-} from "~/components/dashboard";
-import { SiteHeader } from "~/components/layout";
-import data from "./data.json";
+import type { Metadata } from "next";
+import { OrdersView } from "~/components/dashboard/orders-view";
 
-export default function Page() {
-  return (
-    <>
-      <SiteHeader />
-      <div className="flex flex-1 flex-col">
-        <div className="@container/main flex flex-1 flex-col gap-2">
-          <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            <SectionCards />
-            <div className="px-4 lg:px-6">
-              <ChartAreaInteractive />
-            </div>
-            <DataTable data={data} />
-          </div>
-        </div>
-      </div>
-    </>
-  );
+export const metadata: Metadata = {
+  title: "Пульт производства — Личный кабинет ParamLab",
+  description:
+    "Трекинг 5 этапов 3D-печати (Manifold, В печати, ОТК со штангенциркулем, В пути, Готово), паспорт заказа и быстрый повтор партий.",
+};
+
+export default function CabinetIndexPage() {
+  return <OrdersView />;
 }

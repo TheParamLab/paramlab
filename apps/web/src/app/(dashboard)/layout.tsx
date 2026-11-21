@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { DashboardShell } from "~/components/dashboard/dashboard-shell";
 
 export default function DashboardGroupLayout({
@@ -6,5 +6,9 @@ export default function DashboardGroupLayout({
 }: {
   children: ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0E1014]" />}>
+      <DashboardShell>{children}</DashboardShell>
+    </Suspense>
+  );
 }
