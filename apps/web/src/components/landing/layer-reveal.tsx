@@ -55,9 +55,16 @@ export function SpringNumber({
 }
 
 /**
- * Layer-by-Layer Reveal: появление карточек во вьюпорте снизу вверх через
- * `clip-path` с тонкой горизонтальной линией сканирования 1px цвета #FF5C1A
- * по верхней кромке (метафора послойной 3D-печати).
+ * Layer-by-Layer Reveal: появление карточек во вьюпорте снизу вверх с
+ * тонкой горизонтальной линией сканирования 1px цвета #FF5C1A по верхней
+ * кромке (метафора послойной 3D-печати).
+ *
+ * ВАЖНО: начальное состояние не должно использовать `clip-path`.
+ * IntersectionObserver в Chrome считает элемент с собственным `clip-path`
+ * полностью невидимым (isIntersecting=false, ratio=0), поэтому анимация
+ * `whileInView` с начальным `clipPath: inset(100% …)` никогда бы не
+ * запустилась — карточки оставались бы скрытыми навсегда. Transform и
+ * opacity на геометрию IntersectionObserver не влияют.
  */
 export function LayerReveal({
   children,
@@ -83,8 +90,8 @@ export function LayerReveal({
 
   return (
     <MotionComponent
-      initial={{ clipPath: "inset(100% 0% 0% 0%)", opacity: 0.65 }}
-      whileInView={{ clipPath: "inset(0% 0% 0% 0%)", opacity: 1 }}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.16 }}
       transition={{
         duration: 0.4,
