@@ -180,9 +180,44 @@ cp .env.example .env
 # - YANDEX_POSTBOX_ACCESS_KEY_ID / YANDEX_POSTBOX_SECRET_ACCESS_KEY
 #   (optional, primary provider: Yandex Cloud Postbox, postbox.sender role)
 # - RESEND_API_KEY (optional, fallback provider, get from resend.com)
+# - YANDEX_STORAGE_ACCESS_KEY_ID / YANDEX_STORAGE_SECRET_ACCESS_KEY /
+#   YANDEX_STORAGE_BUCKET (see Step 2)
 ```
 
-**Step 2: Setup database**
+**Step 2: Setup file storage (Yandex Object Storage)**
+
+```bash
+# In the Yandex Cloud console:
+# 1. Create a bucket (e.g. paramlab-files)
+# 2. Create a service account with the `storage.editor` role
+# 3. Create a static key for it (IAM → Service accounts → Static keys)
+# 4. Fill in .env:
+#    YANDEX_STORAGE_ACCESS_KEY_ID, YANDEX_STORAGE_SECRET_ACCESS_KEY,
+#    YANDEX_STORAGE_BUCKET
+```
+
+Files are uploaded by the browser directly to the bucket via a presigned `PUT`
+with a `Content-Type` header, so add a CORS rule to the bucket (Yandex Cloud
+console → bucket → CORS):
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://paramlab.ru"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"]
+  }
+]
+```
+
+> [!WARNING]
+> Database records store only object keys, not the bucket name. If your
+> installation already keeps files in another bucket (e.g. local MinIO or AWS
+> S3), copy them into the new bucket **keeping their keys** (`aws s3 sync` or
+> `mc mirror`) before switching `YANDEX_STORAGE_BUCKET`, otherwise old records
+> keep pointing at missing files. Fresh installations can skip this.
+
+**Step 3: Setup database**
 
 ```bash
 # Apply migrations (packages/db/migrations)
@@ -192,14 +227,14 @@ bun db:migrate
 bun db:studio
 ```
 
-**Step 3: Generate authentication schema**
+**Step 4: Generate authentication schema**
 
 ```bash
 # Generate Better Auth schema
 bun auth:generate
 ```
 
-**Step 4: Start development server**
+**Step 5: Start development server**
 
 ```bash
 # Start the self-contained Next.js app (UI + /api routes)
