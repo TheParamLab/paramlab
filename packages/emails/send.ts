@@ -1,8 +1,3 @@
-import {
-  SESv2Client,
-  SendEmailCommand,
-  type SendEmailCommandInput,
-} from "@aws-sdk/client-sesv2";
 import { logger } from "@paramlab/config";
 import { render } from "@react-email/components";
 import nodemailer from "nodemailer";
@@ -11,20 +6,7 @@ import type { ReactNode } from "react";
 import { Resend } from "resend";
 
 import { env } from "./env";
-
-// Primary provider: Yandex Cloud Postbox (AWS-SES-compatible API).
-// Static access keys of a service account with the `postbox.sender` role.
-export const postbox =
-  env.YANDEX_POSTBOX_ACCESS_KEY_ID && env.YANDEX_POSTBOX_SECRET_ACCESS_KEY
-    ? new SESv2Client({
-        region: env.YANDEX_POSTBOX_REGION,
-        endpoint: env.YANDEX_POSTBOX_ENDPOINT,
-        credentials: {
-          accessKeyId: env.YANDEX_POSTBOX_ACCESS_KEY_ID,
-          secretAccessKey: env.YANDEX_POSTBOX_SECRET_ACCESS_KEY,
-        },
-      })
-    : null;
+import { postboxConfigured, sendViaPostbox } from "./postbox";
 
 // Fallback provider: Resend.
 export const resend = env.RESEND_API_KEY
@@ -45,24 +27,6 @@ export type EmailHtml = {
   from?: string;
 };
 
-const sendViaPostbox = async (email: EmailHtml) => {
-  if (!postbox) {
-    throw new Error("Yandex Cloud Postbox is not configured");
-  }
-  const message: SendEmailCommandInput = {
-    FromEmailAddress: email.from ?? env.EMAIL_FROM,
-    Destination: { ToAddresses: email.to },
-    Content: {
-      Simple: {
-        Subject: { Data: email.subject, Charset: "UTF-8" },
-        Body: { Html: { Data: email.html, Charset: "UTF-8" } },
-      },
-    },
-  };
-  const result = await postbox.send(new SendEmailCommand(message));
-  logger.info("email.sent_via_postbox", { messageId: result.MessageId });
-};
-
 const sendViaResend = async (email: EmailHtml) => {
   if (!resend) {
     throw new Error("Resend is not configured");
@@ -81,7 +45,7 @@ const sendViaResend = async (email: EmailHtml) => {
  * same message is retried through Resend so delivery is not lost.
  */
 const deliver = async (email: EmailHtml) => {
-  if (postbox) {
+  if (postboxConfigured) {
     try {
       await sendViaPostbox(email);
       return;
