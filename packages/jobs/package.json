@@ -25,9 +25,10 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@hatchet-dev/typescript-sdk": "1.47.4",
     "@paramlab/config": "workspace:*",
-    "@paramlab/emails": "workspace:*",
-    "@hatchet-dev/typescript-sdk": "1.46.2"
+    "@paramlab/emails": "workspace:*"
+    
   },
   "devDependencies": {
     "@paramlab/tsconfig": "workspace:*",

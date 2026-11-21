@@ -20,12 +20,13 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
+    "@orpc/server": "2.0.0-beta.52",
     "@paramlab/auth": "workspace:*",
     "@paramlab/config": "workspace:*",
     "@paramlab/db": "workspace:*",
     "@paramlab/storage": "workspace:*",
     "@paramlab/validators": "workspace:*",
-    "@orpc/server": "2.0.0-beta.52",
+
     "zod": "4.6.7"
   },
   "devDependencies": {
