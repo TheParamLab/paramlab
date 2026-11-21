@@ -254,6 +254,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 {/* Мобильный логотип */}
                 <Link
                   href={"/" as Route}
+                  aria-label="На главную ParamLab"
                   className="flex items-center gap-2 lg:hidden"
                 >
                   <svg

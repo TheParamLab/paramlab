@@ -1,5 +1,15 @@
-import { MATERIALS, type MaterialId } from "~/components/landing/data";
-import { calcPrice, estimateMass } from "~/components/landing/pricing";
+import { useSyncExternalStore } from "react";
+import {
+  MATERIALS,
+  type MaterialId,
+  PART_TYPES,
+  type PartTypeId,
+} from "~/components/landing/data";
+import {
+  calcPrice,
+  clampBore,
+  estimateMass,
+} from "~/components/landing/pricing";
 import type {
   DashboardOrder,
   DashboardSummaryMetrics,
@@ -75,7 +85,7 @@ export const STAGE_ORDER: readonly PrintStageId[] = [
   "done",
 ];
 
-export const MOCK_ORDERS: DashboardOrder[] = [
+const MOCK_ORDERS: DashboardOrder[] = [
   {
     id: "ord-891",
     orderNumber: "PL-2604-891",
@@ -606,7 +616,7 @@ export const MOCK_ORDERS: DashboardOrder[] = [
   },
 ];
 
-export const MOCK_PART_PRESETS: SavedPartPreset[] = [
+const MOCK_PART_PRESETS: SavedPartPreset[] = [
   {
     id: "prs-bsh-042",
     presetCode: "PRS-BSH-042",
@@ -863,6 +873,55 @@ export const MOCK_SUMMARY_METRICS: DashboardSummaryMetrics = {
  * Слой данных (Data Access Layer) — чистые функции для получения и пересчета
  * спецификаций пресетов и заказов. Готово к замене на oRPC / tRPC процедуры.
  */
+export function calculateMinWallMm(
+  partType: PartTypeId,
+  dims: { d1: number; d2: number; h: number },
+): number {
+  if (partType === "bushing" || partType === "gear") {
+    return Number(((dims.d1 - dims.d2) / 2).toFixed(1));
+  }
+  if (partType === "adapter") {
+    return 2.8;
+  }
+  const wall = Math.max(2.4, Math.min(6, Math.min(dims.d1, dims.d2) * 0.06));
+  return Number(wall.toFixed(1));
+}
+
+export function isManifoldWallValid(
+  partType: PartTypeId,
+  dims: { d1: number; d2: number; h: number },
+): boolean {
+  const minWall = calculateMinWallMm(partType, dims);
+  if (partType === "bushing" || partType === "gear") {
+    return dims.d2 <= clampBore(dims.d1, dims.d2) && minWall >= 2.0;
+  }
+  return minWall >= 2.0;
+}
+
+export function normalizePartDimensions(
+  partType: PartTypeId,
+  dims: { d1: number; d2: number; h: number },
+): { d1: number; d2: number; h: number } {
+  const partMeta = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
+  const d1 = Math.max(
+    partMeta.dimensions.d1.min,
+    Math.min(partMeta.dimensions.d1.max, Math.round(dims.d1)),
+  );
+  const rawD2 = Math.max(
+    partMeta.dimensions.d2.min,
+    Math.min(partMeta.dimensions.d2.max, Math.round(dims.d2)),
+  );
+  const d2 =
+    partType === "bushing" || partType === "gear"
+      ? Math.max(partMeta.dimensions.d2.min, clampBore(d1, rawD2))
+      : rawD2;
+  const h = Math.max(
+    partMeta.dimensions.h.min,
+    Math.min(partMeta.dimensions.h.max, Math.round(dims.h)),
+  );
+  return { d1, d2, h };
+}
+
 export function calculatePresetPricing(
   preset: SavedPartPreset,
   materialId: MaterialId,
@@ -870,6 +929,7 @@ export function calculatePresetPricing(
   customDims?: { d1: number; d2: number; h: number },
 ) {
   const material = MATERIALS.find((m) => m.id === materialId) ?? MATERIALS[0];
+  const safeQuantity = Math.max(1, Math.min(500, Math.round(quantity) || 1));
   const dims = customDims ?? {
     d1: preset.dimensions.d1.value,
     d2: preset.dimensions.d2.value,
@@ -879,7 +939,7 @@ export function calculatePresetPricing(
   const price = calcPrice({
     massGrams: unitMassGrams,
     rate: material.rate,
-    quantity,
+    quantity: safeQuantity,
     extras: 0,
   });
 
@@ -905,4 +965,268 @@ export function formatDimensionFormula(
     return `D1 ${dims.d1} × D2 ${dims.d2} × H${dims.h}`;
   }
   return `L${dims.d1} × W${dims.d2} × H${dims.h}`;
+}
+
+/**
+ * Единое клиентское хранилище mock-заказов и пресетов, чтобы действия
+ * на странице /parts (отправка пресета в печать) сразу отображались на /orders.
+ */
+let ordersState: DashboardOrder[] = MOCK_ORDERS;
+let presetsState: SavedPartPreset[] = MOCK_PART_PRESETS;
+const listeners = new Set<() => void>();
+
+function emitChange() {
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function useDashboardOrders() {
+  return useSyncExternalStore(
+    subscribe,
+    () => ordersState,
+    () => MOCK_ORDERS,
+  );
+}
+
+export function useDashboardPresets() {
+  return useSyncExternalStore(
+    subscribe,
+    () => presetsState,
+    () => MOCK_PART_PRESETS,
+  );
+}
+
+export function setDashboardPresets(
+  updater: (prev: SavedPartPreset[]) => SavedPartPreset[],
+) {
+  presetsState = updater(presetsState);
+  emitChange();
+}
+
+export function repeatDashboardOrder(source: DashboardOrder): DashboardOrder {
+  const nextNumber = `PL-2604-${900 + ordersState.length}`;
+  const repeatedOrder: DashboardOrder = {
+    id: `ord-rep-${ordersState.length + 1}`,
+    orderNumber: nextNumber,
+    createdAt: "Только что",
+    updatedAt: "Только что",
+    category: "active",
+    currentStage: "manifold",
+    stageProgressPercent: 35,
+    layerTelemetry: undefined,
+    items: source.items.map((item, idx) => ({
+      ...item,
+      id: `${item.id}-rep-${ordersState.length + 1}-${idx}`,
+    })),
+    subtotalRub: source.subtotalRub,
+    deliveryRub: source.deliveryRub,
+    discountPercent: source.discountPercent,
+    totalRub: source.totalRub,
+    delivery: {
+      carrier: source.delivery.carrier,
+      carrierLabel: source.delivery.carrierLabel,
+      trackingNumber: undefined,
+      pvzCode: source.delivery.pvzCode,
+      pvzAddress: source.delivery.pvzAddress,
+      etaText: "Ожидает присвоения трек-номера после ОТК",
+      storageUntil: undefined,
+      barcodeCode: undefined,
+    },
+    invoiceAvailable: true,
+    updNumber: undefined,
+    stages: [
+      {
+        stage: "manifold",
+        title: "Проверка геометрии (Manifold)",
+        subtitle: `Повторный запуск по паспорту ${source.orderNumber} · Геометрия подтверждена`,
+        timestamp: "Только что",
+        telemetry: "PRESET_CLONE // MANIFOLD_PASS",
+      },
+      {
+        stage: "printing",
+        title: "Печать партии в термокамере",
+        subtitle: "Резервирование слота в ячейке CoreXY",
+      },
+      {
+        stage: "qc",
+        title: "Инструментальный ОТК и упаковка",
+        subtitle: "Замер со штангенциркулем ±0.1 мм",
+      },
+      {
+        stage: "shipping",
+        title: `Передача в логистику (${source.delivery.carrierLabel})`,
+        subtitle: source.delivery.pvzAddress,
+      },
+      {
+        stage: "done",
+        title: "Готово к выдаче в ПВЗ",
+        subtitle: source.delivery.pvzAddress,
+      },
+    ],
+  };
+
+  ordersState = [repeatedOrder, ...ordersState];
+  emitChange();
+  return repeatedOrder;
+}
+
+export function createOrderFromPreset(
+  preset: SavedPartPreset,
+  payload: {
+    materialId: MaterialId;
+    quantity: number;
+    dimensions: { d1: number; d2: number; h: number };
+  },
+): DashboardOrder {
+  const partMeta =
+    PART_TYPES.find((pt) => pt.id === preset.partType) ?? PART_TYPES[0];
+  const pricing = calculatePresetPricing(
+    preset,
+    payload.materialId,
+    payload.quantity,
+    payload.dimensions,
+  );
+  const formula = formatDimensionFormula(preset.partType, payload.dimensions);
+  const nextNumber = `PL-2604-${900 + ordersState.length}`;
+  const defaultPvz =
+    MOCK_ENGINEER_PROFILE.pickupPoints.find((p) => p.isDefault) ??
+    MOCK_ENGINEER_PROFILE.pickupPoints[0];
+  const deliveryRub = defaultPvz?.carrier === "ozon" ? 199 : 290;
+  const discountPercent = pricing.discountApplied ? 20 : 0;
+
+  const newOrder: DashboardOrder = {
+    id: `ord-prs-${ordersState.length + 1}`,
+    orderNumber: nextNumber,
+    createdAt: "Только что",
+    updatedAt: "Только что",
+    category: "active",
+    currentStage: "manifold",
+    stageProgressPercent: 40,
+    items: [
+      {
+        id: `itm-prs-${ordersState.length + 1}`,
+        title: preset.title,
+        materialId: pricing.material.id as MaterialId,
+        materialCode: pricing.material.code,
+        materialTemp: pricing.material.temp,
+        quantity: payload.quantity,
+        unitMassGrams: pricing.unitMassGrams,
+        totalMassGrams: pricing.totalMassGrams,
+        unitPriceRub: pricing.unitPriceRub,
+        totalPriceRub: pricing.totalPriceRub,
+        parametricSpec: {
+          partType: preset.partType,
+          templateCode: partMeta.code,
+          dimensionLabel: formula,
+          dimensions: {
+            d1: {
+              code: preset.dimensions.d1.code,
+              label: preset.dimensions.d1.label,
+              value: payload.dimensions.d1,
+            },
+            d2: {
+              code: preset.dimensions.d2.code,
+              label: preset.dimensions.d2.label,
+              value: payload.dimensions.d2,
+            },
+            h: {
+              code: preset.dimensions.h.code,
+              label: preset.dimensions.h.label,
+              value: payload.dimensions.h,
+            },
+          },
+          tolerance: preset.tolerance,
+          layerHeightMm: 0.2,
+          infillPercent: 100,
+          nozzleMm: 0.4,
+        },
+      },
+    ],
+    subtotalRub: pricing.totalPriceRub,
+    deliveryRub,
+    discountPercent,
+    totalRub: pricing.totalPriceRub + deliveryRub,
+    delivery: {
+      carrier: defaultPvz?.carrier ?? "cdek",
+      carrierLabel: defaultPvz?.carrierLabel ?? "СДЭК Экспресс",
+      trackingNumber: undefined,
+      pvzCode: defaultPvz?.code ?? "MSK-118",
+      pvzAddress: defaultPvz
+        ? `г. ${defaultPvz.city}, ${defaultPvz.address}`
+        : "г. Москва, ул. Бауманская, д. 43/1, ПВЗ СДЭК",
+      etaText: "Ожидает присвоения трек-номера после ОТК",
+    },
+    invoiceAvailable: true,
+    updNumber: undefined,
+    stages: [
+      {
+        stage: "manifold",
+        title: "Проверка геометрии (Manifold)",
+        subtitle: `Запуск из пресета ${preset.presetCode} (${formula}) · Сетка подтверждена`,
+        timestamp: "Только что",
+        telemetry: "PRESET_DISPATCH // MANIFOLD_OK",
+      },
+      {
+        stage: "printing",
+        title: "Печать партии в термокамере",
+        subtitle: "Резервирование слота в ячейке CoreXY",
+      },
+      {
+        stage: "qc",
+        title: "Инструментальный ОТК и упаковка",
+        subtitle: "Замер со штангенциркулем ±0.1 мм",
+      },
+      {
+        stage: "shipping",
+        title: `Передача в логистику (${defaultPvz?.carrierLabel ?? "СДЭК Экспресс"})`,
+        subtitle: defaultPvz?.address ?? "ПВЗ по умолчанию",
+      },
+      {
+        stage: "done",
+        title: "Готово к выдаче в ПВЗ",
+        subtitle: defaultPvz?.address ?? "ПВЗ по умолчанию",
+      },
+    ],
+  };
+
+  ordersState = [newOrder, ...ordersState];
+  presetsState = presetsState.map((p) =>
+    p.id === preset.id
+      ? {
+          ...p,
+          totalOrdersCount: p.totalOrdersCount + 1,
+          lastOrderedAt: "Только что",
+        }
+      : p,
+  );
+  emitChange();
+  return newOrder;
+}
+
+export function triggerTextDocumentDownload(
+  filename: string,
+  lines: string[],
+): boolean {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return false;
+  }
+  const content = lines.join("\n");
+  const blob = new Blob([content], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
 }

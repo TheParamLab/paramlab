@@ -27,7 +27,7 @@ export type CarrierType = "ozon" | "cdek";
 interface DeliveryInfo {
   carrier: CarrierType;
   carrierLabel: string;
-  trackingNumber: string;
+  trackingNumber?: string;
   pvzCode: string;
   pvzAddress: string;
   etaText: string;

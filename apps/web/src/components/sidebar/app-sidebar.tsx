@@ -17,6 +17,7 @@ import {
   IconDashboard,
   IconDatabase,
   IconFileWord,
+  IconFlame,
   IconFolder,
   IconInnerShadowTop,
   IconListDetails,
@@ -35,6 +36,17 @@ import {
 
 const data = {
   navMain: [
+    {
+      title: "Пульт производства",
+      url: "/orders",
+      icon: IconFlame,
+      isActive: true,
+      items: [
+        { title: "Заказы и печать", url: "/orders" },
+        { title: "Библиотека пресетов", url: "/parts" },
+        { title: "Профиль и ПВЗ", url: "/profile" },
+      ],
+    },
     {
       title: "Мои детали",
       url: paths.parts.root,

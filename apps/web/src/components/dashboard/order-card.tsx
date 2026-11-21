@@ -152,10 +152,16 @@ export function OrderCard({
             <Truck className="size-3.5 text-[#00D1FF]" />
             {order.delivery.carrierLabel}:
           </span>
-          <CopyableChip
-            value={order.delivery.trackingNumber}
-            tooltipText="Скопировать трек-номер"
-          />
+          {order.delivery.trackingNumber ? (
+            <CopyableChip
+              value={order.delivery.trackingNumber}
+              tooltipText="Скопировать трек-номер"
+            />
+          ) : (
+            <span className="rounded-lg border border-[#262B36] bg-[#0E1014] px-2 py-0.5 text-[11px] text-[#8A93A2]">
+              Трек ожидается
+            </span>
+          )}
           <span className="hidden items-center gap-1 text-[#8A93A2] md:inline-flex">
             <MapPin className="size-3.5 text-[#FF5C1A]" />
             <span className="max-w-[260px] truncate">

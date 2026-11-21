@@ -11,15 +11,22 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { z } from "zod";
 import {
   MATERIALS,
   type MaterialId,
   PART_TYPES,
   type PartTypeId,
 } from "~/components/landing/data";
+import { clampBore, estimateMass } from "~/components/landing/pricing";
 import {
+  calculateMinWallMm,
+  createOrderFromPreset,
   formatDimensionFormula,
-  MOCK_PART_PRESETS,
+  isManifoldWallValid,
+  normalizePartDimensions,
+  setDashboardPresets,
+  useDashboardPresets,
 } from "~/lib/mock-dashboard";
 import type { SavedPartPreset } from "~/types/dashboard";
 import { EmptyBlueprintState } from "./empty-blueprint-state";
@@ -35,7 +42,7 @@ const MATERIAL_FILTERS: readonly { id: "all" | MaterialId; label: string }[] = [
 
 export function PartsView() {
   const prefersReducedMotion = useReducedMotion();
-  const [presets, setPresets] = useState<SavedPartPreset[]>(MOCK_PART_PRESETS);
+  const presets = useDashboardPresets();
   const [materialFilter, setMaterialFilter] = useState<"all" | MaterialId>(
     "all",
   );
@@ -51,7 +58,11 @@ export function PartsView() {
   );
   const [newPartType, setNewPartType] = useState<PartTypeId>("bushing");
   const [newMaterialId, setNewMaterialId] = useState<MaterialId>("pa12");
-  const [newDims, setNewDims] = useState({ d1: 42, d2: 24, h: 30 });
+  const [newDims, setNewDims] = useState({ d1: 56, d2: 32, h: 48 });
+  const [creatorError, setCreatorError] = useState<string | null>(null);
+
+  const selectedTemplate =
+    PART_TYPES.find((pt) => pt.id === newPartType) ?? PART_TYPES[0];
 
   const filteredPresets = presets.filter((preset) => {
     if (materialFilter !== "all" && preset.materialId !== materialFilter) {
@@ -70,6 +81,19 @@ export function PartsView() {
     return true;
   });
 
+  function handleTemplateChange(nextType: PartTypeId) {
+    setNewPartType(nextType);
+    setCreatorError(null);
+    const meta = PART_TYPES.find((pt) => pt.id === nextType) ?? PART_TYPES[0];
+    setNewDims(
+      normalizePartDimensions(nextType, {
+        d1: meta.dimensions.d1.initial,
+        d2: meta.dimensions.d2.initial,
+        h: meta.dimensions.h.initial,
+      }),
+    );
+  }
+
   function handleOrderPreset(
     preset: SavedPartPreset,
     payload: {
@@ -79,24 +103,13 @@ export function PartsView() {
       totalPriceRub: number;
     },
   ) {
+    const createdOrder = createOrderFromPreset(preset, payload);
     const mat =
       MATERIALS.find((m) => m.id === payload.materialId) ?? MATERIALS[0];
     const formula = formatDimensionFormula(preset.partType, payload.dimensions);
 
-    setPresets((prev) =>
-      prev.map((p) =>
-        p.id === preset.id
-          ? {
-              ...p,
-              totalOrdersCount: p.totalOrdersCount + 1,
-              lastOrderedAt: "Только что",
-            }
-          : p,
-      ),
-    );
-
     toast.success(
-      `Партия «${preset.title}» (${formula}, ${payload.quantity} шт., ${mat.code}) отправлена в очередь печати`,
+      `Заказ № ${createdOrder.orderNumber}: «${preset.title}» (${formula}, ${payload.quantity} шт., ${mat.code}) отправлен в очередь печати`,
     );
   }
 
@@ -109,19 +122,29 @@ export function PartsView() {
   ) {
     const mat =
       MATERIALS.find((m) => m.id === updated.materialId) ?? MATERIALS[0];
-    setPresets((prev) =>
+    setDashboardPresets((prev) =>
       prev.map((p) => {
         if (p.id !== presetId) return p;
-        const formula = formatDimensionFormula(p.partType, updated.dimensions);
+        const normalized = normalizePartDimensions(
+          p.partType,
+          updated.dimensions,
+        );
+        const formula = formatDimensionFormula(p.partType, normalized);
+        const minWallMm = calculateMinWallMm(p.partType, normalized);
+        const manifoldVerified = isManifoldWallValid(p.partType, normalized);
+        const unitMassGrams = estimateMass(p.partType, normalized, mat.density);
         return {
           ...p,
           materialId: updated.materialId,
           materialCode: mat.code,
           dimensionFormula: formula,
+          unitMassGrams,
+          minWallMm,
+          manifoldVerified,
           dimensions: {
-            d1: { ...p.dimensions.d1, value: updated.dimensions.d1 },
-            d2: { ...p.dimensions.d2, value: updated.dimensions.d2 },
-            h: { ...p.dimensions.h, value: updated.dimensions.h },
+            d1: { ...p.dimensions.d1, value: normalized.d1 },
+            d2: { ...p.dimensions.d2, value: normalized.d2 },
+            h: { ...p.dimensions.h, value: normalized.h },
           },
         };
       }),
@@ -130,7 +153,7 @@ export function PartsView() {
 
   function handleDeletePreset(presetId: string) {
     const target = presets.find((p) => p.id === presetId);
-    setPresets((prev) => prev.filter((p) => p.id !== presetId));
+    setDashboardPresets((prev) => prev.filter((p) => p.id !== presetId));
     if (target) {
       toast.success(`Пресет ${target.presetCode} удален из библиотеки`);
     }
@@ -138,17 +161,104 @@ export function PartsView() {
 
   function handleCreatePreset(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setCreatorError(null);
+
     const partMeta =
       PART_TYPES.find((pt) => pt.id === newPartType) ?? PART_TYPES[0];
     const mat = MATERIALS.find((m) => m.id === newMaterialId) ?? MATERIALS[0];
-    const formula = formatDimensionFormula(newPartType, newDims);
+
+    const presetSchema = z
+      .object({
+        title: z
+          .string()
+          .trim()
+          .min(2, "Укажите наименование детали (не менее 2 символов)"),
+        d1: z
+          .number()
+          .int("Размер должен быть целым числом")
+          .min(
+            partMeta.dimensions.d1.min,
+            `${partMeta.dimensions.d1.label}: от ${partMeta.dimensions.d1.min} до ${partMeta.dimensions.d1.max} мм`,
+          )
+          .max(
+            partMeta.dimensions.d1.max,
+            `${partMeta.dimensions.d1.label}: от ${partMeta.dimensions.d1.min} до ${partMeta.dimensions.d1.max} мм`,
+          ),
+        d2: z
+          .number()
+          .int("Размер должен быть целым числом")
+          .min(
+            partMeta.dimensions.d2.min,
+            `${partMeta.dimensions.d2.label}: от ${partMeta.dimensions.d2.min} до ${partMeta.dimensions.d2.max} мм`,
+          )
+          .max(
+            partMeta.dimensions.d2.max,
+            `${partMeta.dimensions.d2.label}: от ${partMeta.dimensions.d2.min} до ${partMeta.dimensions.d2.max} мм`,
+          ),
+        h: z
+          .number()
+          .int("Размер должен быть целым числом")
+          .min(
+            partMeta.dimensions.h.min,
+            `${partMeta.dimensions.h.label}: от ${partMeta.dimensions.h.min} до ${partMeta.dimensions.h.max} мм`,
+          )
+          .max(
+            partMeta.dimensions.h.max,
+            `${partMeta.dimensions.h.label}: от ${partMeta.dimensions.h.min} до ${partMeta.dimensions.h.max} мм`,
+          ),
+      })
+      .refine(
+        (val) => {
+          if (newPartType === "bushing" || newPartType === "gear") {
+            return val.d2 <= clampBore(val.d1, val.d2);
+          }
+          return true;
+        },
+        {
+          message:
+            "Внутренний диаметр (d) должен быть минимум на 4 мм меньше наружного (D) для сохранения стенки ≥ 2.0 мм",
+        },
+      );
+
+    const parsed = presetSchema.safeParse({
+      title: newTitle,
+      d1: newDims.d1,
+      d2: newDims.d2,
+      h: newDims.h,
+    });
+
+    if (!parsed.success) {
+      const firstIssue =
+        parsed.error.issues[0]?.message ?? "Проверьте параметры пресета";
+      setCreatorError(firstIssue);
+      toast.error(firstIssue);
+      return;
+    }
+
+    const validDims = {
+      d1: parsed.data.d1,
+      d2: parsed.data.d2,
+      h: parsed.data.h,
+    };
+    const minWallMm = calculateMinWallMm(newPartType, validDims);
+    const manifoldVerified = isManifoldWallValid(newPartType, validDims);
+
+    if (!manifoldVerified) {
+      const msg = `Минимальная стенка детали (${minWallMm.toFixed(1)} мм) меньше допустимых 2.0 мм`;
+      setCreatorError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    const formula = formatDimensionFormula(newPartType, validDims);
     const codeNumber = 100 + presets.length * 7;
     const presetCode = `PRS-${partMeta.code.split("-")[1] ?? "CAD"}-${codeNumber}`;
+    const unitMassGrams = estimateMass(newPartType, validDims, mat.density);
 
     const created: SavedPartPreset = {
       id: `prs-custom-${Date.now()}`,
       presetCode,
-      title: newTitle.trim() || partMeta.label,
+      title: parsed.data.title,
       notes: newNotes.trim() || partMeta.tolerance,
       categoryLabel: partMeta.shortLabel,
       partType: newPartType,
@@ -159,36 +269,36 @@ export function PartsView() {
         d1: {
           code: partMeta.dimensions.d1.code,
           label: partMeta.dimensions.d1.label,
-          value: newDims.d1,
+          value: validDims.d1,
           min: partMeta.dimensions.d1.min,
           max: partMeta.dimensions.d1.max,
         },
         d2: {
           code: partMeta.dimensions.d2.code,
           label: partMeta.dimensions.d2.label,
-          value: newDims.d2,
+          value: validDims.d2,
           min: partMeta.dimensions.d2.min,
           max: partMeta.dimensions.d2.max,
         },
         h: {
           code: partMeta.dimensions.h.code,
           label: partMeta.dimensions.h.label,
-          value: newDims.h,
+          value: validDims.h,
           min: partMeta.dimensions.h.min,
           max: partMeta.dimensions.h.max,
         },
       },
       tolerance: partMeta.tolerance,
-      unitMassGrams: 38,
-      estimatedPrintMinutes: 60,
+      unitMassGrams,
+      estimatedPrintMinutes: Math.max(25, Math.round(unitMassGrams * 1.5)),
       defaultQuantity: 10,
       lastOrderedAt: "Новый пресет",
       totalOrdersCount: 0,
-      manifoldVerified: true,
-      minWallMm: 3.2,
+      manifoldVerified,
+      minWallMm,
     };
 
-    setPresets((prev) => [created, ...prev]);
+    setDashboardPresets((prev) => [created, ...prev]);
     setIsCreatorOpen(false);
     toast.success(`Параметрический пресет ${presetCode} (${formula}) сохранен`);
   }
@@ -245,7 +355,8 @@ export function PartsView() {
               </div>
               <span className="inline-flex items-center gap-1 font-mono text-xs text-[#10B981]">
                 <ShieldCheck className="size-3.5" />
-                Авто-контроль стенки ≥ 2.0 мм
+                Стенка ≥ {calculateMinWallMm(newPartType, newDims).toFixed(1)}{" "}
+                мм
               </span>
             </div>
 
@@ -296,7 +407,7 @@ export function PartsView() {
                       id="preset-type"
                       value={newPartType}
                       onChange={(e) =>
-                        setNewPartType(e.target.value as PartTypeId)
+                        handleTemplateChange(e.target.value as PartTypeId)
                       }
                       className="mt-1 h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 font-mono text-xs text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                     >
@@ -349,20 +460,24 @@ export function PartsView() {
                         htmlFor="dim-d1"
                         className="block text-[11px] text-[#8A93A2]"
                       >
-                        Ось 1 (D / L), мм
+                        {selectedTemplate.dimensions.d1.code} (
+                        {selectedTemplate.dimensions.d1.min}–
+                        {selectedTemplate.dimensions.d1.max} мм)
                       </label>
                       <input
                         id="dim-d1"
                         type="number"
-                        min={15}
-                        max={220}
+                        step={1}
+                        min={selectedTemplate.dimensions.d1.min}
+                        max={selectedTemplate.dimensions.d1.max}
                         value={newDims.d1}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setCreatorError(null);
                           setNewDims((d) => ({
                             ...d,
-                            d1: Number(e.target.value) || 40,
-                          }))
-                        }
+                            d1: Math.round(Number(e.target.value) || 0),
+                          }));
+                        }}
                         className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-sm font-bold text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                       />
                     </div>
@@ -371,20 +486,24 @@ export function PartsView() {
                         htmlFor="dim-d2"
                         className="block text-[11px] text-[#8A93A2]"
                       >
-                        Ось 2 (d / W), мм
+                        {selectedTemplate.dimensions.d2.code} (
+                        {selectedTemplate.dimensions.d2.min}–
+                        {selectedTemplate.dimensions.d2.max} мм)
                       </label>
                       <input
                         id="dim-d2"
                         type="number"
-                        min={6}
-                        max={180}
+                        step={1}
+                        min={selectedTemplate.dimensions.d2.min}
+                        max={selectedTemplate.dimensions.d2.max}
                         value={newDims.d2}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setCreatorError(null);
                           setNewDims((d) => ({
                             ...d,
-                            d2: Number(e.target.value) || 20,
-                          }))
-                        }
+                            d2: Math.round(Number(e.target.value) || 0),
+                          }));
+                        }}
                         className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-sm font-bold text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                       />
                     </div>
@@ -393,24 +512,37 @@ export function PartsView() {
                         htmlFor="dim-h"
                         className="block text-[11px] text-[#8A93A2]"
                       >
-                        Высота (H), мм
+                        {selectedTemplate.dimensions.h.code} (
+                        {selectedTemplate.dimensions.h.min}–
+                        {selectedTemplate.dimensions.h.max} мм)
                       </label>
                       <input
                         id="dim-h"
                         type="number"
-                        min={10}
-                        max={160}
+                        step={1}
+                        min={selectedTemplate.dimensions.h.min}
+                        max={selectedTemplate.dimensions.h.max}
                         value={newDims.h}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          setCreatorError(null);
                           setNewDims((d) => ({
                             ...d,
-                            h: Number(e.target.value) || 30,
-                          }))
-                        }
+                            h: Math.round(Number(e.target.value) || 0),
+                          }));
+                        }}
                         className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-sm font-bold text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                       />
                     </div>
                   </div>
+
+                  {creatorError && (
+                    <p
+                      role="alert"
+                      className="mt-2.5 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-[11px] text-red-400"
+                    >
+                      {creatorError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-4 flex items-center justify-end gap-2 border-t border-[#262B36] pt-3">

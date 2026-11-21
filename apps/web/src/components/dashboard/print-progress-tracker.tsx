@@ -227,7 +227,13 @@ export function PrintProgressTracker({
               </strong>
             </div>
             <div className="text-right">
-              Шаг Z: <strong className="text-[#00D1FF]">0.20 мм</strong>
+              Шаг Z:{" "}
+              <strong className="text-[#00D1FF]">
+                {(order.items[0]?.parametricSpec.layerHeightMm ?? 0.2).toFixed(
+                  2,
+                )}{" "}
+                мм
+              </strong>
             </div>
           </div>
         </div>

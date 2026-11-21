@@ -14,6 +14,7 @@ import {
   toast,
 } from "@paramlab/ui";
 import {
+  AlertTriangle,
   Check,
   Clock,
   Minus,
@@ -26,9 +27,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { MATERIALS, type MaterialId } from "~/components/landing/data";
+import { clampBore } from "~/components/landing/pricing";
 import {
+  calculateMinWallMm,
   calculatePresetPricing,
   formatDimensionFormula,
+  isManifoldWallValid,
 } from "~/lib/mock-dashboard";
 import type { SavedPartPreset } from "~/types/dashboard";
 import { CopyableChip } from "./copyable-chip";
@@ -75,12 +79,36 @@ export function PartPresetCard({
     h: preset.dimensions.h.value,
   });
 
-  const pricing = calculatePresetPricing(preset, materialId, quantity, dims);
-  const formula = formatDimensionFormula(preset.partType, dims);
+  const isBorePart =
+    preset.partType === "bushing" || preset.partType === "gear";
+  const effectiveDims = isBorePart
+    ? {
+        ...dims,
+        d2: Math.max(preset.dimensions.d2.min, clampBore(dims.d1, dims.d2)),
+      }
+    : dims;
+
+  const safeQuantity = Math.max(1, Math.min(500, Math.round(quantity) || 1));
+  const pricing = calculatePresetPricing(
+    preset,
+    materialId,
+    safeQuantity,
+    effectiveDims,
+  );
+  const formula = formatDimensionFormula(preset.partType, effectiveDims);
+  const currentMinWallMm = calculateMinWallMm(preset.partType, effectiveDims);
+  const wallValid = isManifoldWallValid(preset.partType, effectiveDims);
 
   function handleSaveDims() {
+    if (!wallValid) {
+      toast.error(
+        `Недопустимая толщина стенки (${currentMinWallMm.toFixed(1)} мм). Минимум 2.0 мм.`,
+      );
+      return;
+    }
+    setDims(effectiveDims);
     setIsEditingDims(false);
-    onUpdatePreset?.(preset.id, { materialId, dimensions: dims });
+    onUpdatePreset?.(preset.id, { materialId, dimensions: effectiveDims });
     toast.success(
       `Параметры пресета ${preset.presetCode} обновлены: ${formula}`,
     );
@@ -192,10 +220,17 @@ export function PartPresetCard({
             <span className="text-[11px] text-[#8A93A2]">Габарит:</span>
             <CopyableChip value={formula} tooltipText="Скопировать размеры" />
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] text-[#10B981]">
-            <ShieldCheck className="size-3.5" />
-            Стенка ≥{preset.minWallMm.toFixed(1)} мм
-          </span>
+          {wallValid ? (
+            <span className="inline-flex items-center gap-1 text-[11px] text-[#10B981]">
+              <ShieldCheck className="size-3.5" />
+              Стенка ≥{currentMinWallMm.toFixed(1)} мм
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] text-[#F59E0B]">
+              <AlertTriangle className="size-3.5" />
+              Стенка {currentMinWallMm.toFixed(1)} мм &lt; 2.0 мм
+            </span>
+          )}
         </div>
 
         {/* Быстрая корректировка размеров D1 / D2 / H без ухода со страницы */}
@@ -207,8 +242,9 @@ export function PartPresetCard({
               </span>
               <button
                 type="button"
+                disabled={!wallValid}
                 onClick={handleSaveDims}
-                className="inline-flex items-center gap-1 rounded bg-[#10B981]/15 px-2 py-0.5 text-[11px] font-semibold text-[#10B981] hover:bg-[#10B981]/25"
+                className="inline-flex items-center gap-1 rounded bg-[#10B981]/15 px-2 py-0.5 text-[11px] font-semibold text-[#10B981] hover:bg-[#10B981]/25 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Check className="size-3" />
                 Фиксировать
@@ -217,26 +253,43 @@ export function PartPresetCard({
 
             {(["d1", "d2", "h"] as const).map((key) => {
               const meta = preset.dimensions[key];
+              const maxAllowed =
+                key === "d2" && isBorePart
+                  ? Math.max(
+                      meta.min,
+                      Math.min(meta.max, clampBore(effectiveDims.d1, meta.max)),
+                    )
+                  : meta.max;
               return (
                 <div key={key} className="flex flex-col gap-1">
                   <div className="flex justify-between text-[11px]">
                     <span className="text-[#8A93A2]">{meta.label}</span>
                     <span className="font-bold text-[#F2F4F7]">
-                      {dims[key]} мм
+                      {effectiveDims[key]} мм
                     </span>
                   </div>
                   <input
                     type="range"
                     aria-label={meta.label}
                     min={meta.min}
-                    max={meta.max}
-                    value={dims[key]}
-                    onChange={(e) =>
-                      setDims((prev) => ({
-                        ...prev,
-                        [key]: Number(e.target.value),
-                      }))
-                    }
+                    max={maxAllowed}
+                    value={effectiveDims[key]}
+                    onChange={(e) => {
+                      const nextVal = Number(e.target.value);
+                      setDims((prev) => {
+                        const updated = {
+                          ...prev,
+                          [key]: nextVal,
+                        };
+                        if (isBorePart) {
+                          updated.d2 = Math.max(
+                            preset.dimensions.d2.min,
+                            clampBore(updated.d1, updated.d2),
+                          );
+                        }
+                        return updated;
+                      });
+                    }}
                     className="lab-slider w-full"
                   />
                 </div>
@@ -300,15 +353,22 @@ export function PartPresetCard({
             </button>
             <input
               type="number"
+              inputMode="numeric"
+              step={1}
               aria-label="Количество деталей в партии"
               min={1}
               max={500}
-              value={quantity}
-              onChange={(e) =>
+              value={safeQuantity}
+              onChange={(e) => {
+                const parsed = Number(e.target.value);
+                if (!Number.isFinite(parsed)) {
+                  setQuantity(1);
+                  return;
+                }
                 setQuantity(
-                  Math.max(1, Math.min(500, Number(e.target.value) || 1)),
-                )
-              }
+                  Math.max(1, Math.min(500, Math.round(parsed) || 1)),
+                );
+              }}
               className="w-11 [appearance:textfield] bg-transparent text-center text-xs font-bold text-[#F2F4F7] outline-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <button
@@ -345,15 +405,28 @@ export function PartPresetCard({
 
           <button
             type="button"
-            onClick={() =>
+            disabled={!wallValid}
+            onClick={() => {
+              if (!Number.isInteger(safeQuantity) || safeQuantity < 1) {
+                toast.error(
+                  "Укажите целое количество деталей (от 1 до 500 шт.)",
+                );
+                return;
+              }
+              if (!wallValid) {
+                toast.error(
+                  "Невозможно отправить в печать: толщина стенки меньше 2.0 мм",
+                );
+                return;
+              }
               onOrderPreset(preset, {
                 materialId,
-                quantity,
-                dimensions: dims,
+                quantity: safeQuantity,
+                dimensions: effectiveDims,
                 totalPriceRub: pricing.totalPriceRub,
-              })
-            }
-            className="cta-border-beam inline-flex h-10 items-center gap-1.5 rounded-[12px] bg-[#FF5C1A] px-4 font-mono text-xs font-semibold text-[#0E1014] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]"
+              });
+            }}
+            className="cta-border-beam inline-flex h-10 items-center gap-1.5 rounded-[12px] bg-[#FF5C1A] px-4 font-mono text-xs font-semibold text-[#0E1014] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Repeat className="size-3.5" />В печать
           </button>

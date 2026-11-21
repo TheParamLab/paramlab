@@ -6,9 +6,30 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  toast,
 } from "@paramlab/ui";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
+
+function fallbackCopyTextToClipboard(text: string): boolean {
+  if (typeof document === "undefined") return false;
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  let success = false;
+  try {
+    success = document.execCommand("copy");
+  } catch {
+    success = false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+  return success;
+}
 
 export interface CopyableChipProps {
   /** Значение, которое копируется в буфер обмена */
@@ -45,11 +66,18 @@ export function CopyableChip({
   async function handleCopy(event: React.MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
     try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API unavailable");
+      }
       await navigator.clipboard.writeText(value);
       setCopied(true);
     } catch {
-      // Fallback для окружений без clipboard API
-      setCopied(true);
+      if (fallbackCopyTextToClipboard(value)) {
+        setCopied(true);
+      } else {
+        setCopied(false);
+        toast.error("Не удалось скопировать значение в буфер обмена");
+      }
     }
   }
 

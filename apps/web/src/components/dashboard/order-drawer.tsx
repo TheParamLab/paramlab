@@ -19,7 +19,10 @@ import {
   Truck,
   X,
 } from "lucide-react";
-import { STAGE_METADATA } from "~/lib/mock-dashboard";
+import {
+  STAGE_METADATA,
+  triggerTextDocumentDownload,
+} from "~/lib/mock-dashboard";
 import type { DashboardOrder } from "~/types/dashboard";
 import { CopyableChip } from "./copyable-chip";
 import { PartSchematicPreview } from "./part-schematic-preview";
@@ -47,9 +50,26 @@ export function OrderDrawer({
 
   function handleDownloadInvoice() {
     if (!order) return;
-    toast.success(
-      `Счет и закрывающий документ ${order.updNumber ?? order.orderNumber} сформированы (PDF)`,
-    );
+    const docCode = order.updNumber ?? order.orderNumber;
+    const filename = `${docCode.replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`;
+    const ok = triggerTextDocumentDownload(filename, [
+      `PARAMLAB // ПАСПОРТ И СЧЕТ-СПЕЦИФИКАЦИЯ № ${order.orderNumber}`,
+      `Документ: ${docCode}`,
+      `Создан: ${order.createdAt}`,
+      `Деталь: ${primaryItem?.title ?? order.orderNumber}`,
+      `Габарит: ${primaryItem?.parametricSpec.dimensionLabel ?? "-"}`,
+      `Полимер: ${primaryItem?.materialCode ?? "-"}`,
+      `Партия: ${primaryItem?.quantity ?? 1} шт.`,
+      `Доставка: ${order.delivery.carrierLabel} (${order.delivery.pvzAddress})`,
+      `Итого к оплате: ${order.totalRub} RUB`,
+    ]);
+    if (ok) {
+      toast.success(
+        `Счет и закрывающий документ ${docCode} скачаны (${filename})`,
+      );
+    } else {
+      toast.error("Не удалось сформировать документ для скачивания");
+    }
   }
 
   return (
@@ -199,11 +219,17 @@ export function OrderDrawer({
                     Логистика и пункт выдачи
                   </h4>
                 </div>
-                <CopyableChip
-                  value={order.delivery.trackingNumber}
-                  prefix={`${order.delivery.carrierLabel} · `}
-                  tooltipText="Скопировать трек-номер"
-                />
+                {order.delivery.trackingNumber ? (
+                  <CopyableChip
+                    value={order.delivery.trackingNumber}
+                    prefix={`${order.delivery.carrierLabel} · `}
+                    tooltipText="Скопировать трек-номер"
+                  />
+                ) : (
+                  <span className="rounded-lg border border-[#262B36] bg-[#161920] px-2.5 py-0.5 font-mono text-[11px] text-[#8A93A2]">
+                    {order.delivery.carrierLabel} · Трек-номер после ОТК
+                  </span>
+                )}
               </div>
 
               <div className="space-y-2 text-xs">

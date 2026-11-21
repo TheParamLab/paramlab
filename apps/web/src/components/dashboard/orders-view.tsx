@@ -14,9 +14,10 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import {
-  MOCK_ORDERS,
   MOCK_SUMMARY_METRICS,
+  repeatDashboardOrder,
   STAGE_METADATA,
+  useDashboardOrders,
 } from "~/lib/mock-dashboard";
 import type { DashboardOrder, PrintStageId } from "~/types/dashboard";
 import { EmptyBlueprintState } from "./empty-blueprint-state";
@@ -37,7 +38,7 @@ const STAGE_FILTERS: readonly {
 
 export function OrdersView() {
   const prefersReducedMotion = useReducedMotion();
-  const [orders, setOrders] = useState<DashboardOrder[]>(MOCK_ORDERS);
+  const orders = useDashboardOrders();
   const [categoryTab, setCategoryTab] = useState<
     "active" | "completed" | "all"
   >("active");
@@ -61,7 +62,7 @@ export function OrdersView() {
     if (searchQuery.trim() !== "") {
       const q = searchQuery.trim().toLowerCase();
       const matchNumber = order.orderNumber.toLowerCase().includes(q);
-      const matchTrack = order.delivery.trackingNumber
+      const matchTrack = (order.delivery.trackingNumber ?? "")
         .toLowerCase()
         .includes(q);
       const matchItem = order.items.some(
@@ -83,53 +84,12 @@ export function OrdersView() {
   }
 
   function handleRepeatOrder(source: DashboardOrder) {
-    const nextNumber = `PL-2604-${900 + orders.length}`;
-    const repeatedOrder: DashboardOrder = {
-      ...source,
-      id: `ord-rep-${orders.length + 1}`,
-      orderNumber: nextNumber,
-      createdAt: "Только что",
-      updatedAt: "Только что",
-      category: "active",
-      currentStage: "manifold",
-      stageProgressPercent: 35,
-      layerTelemetry: undefined,
-      stages: [
-        {
-          stage: "manifold",
-          title: "Проверка геометрии (Manifold)",
-          subtitle: `Повторный запуск по паспорту ${source.orderNumber} · Геометрия подтверждена`,
-          timestamp: "Только что",
-          telemetry: "PRESET_CLONE // MANIFOLD_PASS",
-        },
-        {
-          stage: "printing",
-          title: "Печать партии в термокамере",
-          subtitle: "Резервирование слота в ячейке CoreXY",
-        },
-        {
-          stage: "qc",
-          title: "Инструментальный ОТК и упаковка",
-          subtitle: "Замер со штангенциркулем ±0.1 мм",
-        },
-        {
-          stage: "shipping",
-          title: `Передача в логистику (${source.delivery.carrierLabel})`,
-          subtitle: source.delivery.pvzAddress,
-        },
-        {
-          stage: "done",
-          title: "Готово к выдаче в ПВЗ",
-          subtitle: source.delivery.pvzAddress,
-        },
-      ],
-    };
-
-    setOrders((prev) => [repeatedOrder, ...prev]);
+    const repeatedOrder = repeatDashboardOrder(source);
     setCategoryTab("active");
     setStageFilter("all");
+    setSearchQuery("");
     toast.success(
-      `Заказ № ${nextNumber} создан и передан на этап «Проверка (Manifold)»`,
+      `Заказ № ${repeatedOrder.orderNumber} создан и передан на этап «Проверка (Manifold)»`,
     );
   }
 

@@ -15,7 +15,11 @@ import {
   User,
 } from "lucide-react";
 import { useState } from "react";
-import { MOCK_ENGINEER_PROFILE } from "~/lib/mock-dashboard";
+import { z } from "zod";
+import {
+  MOCK_ENGINEER_PROFILE,
+  triggerTextDocumentDownload,
+} from "~/lib/mock-dashboard";
 import type {
   CarrierType,
   CompanyRequisites,
@@ -25,6 +29,49 @@ import type {
 } from "~/types/dashboard";
 import { CopyableChip } from "./copyable-chip";
 
+const contactsSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Укажите имя и фамилию получателя (минимум 2 символа)"),
+  roleTitle: z.string().trim().min(2, "Укажите должность или подразделение"),
+  email: z.string().trim().email("Укажите корректный рабочий E-mail"),
+  phone: z
+    .string()
+    .trim()
+    .min(10, "Укажите контактный телефон (не менее 10 символов)"),
+});
+
+const pvzSchema = z.object({
+  carrier: z.enum(["cdek", "ozon"]),
+  city: z.string().trim().min(2, "Укажите город пункта выдачи"),
+  address: z.string().trim().min(5, "Укажите улицу, дом и номер пункта выдачи"),
+});
+
+const requisitesSchema = z.object({
+  legalName: z
+    .string()
+    .trim()
+    .min(3, "Укажите полное наименование организации (ООО / ИП)"),
+  inn: z
+    .string()
+    .trim()
+    .regex(/^\d{10}(\d{2})?$/, "ИНН должен содержать 10 или 12 цифр"),
+  kpp: z
+    .string()
+    .trim()
+    .regex(/^(\d{9})?$/, "КПП должен содержать 9 цифр"),
+  bik: z
+    .string()
+    .trim()
+    .regex(/^\d{9}$/, "БИК банка должен содержать 9 цифр"),
+  checkingAccount: z
+    .string()
+    .trim()
+    .regex(/^\d{20}$/, "Расчетный счет должен содержать 20 цифр"),
+  edoOperator: z.string().trim().min(2, "Укажите оператора ЭДО"),
+});
+
 export function ProfileView() {
   const [profile, setProfile] = useState<EngineerProfileData>(
     MOCK_ENGINEER_PROFILE,
@@ -33,6 +80,7 @@ export function ProfileView() {
   const [roleTitle, setRoleTitle] = useState(profile.roleTitle);
   const [phone, setPhone] = useState(profile.phone);
   const [email, setEmail] = useState(profile.email);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   const [pickupPoints, setPickupPoints] = useState<PickupPointPreset[]>(
     profile.pickupPoints,
@@ -41,6 +89,7 @@ export function ProfileView() {
   const [newPvzCarrier, setNewPvzCarrier] = useState<CarrierType>("cdek");
   const [newPvzCity, setNewPvzCity] = useState("Москва");
   const [newPvzAddress, setNewPvzAddress] = useState("");
+  const [pvzError, setPvzError] = useState<string | null>(null);
 
   const [notifications, setNotifications] = useState<NotificationPreferences>(
     profile.notifications,
@@ -48,15 +97,31 @@ export function ProfileView() {
   const [requisites, setRequisites] = useState<CompanyRequisites>(
     profile.requisites,
   );
+  const [requisitesError, setRequisitesError] = useState<string | null>(null);
 
   function handleSaveContacts(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setProfile((prev) => ({
-      ...prev,
+    setContactError(null);
+    const parsed = contactsSchema.safeParse({
       fullName,
       roleTitle,
-      phone,
       email,
+      phone,
+    });
+    if (!parsed.success) {
+      const msg =
+        parsed.error.issues[0]?.message ?? "Проверьте контактные данные";
+      setContactError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setProfile((prev) => ({
+      ...prev,
+      fullName: parsed.data.fullName,
+      roleTitle: parsed.data.roleTitle,
+      phone: parsed.data.phone,
+      email: parsed.data.email,
     }));
     toast.success("Контактные данные инженера сохранены");
   }
@@ -78,16 +143,31 @@ export function ProfileView() {
 
   function handleAddPvz(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!newPvzAddress.trim()) return;
-    const codePrefix = newPvzCarrier === "cdek" ? "MSK" : "OZN";
+    setPvzError(null);
+    const cityValue = newPvzCity.trim() || "Москва";
+    const parsed = pvzSchema.safeParse({
+      carrier: newPvzCarrier,
+      city: cityValue,
+      address: newPvzAddress,
+    });
+    if (!parsed.success) {
+      const msg =
+        parsed.error.issues[0]?.message ?? "Проверьте адрес пункта выдачи";
+      setPvzError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    const codePrefix = parsed.data.carrier === "cdek" ? "MSK" : "OZN";
     const randomCode = `${codePrefix}-${200 + pickupPoints.length * 19}`;
     const created: PickupPointPreset = {
       id: `pvz-${Date.now()}`,
-      carrier: newPvzCarrier,
-      carrierLabel: newPvzCarrier === "cdek" ? "СДЭК Экспресс" : "Ozon Посылка",
+      carrier: parsed.data.carrier,
+      carrierLabel:
+        parsed.data.carrier === "cdek" ? "СДЭК Экспресс" : "Ozon Посылка",
       code: randomCode,
-      city: newPvzCity.trim() || "Москва",
-      address: newPvzAddress.trim(),
+      city: parsed.data.city,
+      address: parsed.data.address,
       schedule: "Ежедневно 09:00–21:00",
       isDefault: true,
     };
@@ -114,9 +194,51 @@ export function ProfileView() {
 
   function handleSaveRequisites(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setRequisitesError(null);
+    const parsed = requisitesSchema.safeParse({
+      legalName: requisites.legalName,
+      inn: requisites.inn,
+      kpp: requisites.kpp,
+      bik: requisites.bik,
+      checkingAccount: requisites.checkingAccount,
+      edoOperator: requisites.edoOperator,
+    });
+    if (!parsed.success) {
+      const msg =
+        parsed.error.issues[0]?.message ??
+        "Проверьте реквизиты юридического лица";
+      setRequisitesError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setRequisites((prev) => ({
+      ...prev,
+      ...parsed.data,
+    }));
     toast.success(
-      `Реквизиты ${requisites.legalName} (ИНН ${requisites.inn}) сохранены для автовыставления счетов и УПД`,
+      `Реквизиты ${parsed.data.legalName} (ИНН ${parsed.data.inn}) сохранены для автовыставления счетов и УПД`,
     );
+  }
+
+  function handleDownloadContractPdf() {
+    const filename = `ParamLab_Contract_${requisites.inn || "Requisites"}.pdf`;
+    const ok = triggerTextDocumentDownload(filename, [
+      "PARAMLAB // КАРТОЧКА РЕКВИЗИТОВ И ТИПОВОЙ ДОГОВОР ПОСТАВКИ",
+      `Заказчик: ${requisites.legalName}`,
+      `ИНН / КПП: ${requisites.inn} / ${requisites.kpp}`,
+      `Банк: ${requisites.bankName} (БИК ${requisites.bik})`,
+      `Р/С: ${requisites.checkingAccount}`,
+      `Оператор ЭДО: ${requisites.edoOperator} (${requisites.edoId})`,
+      `Контактное лицо: ${profile.fullName} (${profile.email})`,
+    ]);
+    if (ok) {
+      toast.success(
+        `Карточка реквизитов и типовой договор поставки скачаны (${filename})`,
+      );
+    } else {
+      toast.error("Не удалось сформировать файл договора для скачивания");
+    }
   }
 
   return (
@@ -179,7 +301,10 @@ export function ProfileView() {
                   id="profile-name"
                   type="text"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => {
+                    setContactError(null);
+                    setFullName(e.target.value);
+                  }}
                   className="mt-1 h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 text-sm text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -195,7 +320,10 @@ export function ProfileView() {
                   id="profile-role"
                   type="text"
                   value={roleTitle}
-                  onChange={(e) => setRoleTitle(e.target.value)}
+                  onChange={(e) => {
+                    setContactError(null);
+                    setRoleTitle(e.target.value);
+                  }}
                   className="mt-1 h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 text-sm text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -213,7 +341,10 @@ export function ProfileView() {
                   id="profile-email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setContactError(null);
+                    setEmail(e.target.value);
+                  }}
                   className="mt-1 h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 font-mono text-xs text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -229,11 +360,23 @@ export function ProfileView() {
                   id="profile-phone"
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setContactError(null);
+                    setPhone(e.target.value);
+                  }}
                   className="mt-1 h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 font-mono text-xs text-[#F2F4F7] tabular-nums focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
             </div>
+
+            {contactError && (
+              <p
+                role="alert"
+                className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-mono text-xs text-red-400"
+              >
+                {contactError}
+              </p>
+            )}
 
             <div className="flex justify-end pt-2">
               <button
@@ -401,7 +544,10 @@ export function ProfileView() {
                     id="pvz-city"
                     type="text"
                     value={newPvzCity}
-                    onChange={(e) => setNewPvzCity(e.target.value)}
+                    onChange={(e) => {
+                      setPvzError(null);
+                      setNewPvzCity(e.target.value);
+                    }}
                     className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-xs text-[#F2F4F7]"
                   />
                 </div>
@@ -417,13 +563,24 @@ export function ProfileView() {
                 <input
                   id="pvz-addr"
                   type="text"
-                  required
                   placeholder="ул. Профсоюзная, д. 56, ПВЗ №142"
                   value={newPvzAddress}
-                  onChange={(e) => setNewPvzAddress(e.target.value)}
+                  onChange={(e) => {
+                    setPvzError(null);
+                    setNewPvzAddress(e.target.value);
+                  }}
                   className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-xs text-[#F2F4F7]"
                 />
               </div>
+
+              {pvzError && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 font-mono text-xs text-red-400"
+                >
+                  {pvzError}
+                </p>
+              )}
 
               <div className="flex justify-end gap-2">
                 <button
@@ -530,12 +687,13 @@ export function ProfileView() {
                 id="req-name"
                 type="text"
                 value={requisites.legalName}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setRequisitesError(null);
                   setRequisites((prev) => ({
                     ...prev,
                     legalName: e.target.value,
-                  }))
-                }
+                  }));
+                }}
                 className="mt-1 h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 text-sm text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
               />
             </div>
@@ -552,9 +710,10 @@ export function ProfileView() {
                   id="req-inn"
                   type="text"
                   value={requisites.inn}
-                  onChange={(e) =>
-                    setRequisites((prev) => ({ ...prev, inn: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setRequisitesError(null);
+                    setRequisites((prev) => ({ ...prev, inn: e.target.value }));
+                  }}
                   className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#0E1014] px-2.5 text-xs font-semibold text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -570,9 +729,10 @@ export function ProfileView() {
                   id="req-kpp"
                   type="text"
                   value={requisites.kpp}
-                  onChange={(e) =>
-                    setRequisites((prev) => ({ ...prev, kpp: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setRequisitesError(null);
+                    setRequisites((prev) => ({ ...prev, kpp: e.target.value }));
+                  }}
                   className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#0E1014] px-2.5 text-xs font-semibold text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -588,9 +748,10 @@ export function ProfileView() {
                   id="req-bik"
                   type="text"
                   value={requisites.bik}
-                  onChange={(e) =>
-                    setRequisites((prev) => ({ ...prev, bik: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setRequisitesError(null);
+                    setRequisites((prev) => ({ ...prev, bik: e.target.value }));
+                  }}
                   className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#0E1014] px-2.5 text-xs font-semibold text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -608,12 +769,13 @@ export function ProfileView() {
                   id="req-account"
                   type="text"
                   value={requisites.checkingAccount}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setRequisitesError(null);
                     setRequisites((prev) => ({
                       ...prev,
                       checkingAccount: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#0E1014] px-2.5 font-mono text-xs text-[#F2F4F7] tabular-nums focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
@@ -629,16 +791,26 @@ export function ProfileView() {
                   id="req-edo"
                   type="text"
                   value={requisites.edoOperator}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setRequisitesError(null);
                     setRequisites((prev) => ({
                       ...prev,
                       edoOperator: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#0E1014] px-2.5 font-mono text-xs text-[#F2F4F7] focus:border-[#00D1FF] focus:outline-none"
                 />
               </div>
             </div>
+
+            {requisitesError && (
+              <p
+                role="alert"
+                className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 font-mono text-xs text-red-400"
+              >
+                {requisitesError}
+              </p>
+            )}
 
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 py-2 font-mono text-xs">
               <span className="text-[11px] text-[#8A93A2]">ID ЭДО:</span>
@@ -652,11 +824,7 @@ export function ProfileView() {
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
               <button
                 type="button"
-                onClick={() =>
-                  toast.success(
-                    "Карточка реквизитов и типовой договор поставки скачаны (PDF)",
-                  )
-                }
+                onClick={handleDownloadContractPdf}
                 className="inline-flex h-10 items-center gap-1.5 rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3 font-mono text-xs text-[#8A93A2] transition-colors hover:border-[#8A93A2] hover:text-[#F2F4F7]"
               >
                 <FileText className="size-3.5 text-[#F59E0B]" />
