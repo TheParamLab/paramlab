@@ -12,22 +12,21 @@ test("redirects anonymous visitors to the login page", async ({ page }) => {
   await expect(page).toHaveURL(/\/auth\/login$/);
 });
 
-test("renders the login form", async ({ page }) => {
+test("renders the passwordless auth gateway", async ({ page }) => {
   await page.goto("/auth/login");
 
-  await expect(page.getByText("С возвращением")).toBeVisible();
-  // Labels must be wired to the inputs (FormLabel htmlFor → FormControl id).
-  const panel = page.getByRole("tabpanel", { name: "Пароль" });
-  await expect(panel.getByLabel("Электронная почта")).toHaveAttribute(
+  await expect(page.getByText("Вход в ParamLab")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Войти через Telegram" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Рабочая или личная почта")).toHaveAttribute(
     "type",
     "email",
   );
-  await expect(panel.getByLabel("Пароль", { exact: true })).toHaveAttribute(
-    "type",
-    "password",
-  );
-  await expect(page.getByRole("button", { name: "Войти" })).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Забыли пароль?" }),
+    page.getByRole("button", { name: "Получить код" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "← Вернуться в конфигуратор" }),
   ).toBeVisible();
 });

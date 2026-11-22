@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { AuthShell, OTPForm } from "~/components/auth";
+import { Suspense } from "react";
+import { AuthCard, AuthShell } from "~/components/auth";
 
 export const metadata: Metadata = {
   title: "Подтверждение кода — ParamLab",
@@ -9,7 +10,13 @@ export const metadata: Metadata = {
 export default function OTPPage() {
   return (
     <AuthShell width="xs">
-      <OTPForm className="rounded-[16px] border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl" />
+      <Suspense
+        fallback={
+          <div className="h-[340px] w-full max-w-[400px] animate-pulse rounded-[16px] border border-[#262B36] bg-[#161920]" />
+        }
+      >
+        <AuthCard initialStep="otp" />
+      </Suspense>
     </AuthShell>
   );
 }
