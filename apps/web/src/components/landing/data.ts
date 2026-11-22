@@ -107,6 +107,15 @@ interface PartParameterMeta {
   initial: number;
 }
 
+interface PartTextParamMeta {
+  code: string;
+  label: string;
+  placeholder: string;
+  maxLength: number;
+  initial: string;
+  presets: readonly string[];
+}
+
 export interface PartType {
   id: string;
   shortLabel: string;
@@ -115,6 +124,8 @@ export interface PartType {
   tolerance: string;
   /** Подписи ползунков и диапазоны размеров в Hero-конфигураторе. */
   dimensions: Record<DimensionKey, PartParameterMeta>;
+  /** Опциональная параметрическая надпись (например, для двухцветной бирки). */
+  textParam?: PartTextParamMeta;
 }
 
 export const PART_TYPES = [
@@ -370,15 +381,60 @@ export const PART_TYPES = [
       },
     },
   },
+  {
+    id: "plant-tag",
+    shortLabel: "Садовая бирка",
+    label: "Двухцветная бирка-колышек с рельефной надписью",
+    code: "CAD-TAG-08",
+    tolerance: "2 цвета (Z = 2.4 мм) · Ребро жесткости",
+    textParam: {
+      code: "TXT",
+      label: "Надпись на бирке (кириллица / цифры)",
+      placeholder: "Например: ТОМАТ",
+      maxLength: 12,
+      initial: "ТОМАТ",
+      presets: ["ТОМАТ", "ПЕРЕЦ", "ОГУРЕЦ", "БАКЛАЖАН"],
+    },
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Общая длина с колышком L",
+        unit: "мм",
+        min: 80,
+        max: 150,
+        step: 1,
+        initial: 124,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина таблички W",
+        unit: "мм",
+        min: 22,
+        max: 36,
+        step: 1,
+        initial: 26,
+      },
+      h: {
+        code: "H",
+        label: "Общая толщина с рельефом H",
+        unit: "мм",
+        min: 3,
+        max: 6,
+        step: 1,
+        initial: 3,
+      },
+    },
+  },
 ] as const satisfies readonly PartType[];
 
 export type PartTypeId = (typeof PART_TYPES)[number]["id"];
 
-/** Три основных шаблона для быстрого переключения в Hero. */
+/** Четыре основных шаблона для быстрого переключения в Hero. */
 export const HERO_PART_TYPES: readonly PartTypeId[] = [
   "bushing",
   "din-box",
   "gear",
+  "plant-tag",
 ];
 
 export interface ParametricTemplateCard {
@@ -390,6 +446,7 @@ export interface ParametricTemplateCard {
   description: string;
   materialCode: string;
   presetDimensions: Dimensions;
+  presetLabelText?: string;
   params: readonly {
     code: string;
     name: string;
@@ -401,7 +458,8 @@ export interface ParametricTemplateCard {
     | "bushing"
     | "adapter"
     | "bracket"
-    | "organizer";
+    | "organizer"
+    | "plant-tag";
 }
 
 export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
@@ -506,6 +564,24 @@ export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
       { code: "Z", name: "Число секций", value: "1–12 ячеек" },
     ],
     visualKind: "organizer",
+  },
+  {
+    id: "seedling-plant-tag",
+    partType: "plant-tag",
+    category: "Агротехника и маркировка",
+    code: "TPL-TAG-08",
+    title: "Двухцветная бирка для рассады с вашей надписью",
+    description:
+      "Удлинённый колышек с ребром жесткости, контрастный рельефный текст и кант для двухцветной печати.",
+    materialCode: "PETG",
+    presetDimensions: { d1: 124, d2: 26, h: 3 },
+    presetLabelText: "БАКЛАЖАН",
+    params: [
+      { code: "L", name: "Общая длина", value: "80–150 мм" },
+      { code: "W", name: "Ширина головки", value: "22–36 мм" },
+      { code: "TXT", name: "Текст рельефа", value: "до 12 симв." },
+    ],
+    visualKind: "plant-tag",
   },
 ] as const;
 

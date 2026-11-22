@@ -300,6 +300,37 @@ export function PartSchematicPreview({
             />
           </g>
         )}
+
+        {partType === "plant-tag" && (
+          <g>
+            <path
+              d="M 28 68 L 106 56 L 116 44 L 208 44 Q 214 44 214 50 L 214 86 Q 214 92 208 92 L 116 92 L 106 80 Z"
+              fill="rgba(22, 25, 32, 0.88)"
+              stroke="#00D1FF"
+              strokeWidth="1.4"
+            />
+            <line
+              x1="36"
+              y1="68"
+              x2="119"
+              y2="68"
+              stroke="#FF5C1A"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+            <rect
+              x="119"
+              y="49"
+              width="82"
+              height="38"
+              rx="4"
+              fill="rgba(0, 209, 255, 0.08)"
+              stroke="#FF5C1A"
+              strokeWidth="1.4"
+            />
+            <circle cx="207" cy="68" r="3" fill="#0E1014" stroke="#00D1FF" />
+          </g>
+        )}
       </svg>
 
       {size === "md" && dimensionLabel && (

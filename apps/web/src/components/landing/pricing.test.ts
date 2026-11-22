@@ -67,6 +67,7 @@ describe("estimateMass", () => {
       "end-cap",
       "bracket",
       "organizer",
+      "plant-tag",
     ] as const) {
       const small = estimateMass(type, { d1: 50, d2: 35, h: 30 }, 1.2);
       const large = estimateMass(type, { d1: 100, d2: 35, h: 30 }, 1.2);

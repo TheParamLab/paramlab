@@ -29,6 +29,7 @@ interface Face3D {
   centerY: number;
   isTop?: boolean;
   isInner?: boolean;
+  isAccent?: boolean;
 }
 
 interface Callout3D {
@@ -77,7 +78,7 @@ function quadFace(
   v1: Vec3,
   v2: Vec3,
   v3: Vec3,
-  opts?: { isTop?: boolean; isInner?: boolean },
+  opts?: { isTop?: boolean; isInner?: boolean; isAccent?: boolean },
 ): Face3D {
   const n = normalize(cross(sub(v1, v0), sub(v3, v0)));
   const centerY = (v0.y + v1.y + v2.y + v3.y) * 0.25;
@@ -87,6 +88,7 @@ function quadFace(
     centerY,
     isTop: opts?.isTop,
     isInner: opts?.isInner,
+    isAccent: opts?.isAccent,
   };
 }
 
@@ -137,6 +139,7 @@ function addBoxWall(
   y1: number,
   z0: number,
   z1: number,
+  opts?: { isAccent?: boolean },
 ) {
   const b00: Vec3 = { x: x0, y: y0, z: z0 };
   const b10: Vec3 = { x: x1, y: y0, z: z0 };
@@ -148,12 +151,12 @@ function addBoxWall(
   const t11: Vec3 = { x: x1, y: y1, z: z1 };
   const t01: Vec3 = { x: x0, y: y1, z: z1 };
 
-  faces.push(quadFace(b01, b11, t11, t01)); // front +Z
-  faces.push(quadFace(b10, b00, t00, t10)); // back -Z
-  faces.push(quadFace(b11, b10, t10, t11)); // right +X
-  faces.push(quadFace(b00, b01, t01, t00)); // left -X
-  faces.push(quadFace(t01, t11, t10, t00, { isTop: true })); // top +Y
-  faces.push(quadFace(b00, b10, b11, b01)); // bottom -Y
+  faces.push(quadFace(b01, b11, t11, t01, opts)); // front +Z
+  faces.push(quadFace(b10, b00, t00, t10, opts)); // back -Z
+  faces.push(quadFace(b11, b10, t10, t11, opts)); // right +X
+  faces.push(quadFace(b00, b01, t01, t00, opts)); // left -X
+  faces.push(quadFace(t01, t11, t10, t00, { isTop: true, ...opts })); // top +Y
+  faces.push(quadFace(b00, b10, b11, b01, opts)); // bottom -Y
 }
 
 function addTriangularRib(
@@ -610,6 +613,132 @@ function buildGeometry(
     };
   }
 
+  if (partType === "plant-tag") {
+    const L = d1;
+    const W = d2;
+    const H = Math.max(3, h);
+    const halfL = L / 2;
+    const halfW = W / 2;
+    const y0 = -H / 2;
+    const baseTop = y0 + H * 0.8;
+    const y1 = H / 2;
+
+    const tipX = -halfL;
+    const neckX = -halfL + L * 0.48;
+    const headStartX = -halfL + L * 0.52;
+    const headEndX = halfL;
+    const tipHalfW = 2.3;
+    const neckHalfW = Math.min(halfW * 0.62, 7.5);
+
+    // 1. Ножка-колышек (клин)
+    const sb0: Vec3 = { x: tipX, y: y0, z: -tipHalfW };
+    const sb1: Vec3 = { x: neckX, y: y0, z: -neckHalfW };
+    const sb2: Vec3 = { x: neckX, y: y0, z: neckHalfW };
+    const sb3: Vec3 = { x: tipX, y: y0, z: tipHalfW };
+    const st0: Vec3 = { x: tipX, y: baseTop, z: -tipHalfW };
+    const st1: Vec3 = { x: neckX, y: baseTop, z: -neckHalfW };
+    const st2: Vec3 = { x: neckX, y: baseTop, z: neckHalfW };
+    const st3: Vec3 = { x: tipX, y: baseTop, z: tipHalfW };
+
+    faces.push(quadFace(sb3, sb2, st2, st3));
+    faces.push(quadFace(sb1, sb0, st0, st1));
+    faces.push(quadFace(sb0, sb3, st3, st0));
+    faces.push(quadFace(st3, st2, st1, st0, { isTop: true }));
+    faces.push(quadFace(sb0, sb1, sb2, sb3));
+
+    // 2. Переходная галтель от ножки к головке
+    const tb0: Vec3 = { x: neckX, y: y0, z: -neckHalfW };
+    const tb1: Vec3 = { x: headStartX, y: y0, z: -halfW };
+    const tb2: Vec3 = { x: headStartX, y: y0, z: halfW };
+    const tb3: Vec3 = { x: neckX, y: y0, z: neckHalfW };
+    const tt0: Vec3 = { x: neckX, y: baseTop, z: -neckHalfW };
+    const tt1: Vec3 = { x: headStartX, y: baseTop, z: -halfW };
+    const tt2: Vec3 = { x: headStartX, y: baseTop, z: halfW };
+    const tt3: Vec3 = { x: neckX, y: baseTop, z: neckHalfW };
+
+    faces.push(quadFace(tb3, tb2, tt2, tt3));
+    faces.push(quadFace(tb1, tb0, tt0, tt1));
+    faces.push(quadFace(tt3, tt2, tt1, tt0, { isTop: true }));
+    faces.push(quadFace(tb0, tb1, tb2, tb3));
+
+    // 3. Основная головка бирки (база Серого цвета)
+    addBoxWall(faces, headStartX, headEndX, y0, baseTop, -halfW, halfW);
+
+    // 4. Чёрный рельеф: продольное ребро жесткости на ножке + окантовка текстовой зоны
+    const rimX0 = headStartX + 1.2;
+    const rimX1 = headEndX - 6.8;
+    const rimZ0 = -halfW + 1.8;
+    const rimZ1 = halfW - 1.8;
+    const rimW = 1.2;
+
+    addBoxWall(faces, tipX + 7, rimX0, baseTop, y1, -1.3, 1.3, {
+      isAccent: true,
+    });
+    addBoxWall(faces, rimX0, rimX1, baseTop, y1, rimZ1 - rimW, rimZ1, {
+      isAccent: true,
+    });
+    addBoxWall(faces, rimX0, rimX1, baseTop, y1, rimZ0, rimZ0 + rimW, {
+      isAccent: true,
+    });
+    addBoxWall(
+      faces,
+      rimX0,
+      rimX0 + rimW,
+      baseTop,
+      y1,
+      rimZ0 + rimW,
+      rimZ1 - rimW,
+      { isAccent: true },
+    );
+    addBoxWall(
+      faces,
+      rimX1 - rimW,
+      rimX1,
+      baseTop,
+      y1,
+      rimZ0 + rimW,
+      rimZ1 - rimW,
+      { isAccent: true },
+    );
+
+    const callouts: Callout3D[] = [
+      {
+        key: "d1",
+        code: "L",
+        value: L,
+        start: { x: -halfL, y: y1 + 6, z: halfW },
+        end: { x: halfL, y: y1 + 6, z: halfW },
+        labelPos: { x: 0, y: y1 + 14, z: halfW },
+      },
+      {
+        key: "d2",
+        code: "W",
+        value: W,
+        start: { x: halfL + 8, y: y0, z: -halfW },
+        end: { x: halfL + 8, y: y0, z: halfW },
+        labelPos: { x: halfL + 18, y: y0, z: 0 },
+      },
+      {
+        key: "h",
+        code: "H",
+        value: H,
+        start: { x: -halfL - 10, y: y0, z: halfW },
+        end: { x: -halfL - 10, y: y1, z: halfW },
+        labelPos: { x: -halfL - 20, y: 0, z: halfW },
+      },
+    ];
+
+    return {
+      faces,
+      minY: y0,
+      maxY: y1,
+      callouts,
+      isBoxy: true,
+      halfL,
+      halfW,
+    };
+  }
+
   // Корпус РЭА ("din-box") или Крепление / Заглушка ("end-cap")
   const halfL = d1 / 2;
   const halfW = d2 / 2;
@@ -825,6 +954,7 @@ export function CadViewport3D() {
     partType,
     dimensions,
     materialId,
+    labelText,
     activeDimension,
     renderMode,
     setRenderMode,
@@ -1095,35 +1225,101 @@ export function CadViewport3D() {
         if (renderMode === "wireframe") {
           ctx.fillStyle = "rgba(14, 16, 20, 0.32)";
           ctx.fill();
-          ctx.strokeStyle = "rgba(0, 209, 255, 0.65)";
+          ctx.strokeStyle = item.face.isAccent
+            ? "rgba(255, 92, 26, 0.85)"
+            : "rgba(0, 209, 255, 0.65)";
           ctx.lineWidth = 1;
           ctx.stroke();
         } else if (renderMode === "layers") {
-          ctx.fillStyle = shadeColor(
-            material,
-            item.intensity * 0.85,
-            item.face.isTop,
-            item.face.isInner,
-          );
+          ctx.fillStyle = item.face.isAccent
+            ? "rgb(20, 23, 29)"
+            : shadeColor(
+                material,
+                item.intensity * 0.85,
+                item.face.isTop,
+                item.face.isInner,
+              );
           ctx.fill();
           ctx.strokeStyle = "rgba(255, 92, 26, 0.42)";
           ctx.lineWidth = 0.9;
           ctx.stroke();
         } else {
           // Solid режим
-          ctx.fillStyle = shadeColor(
-            material,
-            item.intensity,
-            item.face.isTop,
-            item.face.isInner,
-          );
+          ctx.fillStyle = item.face.isAccent
+            ? "rgb(22, 25, 32)"
+            : shadeColor(
+                material,
+                item.intensity,
+                item.face.isTop,
+                item.face.isInner,
+              );
           ctx.fill();
-          ctx.strokeStyle =
-            "carbon" in material && material.carbon
+          ctx.strokeStyle = item.face.isAccent
+            ? "rgba(0, 209, 255, 0.32)"
+            : "carbon" in material && material.carbon
               ? "rgba(0, 209, 255, 0.16)"
               : "rgba(242, 244, 247, 0.14)";
           ctx.lineWidth = 0.75;
           ctx.stroke();
+        }
+      }
+
+      // 4b. Проекция рельефной надписи и отверстия подвеса для "plant-tag"
+      if (partType === "plant-tag" && activeCutY >= geometry.maxY - 0.15) {
+        const L = dimensions.d1;
+        const halfL = L / 2;
+        const headStartX = -halfL + L * 0.52;
+        const headEndX = halfL;
+        const rimX0 = headStartX + 1.2;
+        const rimX1 = headEndX - 6.8;
+        const textCenterX = (rimX0 + rimX1) * 0.5;
+        const topY = geometry.maxY + 0.1;
+
+        // Крепежное отверстие Ø 3.4 мм в головке
+        const holeCenter = project({
+          x: headEndX - 3.6,
+          y: topY,
+          z: 0,
+        });
+        ctx.fillStyle = "#0E1014";
+        ctx.strokeStyle = "#00D1FF";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(
+          holeCenter.x,
+          holeCenter.y,
+          Math.max(2.5, 1.7 * scale),
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.stroke();
+
+        // Проекция текста вдоль оси X головки бирки
+        const cleanLabel = (labelText || "ТОМАТ").trim().slice(0, 12);
+        if (cleanLabel.length > 0) {
+          const pLeft = project({ x: rimX0 + 3, y: topY, z: 0 });
+          const pRight = project({ x: rimX1 - 3, y: topY, z: 0 });
+          const pTextCenter = project({ x: textCenterX, y: topY, z: 0 });
+          const angle = Math.atan2(pRight.y - pLeft.y, pRight.x - pLeft.x);
+          const spanPx = Math.hypot(pRight.x - pLeft.x, pRight.y - pLeft.y);
+          const fontSizePx = Math.max(
+            9,
+            Math.min(18, (spanPx / Math.max(4.5, cleanLabel.length)) * 1.38),
+          );
+
+          ctx.save();
+          ctx.translate(pTextCenter.x, pTextCenter.y);
+          ctx.rotate(angle);
+          ctx.font = `800 ${Math.round(fontSizePx)}px "JetBrains Mono", sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.lineWidth = 2.4;
+          ctx.strokeStyle = "#0E1014";
+          ctx.strokeText(cleanLabel, 0, 0);
+          ctx.fillStyle = renderMode === "wireframe" ? "#00D1FF" : "#F2F4F7";
+          ctx.fillText(cleanLabel, 0, 0);
+          ctx.restore();
         }
       }
 
@@ -1294,6 +1490,7 @@ export function CadViewport3D() {
     partType,
     dimensions,
     material,
+    labelText,
     activeDimension,
     renderMode,
     isPrinting,

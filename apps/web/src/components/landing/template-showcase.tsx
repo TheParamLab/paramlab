@@ -214,6 +214,48 @@ function TemplateCadPreview({
             )}
           </g>
         )}
+
+        {kind === "plant-tag" && (
+          <g>
+            <path
+              d="M 34 80 L 122 66 L 132 52 L 238 52 Q 246 52 246 60 L 246 100 Q 246 108 238 108 L 132 108 L 122 94 Z"
+              fill={`url(#solid-grad-${kind})`}
+              stroke="#525E75"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="44"
+              y1="80"
+              x2="136"
+              y2="80"
+              stroke="#14171F"
+              strokeWidth="3.2"
+              strokeLinecap="round"
+            />
+            <rect
+              x="136"
+              y="58"
+              width="94"
+              height="44"
+              rx="5"
+              fill="none"
+              stroke="#14171F"
+              strokeWidth="2.4"
+            />
+            <text
+              x="183"
+              y="84"
+              textAnchor="middle"
+              fill="#F2F4F7"
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="800"
+              fontSize="12"
+            >
+              БАКЛАЖАН
+            </text>
+            <circle cx="238" cy="80" r="3.5" fill="#0E1014" stroke="#64748B" />
+          </g>
+        )}
       </svg>
 
       {/* WIREFRAME СЕТКА + РАЗМЕРНЫЕ ВЫНОСКИ D, H, Z (плавно проявляются при наведении) */}
@@ -406,6 +448,45 @@ function TemplateCadPreview({
           </g>
         )}
 
+        {kind === "plant-tag" && (
+          <g fill="none" stroke="#00D1FF">
+            <path
+              d="M 34 80 L 122 66 L 132 52 L 238 52 Q 246 52 246 60 L 246 100 Q 246 108 238 108 L 132 108 L 122 94 Z"
+              strokeWidth="1.3"
+            />
+            <line
+              x1="44"
+              y1="80"
+              x2="136"
+              y2="80"
+              stroke="#FF5C1A"
+              strokeWidth="2.2"
+              strokeDasharray="4 2"
+            />
+            <rect
+              x="136"
+              y="58"
+              width="94"
+              height="44"
+              rx="5"
+              stroke="#FF5C1A"
+              strokeWidth="1.4"
+            />
+            <text
+              x="183"
+              y="84"
+              textAnchor="middle"
+              fill="#00D1FF"
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="700"
+              fontSize="11"
+            >
+              TXT: 12 СИМВ
+            </text>
+            <circle cx="238" cy="80" r="3.5" stroke="#FF5C1A" />
+          </g>
+        )}
+
         {/* Подсвеченные размерные метки D, H, Z */}
         <g className="font-mono text-[10px] font-bold">
           <line
@@ -554,6 +635,7 @@ export function TemplateShowcase() {
                       partType={item.partType}
                       presetDimensions={item.presetDimensions}
                       materialCode={item.materialCode}
+                      presetLabelText={item.presetLabelText}
                       className="flex h-10 w-full items-center justify-between rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3.5 font-mono text-xs font-medium text-[#F2F4F7] transition-all duration-240 group-hover:border-[#FF5C1A] group-hover:bg-[#FF5C1A]/15 group-hover:text-[#F2F4F7]"
                     >
                       <span className="flex items-center gap-2">

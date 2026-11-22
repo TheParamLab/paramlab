@@ -89,6 +89,14 @@ export function estimateMass(
       volume = floor + walls + dividers;
       break;
     }
+    case "plant-tag": {
+      // Плоская головка (~50% длины) + конусный колышек (~50% длины) + рельефный кант/текст/ребро.
+      const headArea = d1 * 0.5 * d2;
+      const stakeArea = d1 * 0.5 * (d2 * 0.36);
+      const effectiveThickness = Math.max(2.4, h * 0.85);
+      volume = (headArea + stakeArea) * effectiveThickness;
+      break;
+    }
   }
   return Math.max(1, Math.round((volume / 1000) * density));
 }

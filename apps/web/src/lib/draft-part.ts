@@ -24,6 +24,7 @@ export interface DraftPartData {
     d2: number;
     h: number;
   };
+  labelText?: string;
   dimensionFormula: string;
   quantity: number;
   unitMassGrams: number;
@@ -66,6 +67,7 @@ function resolvePartType(input?: string | null) {
 export function formatDraftDimensionFormula(
   partType: PartTypeId,
   dims: { d1: number; d2: number; h: number },
+  labelText?: string | null,
 ): string {
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
   if (partType === "bushing" || partType === "gear") {
@@ -73,13 +75,18 @@ export function formatDraftDimensionFormula(
     const wall = Math.max(2, Math.round((dims.d1 - bore) / 2));
     return `D${dims.d1} × T${wall} × H${dims.h}`;
   }
-  return `${part.dimensions.d1.code}${dims.d1} × ${part.dimensions.d2.code}${dims.d2} × ${part.dimensions.h.code}${dims.h}`;
+  const baseFormula = `${part.dimensions.d1.code}${dims.d1} × ${part.dimensions.d2.code}${dims.d2} × ${part.dimensions.h.code}${dims.h}`;
+  if (partType === "plant-tag" && labelText?.trim()) {
+    return `${baseFormula} · «${labelText.trim().slice(0, 12)}»`;
+  }
+  return baseFormula;
 }
 
 export function buildDraftPart(params: {
   partType?: PartTypeId | string | null;
   materialId?: MaterialId | string | null;
   dimensions?: Partial<{ d1: number; d2: number; h: number }>;
+  labelText?: string | null;
   dimensionFormula?: string | null;
   quantity?: number;
   totalPriceRub?: number;
@@ -121,9 +128,14 @@ export function buildDraftPart(params: {
     extras: 0,
   });
 
+  const cleanLabelText =
+    part.id === "plant-tag"
+      ? params.labelText?.trim().slice(0, 12).toUpperCase() || "ТОМАТ"
+      : undefined;
+
   const formula =
     params.dimensionFormula?.trim() ||
-    formatDraftDimensionFormula(part.id, { d1, d2, h });
+    formatDraftDimensionFormula(part.id, { d1, d2, h }, cleanLabelText);
 
   const totalPriceRub =
     typeof params.totalPriceRub === "number" &&
@@ -140,6 +152,7 @@ export function buildDraftPart(params: {
     materialCode: material.code,
     materialTemp: material.temp,
     dimensions: { d1, d2, h },
+    ...(cleanLabelText ? { labelText: cleanLabelText } : {}),
     dimensionFormula: formula,
     quantity,
     unitMassGrams,
@@ -252,10 +265,18 @@ function parseRawDraftObject(raw: unknown): DraftPartData | null {
   )
     return null;
 
+  const labelText =
+    typeof obj.labelText === "string"
+      ? obj.labelText
+      : typeof obj.text === "string"
+        ? obj.text
+        : undefined;
+
   const draft = buildDraftPart({
     partType: partTypeInput,
     materialId: materialInput,
     dimensions: { d1, d2, h },
+    labelText,
     dimensionFormula: formula,
     quantity,
     totalPriceRub: price,
@@ -326,6 +347,7 @@ export function readDraftPartFromSearchParams(
   const hParam = searchParams.get("h");
   const priceParam = searchParams.get("price");
   const qtyParam = searchParams.get("qty") ?? searchParams.get("quantity");
+  const textParam = searchParams.get("text") ?? searchParams.get("labelText");
 
   const hasAnyParam = Boolean(
     partParam || materialParam || dimsParam || d1Param || d2Param || hParam,
@@ -343,6 +365,7 @@ export function readDraftPartFromSearchParams(
     partType: partParam,
     materialId: materialParam,
     dimensions: { d1, d2, h },
+    labelText: textParam,
     dimensionFormula: dimsParam,
     quantity,
     totalPriceRub,

@@ -12,6 +12,7 @@ import {
   Plus,
   Scale,
   Settings2,
+  Tag,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { CadViewport3D } from "~/components/landing/cad-viewport";
@@ -42,6 +43,7 @@ const TEMPLATE_ICONS: Record<PartTypeId, typeof Settings2> = {
   "end-cap": Cpu,
   bracket: Settings2,
   organizer: Layers,
+  "plant-tag": Tag,
 };
 
 const numberFmt = new Intl.NumberFormat("ru-RU");
@@ -63,6 +65,8 @@ export function Hero() {
     setMaterialId,
     dimensions,
     setDimension,
+    labelText,
+    setLabelText,
     setActiveDimension,
     quantity,
     setQuantity,
@@ -215,7 +219,7 @@ export function Hero() {
                   role="tablist"
                   aria-label="Выбор базового шаблона детали"
                   onKeyDown={handleTemplateKeyDown}
-                  className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+                  className="grid grid-cols-2 gap-2 sm:grid-cols-4"
                 >
                   {heroTemplates.map((item, idx) => {
                     const Icon = TEMPLATE_ICONS[item.id];
@@ -298,7 +302,7 @@ export function Hero() {
                 </fieldset>
               </div>
 
-              {/* 3. Три тактильных слайдера параметров (D, T, H) */}
+              {/* 3. Три тактильных слайдера параметров (D, T, H) + опциональная надпись */}
               <div className="flex flex-col gap-3.5">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[11px] font-medium tracking-wider text-[#8A93A2] uppercase">
@@ -308,6 +312,63 @@ export function Hero() {
                     Сетка замкнута
                   </span>
                 </div>
+
+                {"textParam" in part && part.textParam && (
+                  <div className="flex flex-col gap-2 rounded-[12px] border border-[#00D1FF]/40 bg-[#0E1014]/85 px-3.5 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <label
+                        htmlFor="param-text-input"
+                        className="flex items-center gap-2 text-xs font-medium text-[#F2F4F7] sm:text-sm"
+                      >
+                        <span className="inline-flex h-5 items-center justify-center rounded border border-[#FF5C1A]/50 bg-[#FF5C1A]/15 px-1.5 font-mono text-[10px] font-bold text-[#FF5C1A]">
+                          {part.textParam.code}
+                        </span>
+                        <span>{part.textParam.label}</span>
+                      </label>
+                      <span className="font-mono text-[11px] text-[#8A93A2] tabular-nums">
+                        {labelText.trim().length} / {part.textParam.maxLength}{" "}
+                        симв.
+                      </span>
+                    </div>
+
+                    <input
+                      id="param-text-input"
+                      type="text"
+                      maxLength={part.textParam.maxLength}
+                      value={labelText}
+                      onChange={(e) =>
+                        setLabelText(e.target.value.toUpperCase())
+                      }
+                      placeholder={part.textParam.placeholder}
+                      className="h-10 w-full rounded-lg border border-[#262B36] bg-[#161920] px-3 font-mono text-sm font-bold tracking-wider text-[#F2F4F7] uppercase placeholder:text-[#8A93A2]/50 focus:border-[#00D1FF] focus:outline-none"
+                    />
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      <span className="font-mono text-[10px] text-[#8A93A2]">
+                        Быстрый выбор:
+                      </span>
+                      {part.textParam.presets.map((presetWord) => {
+                        const active =
+                          labelText.trim().toUpperCase() === presetWord;
+                        return (
+                          <button
+                            key={presetWord}
+                            type="button"
+                            onClick={() => setLabelText(presetWord)}
+                            className={cn(
+                              "rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold transition-colors",
+                              active
+                                ? "border-[#FF5C1A] bg-[#FF5C1A]/20 text-[#FF5C1A]"
+                                : "border-[#262B36] bg-[#161920] text-[#8A93A2] hover:border-[#00D1FF]/50 hover:text-[#F2F4F7]",
+                            )}
+                          >
+                            {presetWord}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {DIMENSION_KEYS.map((key) => {
                   const meta = part.dimensions[key];
