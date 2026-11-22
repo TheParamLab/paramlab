@@ -30,7 +30,7 @@ export function SiteHeader({ title = "Заказы" }: SiteHeaderProps) {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink render={<Link href={paths.orders.root} />}>
+              <BreadcrumbLink render={<Link href={paths.dashboard.root} />}>
                 Пульт производства
               </BreadcrumbLink>
             </BreadcrumbItem>

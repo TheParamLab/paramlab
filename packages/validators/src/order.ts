@@ -64,6 +64,14 @@ export const ORDER_STAGES = [
 export const ORDER_STATUSES = [...ORDER_STAGES, "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+/** Статусы, при которых заказ ещё в производстве или в доставке. */
+export const ACTIVE_ORDER_STATUSES = [
+  "paid",
+  "printing",
+  "quality_check",
+  "shipped",
+] as const satisfies readonly OrderStatus[];
+
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending_payment: "Ожидает оплаты",
   paid: "Оплачен · В очереди на станок",

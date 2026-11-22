@@ -13,7 +13,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@paramlab/ui";
-import { ArrowUpRight, Boxes, KeyRound, Package, UserCog } from "lucide-react";
+import {
+  ArrowUpRight,
+  Boxes,
+  KeyRound,
+  LayoutDashboard,
+  Package,
+  UserCog,
+} from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,6 +28,12 @@ import type * as React from "react";
 import { NavUser } from "~/components/sidebar";
 
 const productionNav = [
+  {
+    title: "Обзор",
+    url: paths.dashboard.root,
+    icon: LayoutDashboard,
+    exact: true,
+  },
   { title: "Заказы и печать", url: paths.orders.root, icon: Package },
   { title: "Библиотека деталей", url: paths.parts.root, icon: Boxes },
 ] as const;
@@ -45,7 +58,7 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              render={<Link href={paths.orders.root} />}
+              render={<Link href={paths.dashboard.root} />}
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <Boxes className="size-4" />
@@ -70,7 +83,11 @@ export function AppSidebar({
               <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton
                   tooltip={item.title}
-                  isActive={pathname.startsWith(item.url)}
+                  isActive={
+                    "exact" in item
+                      ? pathname === item.url
+                      : pathname.startsWith(item.url)
+                  }
                   render={<Link href={item.url} />}
                 >
                   <item.icon />

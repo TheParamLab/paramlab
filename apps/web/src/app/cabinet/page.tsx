@@ -15,13 +15,6 @@ export const metadata: Metadata = {
     "Сводка по заказам, деталям и доставке в личном кабинете параметрической 3D-печати ParamLab.",
 };
 
-const ACTIVE_STATUSES = new Set([
-  "paid",
-  "printing",
-  "quality_check",
-  "shipped",
-]);
-
 export default function CabinetPage() {
   return (
     <>
@@ -45,28 +38,26 @@ export default function CabinetPage() {
 }
 
 async function Overview() {
-  const [orders, parts] = await Promise.all([
-    api.order.list({ limit: 50 }),
+  const [summary, orders, parts] = await Promise.all([
+    api.order.summary(),
+    api.order.list({ limit: 5 }),
     api.part.list(),
   ]);
 
-  const activeOrders = orders.filter((order) =>
-    ACTIVE_STATUSES.has(order.status),
-  );
-  const latestOrders = orders.slice(0, 5);
+  const latestOrders = orders;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Заказов в работе"
-          value={String(activeOrders.length)}
+          value={String(summary.active)}
           hint="оплачены и запущены в производство"
           accent="text-[#FF5C1A]"
         />
         <StatCard
           label="Всего заказов"
-          value={String(orders.length)}
+          value={String(summary.total)}
           hint="за всё время"
           accent="text-[#F2F4F7]"
         />
