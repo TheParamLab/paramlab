@@ -1,19 +1,23 @@
 import type { Metadata } from "next";
-import { AuthShell, UnifiedAuthForm } from "~/components/auth";
+import { Suspense } from "react";
+import { AuthCard, AuthShell } from "~/components/auth";
 
 export const metadata: Metadata = {
-  title: "Регистрация инженера — ParamLab",
+  title: "Вход и регистрация инженера — ParamLab",
   description:
-    "Создайте аккаунт в сервисе параметрической 3D-печати ParamLab с точностью ±0.1 мм.",
+    "Создайте аккаунт или войдите без пароля в сервис параметрической 3D-печати paramlab.ru с точностью ±0.1 мм.",
 };
 
 export default function SignUpPage() {
   return (
     <AuthShell withBadge>
-      <UnifiedAuthForm
-        mode="signup"
-        className="rounded-[16px] border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl"
-      />
+      <Suspense
+        fallback={
+          <div className="h-[380px] w-full max-w-[400px] animate-pulse rounded-[16px] border border-[#262B36] bg-[#161920]" />
+        }
+      >
+        <AuthCard initialStep="method" />
+      </Suspense>
     </AuthShell>
   );
 }

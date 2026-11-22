@@ -62,12 +62,18 @@ export const auth = initAuth({
         logger.error("auth.otp_email_missing_otp", undefined, { type });
         throw new Error(`Cannot send ${type} email: OTP is missing`);
       }
+      if (env.NODE_ENV !== "production") {
+        logger.info("auth.dev_email_otp", {
+          email,
+          type,
+        });
+      }
       await dispatchEmail({
         template: "otp-sign-in",
         to: [email],
         subject:
           type === "sign-in"
-            ? "Ваш код для входа"
+            ? "Ваш код для входа в ParamLab"
             : "Подтвердите адрес электронной почты",
         props: { otp, isSignUp: type !== "sign-in" },
       });

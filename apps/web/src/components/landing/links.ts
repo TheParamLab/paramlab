@@ -2,6 +2,6 @@
 export const APP_LINKS = {
   /** Личный кабинет; без сессии proxy отправит на вход. */
   cabinet: "/cabinet",
-  /** Оформление заказа начинается с регистрации. */
-  signup: "/auth/signup",
+  /** Единый шлюз входа и регистрации без паролей (Passwordless-first). */
+  signup: "/auth/login",
 } as const;

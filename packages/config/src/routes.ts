@@ -15,6 +15,7 @@ export const paths = {
   },
   orders: {
     root: ROOTS.ORDERS,
+    new: "/orders/new" as const,
     byId: (id: string) => `${ROOTS.ORDERS}/${id}` as const,
   },
   auth: {

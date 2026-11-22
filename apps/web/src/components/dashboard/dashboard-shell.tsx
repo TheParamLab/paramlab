@@ -16,12 +16,13 @@ import {
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { authClient } from "~/auth/client";
 import {
   MOCK_ENGINEER_PROFILE,
   MOCK_SUMMARY_METRICS,
   resetDashboardStore,
+  restoreDashboardDraftOrders,
   useDashboardOrders,
   useDashboardPresets,
 } from "~/lib/mock-dashboard";
@@ -52,6 +53,15 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const orders = useDashboardOrders();
   const presets = useDashboardPresets();
+
+  const { data: session } = authClient.useSession();
+  const userId = session?.user.id;
+
+  useEffect(() => {
+    if (!userId) return;
+    restoreDashboardDraftOrders(userId);
+    return resetDashboardStore;
+  }, [userId]);
 
   const activeOrdersCount = orders.filter(
     (o) => o.category === "active",

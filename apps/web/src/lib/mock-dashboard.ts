@@ -1111,7 +1111,6 @@ export function createOrderFromPreset(
     MOCK_ENGINEER_PROFILE.pickupPoints.find((p) => p.isDefault) ??
     MOCK_ENGINEER_PROFILE.pickupPoints[0];
   const deliveryRub = 199;
-  const discountPercent = pricing.discountApplied ? 20 : 0;
 
   const newOrder: DashboardOrder = {
     id: `ord-prs-${ordersState.length + 1}`,
@@ -1163,7 +1162,7 @@ export function createOrderFromPreset(
     ],
     subtotalRub: pricing.totalPriceRub,
     deliveryRub,
-    discountPercent,
+    discountPercent: 0,
     totalRub: pricing.totalPriceRub + deliveryRub,
     delivery: {
       carrier: defaultPvz?.carrier ?? "ozon",
@@ -1218,6 +1217,167 @@ export function createOrderFromPreset(
         }
       : p,
   );
+  emitChange();
+  return newOrder;
+}
+
+function draftOrdersKey(userId: string): string {
+  return `paramlab_dashboard_draft_orders:${userId}`;
+}
+
+function readDraftOrders(userId: string): DashboardOrder[] {
+  const raw = window.localStorage.getItem(draftOrdersKey(userId));
+  if (raw === null) return [];
+  const orders: unknown = JSON.parse(raw);
+  if (!Array.isArray(orders)) throw new Error("Invalid saved orders");
+  return orders;
+}
+
+export function restoreDashboardDraftOrders(userId: string) {
+  try {
+    const saved = readDraftOrders(userId);
+    const existingIds = new Set(ordersState.map((order) => order.id));
+    ordersState = [
+      ...saved.filter((order) => !existingIds.has(order.id)),
+      ...ordersState,
+    ];
+    emitChange();
+  } catch {
+    // Ignore unavailable storage on read. Checkout will report write failures.
+  }
+}
+
+export function createOrderFromDraft(
+  userId: string,
+  draft: {
+    partType: PartTypeId;
+    templateCode: string;
+    templateLabel: string;
+    materialId: MaterialId;
+    materialCode: string;
+    materialTemp: string;
+    dimensions: { d1: number; d2: number; h: number };
+    dimensionFormula: string;
+    quantity: number;
+    unitMassGrams: number;
+    totalMassGrams: number;
+    totalPriceRub: number;
+    deliveryRub: number;
+  },
+  pvz: {
+    code: string;
+    city: string;
+    address: string;
+  },
+): DashboardOrder {
+  const partMeta =
+    PART_TYPES.find((pt) => pt.id === draft.partType) ?? PART_TYPES[0];
+  const saved = readDraftOrders(userId);
+  const id = crypto.randomUUID();
+  const nextNumber = `PL-2604-${id.slice(0, 8).toUpperCase()}`;
+  const unitPriceRub = Math.max(
+    1,
+    Math.round(draft.totalPriceRub / Math.max(1, draft.quantity)),
+  );
+
+  const newOrder: DashboardOrder = {
+    id: `ord-drf-${id}`,
+    orderNumber: nextNumber,
+    createdAt: "Только что",
+    updatedAt: "Только что",
+    category: "active",
+    currentStage: "manifold",
+    stageProgressPercent: 45,
+    items: [
+      {
+        id: `itm-drf-${id}`,
+        title: draft.templateLabel,
+        materialId: draft.materialId,
+        materialCode: draft.materialCode,
+        materialTemp: draft.materialTemp,
+        quantity: draft.quantity,
+        unitMassGrams: draft.unitMassGrams,
+        totalMassGrams: draft.totalMassGrams,
+        unitPriceRub,
+        totalPriceRub: draft.totalPriceRub,
+        parametricSpec: {
+          partType: draft.partType,
+          templateCode: draft.templateCode,
+          dimensionLabel: draft.dimensionFormula,
+          dimensions: {
+            d1: {
+              code: partMeta.dimensions.d1.code,
+              label: partMeta.dimensions.d1.label,
+              value: draft.dimensions.d1,
+            },
+            d2: {
+              code: partMeta.dimensions.d2.code,
+              label: partMeta.dimensions.d2.label,
+              value: draft.dimensions.d2,
+            },
+            h: {
+              code: partMeta.dimensions.h.code,
+              label: partMeta.dimensions.h.label,
+              value: draft.dimensions.h,
+            },
+          },
+          tolerance: partMeta.tolerance,
+          layerHeightMm: 0.2,
+          infillPercent: 100,
+          nozzleMm: 0.4,
+        },
+      },
+    ],
+    subtotalRub: draft.totalPriceRub,
+    deliveryRub: draft.deliveryRub,
+    discountPercent: 0,
+    totalRub: draft.totalPriceRub + draft.deliveryRub,
+    delivery: {
+      carrier: "ozon",
+      carrierLabel: "Ozon Посылка",
+      trackingNumber: undefined,
+      pvzCode: pvz.code,
+      pvzAddress: `г. ${pvz.city}, ${pvz.address}`,
+      etaText: "Ожидает присвоения трек-номера после ОТК",
+    },
+    invoiceAvailable: true,
+    updNumber: undefined,
+    stages: [
+      {
+        stage: "manifold",
+        title: "Проверка геометрии (Manifold)",
+        subtitle: `Черновик из конфигуратора (${draft.dimensionFormula}) · Сетка подтверждена`,
+        timestamp: "Только что",
+        telemetry: "CONFIGURATOR_DRAFT // MANIFOLD_OK",
+      },
+      {
+        stage: "printing",
+        title: "Печать партии в термокамере",
+        subtitle: "Резервирование слота в ячейке CoreXY",
+      },
+      {
+        stage: "qc",
+        title: "Инструментальный ОТК и упаковка",
+        subtitle: "Замер со штангенциркулем ±0.1 мм",
+      },
+      {
+        stage: "shipping",
+        title: "Передача в логистику (Ozon Посылка)",
+        subtitle: `г. ${pvz.city}, ${pvz.address}`,
+      },
+      {
+        stage: "done",
+        title: "Готово к выдаче в ПВЗ",
+        subtitle: `г. ${pvz.city}, ${pvz.address}`,
+      },
+    ],
+  };
+
+  window.localStorage.setItem(
+    draftOrdersKey(userId),
+    JSON.stringify([newOrder, ...saved]),
+  );
+  ordersState = [newOrder, ...ordersState];
   emitChange();
   return newOrder;
 }

@@ -83,6 +83,10 @@ export function initAuth<
     plugins: [
       emailOTP({
         async sendVerificationOTP(data) {
+          logger.info("auth.verification_otp_generated", {
+            email: data.email,
+            type: data.type,
+          });
           if (options.sendEmail) {
             await options.sendEmail({
               email: data.email,
