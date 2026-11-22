@@ -13,8 +13,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { authClient } from "~/auth/client";
 import {
-  buildDraftPart,
   clearDraftPart,
   type DraftPartData,
   readDraftPartFromStorage,
@@ -29,46 +29,55 @@ const numberFmt = new Intl.NumberFormat("ru-RU");
 
 export function NewOrderView() {
   const router = useRouter();
-  const [draft, setDraft] = useState<DraftPartData>(() =>
-    buildDraftPart({
-      partType: "bushing",
-      materialId: "petgcf",
-      dimensions: { d1: 42, d2: 34, h: 30 },
-      dimensionFormula: "D42 × T4 × H30",
-      quantity: 1,
-    }),
-  );
+  const { data: session } = authClient.useSession();
+  const userId = session?.user.id;
+  const [draft, setDraft] = useState<DraftPartData | null>(null);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(true);
   const [selectedPvzId, setSelectedPvzId] = useState<string>(
     MOCK_ENGINEER_PROFILE.pickupPoints[0]?.id ?? "pvz-ozon-118",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const stored = readDraftPartFromStorage();
-    if (stored) {
-      setDraft(stored);
-    }
+    setDraft(readDraftPartFromStorage());
+    setIsLoadingDraft(false);
   }, []);
+
+  if (isLoadingDraft) {
+    return <p role="status">Загружаем черновик…</p>;
+  }
+  if (!draft) {
+    return (
+      <div className="mx-auto flex max-w-3xl flex-col gap-3">
+        <h1 className="text-2xl font-bold">Черновик не найден</h1>
+        <Link href="/#calculator" className="text-[#00D1FF] underline">
+          Вернуться в конфигуратор
+        </Link>
+      </div>
+    );
+  }
 
   const selectedPvz =
     MOCK_ENGINEER_PROFILE.pickupPoints.find((p) => p.id === selectedPvzId) ??
     MOCK_ENGINEER_PROFILE.pickupPoints[0];
 
   function handleConfirmOrder() {
-    if (isSubmitting) return;
+    if (!draft || !userId || !selectedPvz || isSubmitting) return;
     setIsSubmitting(true);
 
-    const created = createOrderFromDraft(draft, {
-      code: selectedPvz?.code ?? "OZN-118",
-      city: selectedPvz?.city ?? "Москва",
-      address: selectedPvz?.address ?? "ул. Бауманская, д. 43/1",
-    });
-
-    clearDraftPart();
-    toast.success(
-      `Заказ № ${created.orderNumber} (${draft.dimensionFormula}) оформлен и передан в печать!`,
-    );
-    router.push("/orders" as Route);
+    try {
+      const created = createOrderFromDraft(userId, draft, selectedPvz);
+      clearDraftPart();
+      toast.success(
+        `Демо-заказ № ${created.orderNumber} сохранён в этом браузере.`,
+      );
+      router.push("/orders" as Route);
+    } catch {
+      toast.error(
+        "Не удалось сохранить заказ. Черновик сохранён, попробуйте ещё раз.",
+      );
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -166,6 +175,7 @@ export function NewOrderView() {
               <button
                 key={pvz.id}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setSelectedPvzId(pvz.id)}
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-[12px] border p-3.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
@@ -204,12 +214,10 @@ export function NewOrderView() {
           <button
             type="button"
             onClick={handleConfirmOrder}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !userId || !selectedPvz}
             className="cta-border-beam inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-[#FF5C1A] px-6 text-sm font-bold text-[#0E1014] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]"
           >
-            <span>
-              {isSubmitting ? "Проверка..." : "Запустить партию в печать"}
-            </span>
+            <span>{isSubmitting ? "Проверка..." : "Сохранить демо-заказ"}</span>
             <ArrowRight className="size-4" />
           </button>
         </div>

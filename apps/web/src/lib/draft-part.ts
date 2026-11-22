@@ -34,20 +34,6 @@ export interface DraftPartData {
   savedAt: string;
 }
 
-function isPartTypeId(val: unknown): val is PartTypeId {
-  return (
-    typeof val === "string" &&
-    PART_TYPES.some((pt) => pt.id === (val as PartTypeId))
-  );
-}
-
-function isMaterialId(val: unknown): val is MaterialId {
-  return (
-    typeof val === "string" &&
-    MATERIALS.some((m) => m.id === (val as MaterialId))
-  );
-}
-
 function resolveMaterial(input?: string | null) {
   if (!input) return MATERIALS.find((m) => m.id === "petgcf") ?? MATERIALS[0];
   const lower = input.trim().toLowerCase();
@@ -98,30 +84,27 @@ export function buildDraftPart(params: {
   quantity?: number;
   totalPriceRub?: number;
   city?: string;
-}): DraftPartData {
+}): DraftPartData | null {
   const part = resolvePartType(params.partType);
   const material = resolveMaterial(params.materialId);
 
-  const d1 =
-    typeof params.dimensions?.d1 === "number" &&
-    Number.isFinite(params.dimensions.d1)
-      ? Math.round(params.dimensions.d1)
-      : part.dimensions.d1.initial;
+  const rawDimensions = {
+    d1: params.dimensions?.d1 ?? part.dimensions.d1.initial,
+    d2: params.dimensions?.d2 ?? part.dimensions.d2.initial,
+    h: params.dimensions?.h ?? part.dimensions.h.initial,
+  };
+  for (const key of ["d1", "d2", "h"] as const) {
+    const { min, max } = part.dimensions[key];
+    const value = rawDimensions[key];
+    if (!Number.isFinite(value) || value < min || value > max) return null;
+  }
 
-  const rawD2 =
-    typeof params.dimensions?.d2 === "number" &&
-    Number.isFinite(params.dimensions.d2)
-      ? Math.round(params.dimensions.d2)
-      : part.dimensions.d2.initial;
-
+  const d1 = Math.round(rawDimensions.d1);
+  const rawD2 = Math.round(rawDimensions.d2);
+  const h = Math.round(rawDimensions.h);
   const d2 =
     part.id === "bushing" || part.id === "gear" ? clampBore(d1, rawD2) : rawD2;
-
-  const h =
-    typeof params.dimensions?.h === "number" &&
-    Number.isFinite(params.dimensions.h)
-      ? Math.round(params.dimensions.h)
-      : part.dimensions.h.initial;
+  if (d2 < part.dimensions.d2.min) return null;
 
   const quantity =
     typeof params.quantity === "number" &&
@@ -259,6 +242,16 @@ function parseRawDraftObject(raw: unknown): DraftPartData | null {
         ? obj.price
         : undefined;
 
+  if (
+    !partTypeInput &&
+    !materialInput &&
+    d1 == null &&
+    d2 == null &&
+    h == null &&
+    !formula
+  )
+    return null;
+
   const draft = buildDraftPart({
     partType: partTypeInput,
     materialId: materialInput,
@@ -269,6 +262,9 @@ function parseRawDraftObject(raw: unknown): DraftPartData | null {
     city: typeof obj.city === "string" ? obj.city : undefined,
   });
 
+  if (!draft) return null;
+
+  if (typeof obj.savedAt === "string") draft.savedAt = obj.savedAt;
   if (typeof obj.templateLabel === "string" && obj.templateLabel.trim()) {
     draft.templateLabel = obj.templateLabel.trim();
   }
@@ -330,17 +326,9 @@ export function readDraftPartFromSearchParams(
   const hParam = searchParams.get("h");
   const priceParam = searchParams.get("price");
   const qtyParam = searchParams.get("qty") ?? searchParams.get("quantity");
-  const fromConfigurator = searchParams.get("draft") === "1";
 
   const hasAnyParam = Boolean(
-    partParam ||
-      materialParam ||
-      dimsParam ||
-      d1Param ||
-      d2Param ||
-      hParam ||
-      priceParam ||
-      fromConfigurator,
+    partParam || materialParam || dimsParam || d1Param || d2Param || hParam,
   );
 
   if (!hasAnyParam) return null;
@@ -352,13 +340,36 @@ export function readDraftPartFromSearchParams(
   const totalPriceRub = priceParam ? Number(priceParam) : undefined;
 
   return buildDraftPart({
-    partType: isPartTypeId(partParam) ? partParam : partParam,
-    materialId: isMaterialId(materialParam) ? materialParam : materialParam,
+    partType: partParam,
+    materialId: materialParam,
     dimensions: { d1, d2, h },
     dimensionFormula: dimsParam,
     quantity,
     totalPriceRub,
   });
+}
+
+export function restoreDraftPart(
+  searchParams: Pick<URLSearchParams, "get">,
+): DraftPartData | null {
+  const fromUrl = readDraftPartFromSearchParams(searchParams);
+  const stored = readDraftPartFromStorage();
+  if (!fromUrl) return stored;
+
+  if (
+    stored &&
+    stored.partType === fromUrl.partType &&
+    stored.materialId === fromUrl.materialId &&
+    stored.quantity === fromUrl.quantity &&
+    stored.dimensions.d1 === fromUrl.dimensions.d1 &&
+    stored.dimensions.d2 === fromUrl.dimensions.d2 &&
+    stored.dimensions.h === fromUrl.dimensions.h
+  ) {
+    return stored;
+  }
+
+  saveDraftPart(fromUrl);
+  return fromUrl;
 }
 
 export function hasStoredDraftPart(): boolean {

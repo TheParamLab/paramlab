@@ -1111,7 +1111,6 @@ export function createOrderFromPreset(
     MOCK_ENGINEER_PROFILE.pickupPoints.find((p) => p.isDefault) ??
     MOCK_ENGINEER_PROFILE.pickupPoints[0];
   const deliveryRub = 199;
-  const discountPercent = pricing.discountApplied ? 20 : 0;
 
   const newOrder: DashboardOrder = {
     id: `ord-prs-${ordersState.length + 1}`,
@@ -1163,7 +1162,7 @@ export function createOrderFromPreset(
     ],
     subtotalRub: pricing.totalPriceRub,
     deliveryRub,
-    discountPercent,
+    discountPercent: 0,
     totalRub: pricing.totalPriceRub + deliveryRub,
     delivery: {
       carrier: defaultPvz?.carrier ?? "ozon",
@@ -1222,7 +1221,34 @@ export function createOrderFromPreset(
   return newOrder;
 }
 
+function draftOrdersKey(userId: string): string {
+  return `paramlab_dashboard_draft_orders:${userId}`;
+}
+
+function readDraftOrders(userId: string): DashboardOrder[] {
+  const raw = window.localStorage.getItem(draftOrdersKey(userId));
+  if (raw === null) return [];
+  const orders: unknown = JSON.parse(raw);
+  if (!Array.isArray(orders)) throw new Error("Invalid saved orders");
+  return orders;
+}
+
+export function restoreDashboardDraftOrders(userId: string) {
+  try {
+    const saved = readDraftOrders(userId);
+    const existingIds = new Set(ordersState.map((order) => order.id));
+    ordersState = [
+      ...saved.filter((order) => !existingIds.has(order.id)),
+      ...ordersState,
+    ];
+    emitChange();
+  } catch {
+    // Ignore unavailable storage on read. Checkout will report write failures.
+  }
+}
+
 export function createOrderFromDraft(
+  userId: string,
   draft: {
     partType: PartTypeId;
     templateCode: string;
@@ -1246,15 +1272,16 @@ export function createOrderFromDraft(
 ): DashboardOrder {
   const partMeta =
     PART_TYPES.find((pt) => pt.id === draft.partType) ?? PART_TYPES[0];
-  const nextNumber = `PL-2604-${900 + ordersState.length}`;
+  const saved = readDraftOrders(userId);
+  const id = crypto.randomUUID();
+  const nextNumber = `PL-2604-${id.slice(0, 8).toUpperCase()}`;
   const unitPriceRub = Math.max(
     1,
     Math.round(draft.totalPriceRub / Math.max(1, draft.quantity)),
   );
-  const discountPercent = draft.quantity >= 10 ? 20 : 0;
 
   const newOrder: DashboardOrder = {
-    id: `ord-drf-${ordersState.length + 1}`,
+    id: `ord-drf-${id}`,
     orderNumber: nextNumber,
     createdAt: "Только что",
     updatedAt: "Только что",
@@ -1263,7 +1290,7 @@ export function createOrderFromDraft(
     stageProgressPercent: 45,
     items: [
       {
-        id: `itm-drf-${ordersState.length + 1}`,
+        id: `itm-drf-${id}`,
         title: draft.templateLabel,
         materialId: draft.materialId,
         materialCode: draft.materialCode,
@@ -1303,7 +1330,7 @@ export function createOrderFromDraft(
     ],
     subtotalRub: draft.totalPriceRub,
     deliveryRub: draft.deliveryRub,
-    discountPercent,
+    discountPercent: 0,
     totalRub: draft.totalPriceRub + draft.deliveryRub,
     delivery: {
       carrier: "ozon",
@@ -1346,6 +1373,10 @@ export function createOrderFromDraft(
     ],
   };
 
+  window.localStorage.setItem(
+    draftOrdersKey(userId),
+    JSON.stringify([newOrder, ...saved]),
+  );
   ordersState = [newOrder, ...ordersState];
   emitChange();
   return newOrder;

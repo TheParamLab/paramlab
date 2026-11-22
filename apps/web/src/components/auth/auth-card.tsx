@@ -6,14 +6,15 @@ import { ArrowRight, Mail, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { authClient } from "~/auth/client";
+import { normalizeAuthCallback } from "~/lib/auth-callback";
 import {
   hasStoredDraftPart,
   readDraftPartFromSearchParams,
-  saveDraftPart,
+  restoreDraftPart,
 } from "~/lib/draft-part";
 import { OtpInput } from "./otp-input";
 
@@ -75,6 +76,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
   const [step, setStep] = useState<"method" | "otp">(initialStep);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [targetEmail, setTargetEmail] = useState("");
+  const targetEmailRef = useRef("");
   const [otpValue, setOtpValue] = useState("");
   const [otpError, setOtpError] = useState<string | null>(null);
   const [isSendingCode, setIsSendingCode] = useState(false);
@@ -89,20 +91,23 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
 
   // Сохраняем черновик из URL query-параметров, если клиент перешёл из конфигуратора
   useEffect(() => {
-    const draftFromUrl = readDraftPartFromSearchParams(searchParams);
-    if (draftFromUrl) {
-      saveDraftPart(draftFromUrl);
-    }
+    restoreDraftPart(searchParams);
   }, [searchParams]);
 
   // Если открыта страница /auth/otp напрямую — подтягиваем сохранённый email
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const storedEmail = window.localStorage.getItem("otp_email");
+    let storedEmail: string | null = null;
+    try {
+      storedEmail = window.localStorage.getItem("otp_email");
+    } catch {
+      // Вход работает и без доступа к браузерному хранилищу.
+    }
     if (storedEmail) {
+      targetEmailRef.current = storedEmail;
       setTargetEmail(storedEmail);
       emailForm.setValue("email", storedEmail);
-    } else if (initialStep === "otp") {
+    } else if (initialStep === "otp" && !targetEmailRef.current) {
       setStep("method");
     }
   }, [emailForm, initialStep]);
@@ -117,10 +122,11 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
   }, [step, countdown]);
 
   function resolvePostAuthDestination(): Route {
-    const callbackUrl = searchParams.get("callbackUrl");
-    if (callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")) {
-      return callbackUrl as Route;
-    }
+    const callback = normalizeAuthCallback(
+      searchParams.get("callbackUrl"),
+      window.location.origin,
+    );
+    if (callback) return callback as Route;
 
     const hasDraft =
       hasStoredDraftPart() ||
@@ -151,10 +157,13 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
         return;
       }
 
-      if (typeof window !== "undefined") {
+      try {
         window.localStorage.setItem("otp_email", cleanEmail);
+      } catch {
+        // Адрес остаётся доступным до ухода со страницы.
       }
 
+      targetEmailRef.current = cleanEmail;
       setTargetEmail(cleanEmail);
       setOtpValue("");
       setOtpError(null);
@@ -197,14 +206,17 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
 
   async function handleResendCode() {
     if (!targetEmail || countdown > 0 || isResending) return;
+    const requestEmail = targetEmail;
     setIsResending(true);
     setOtpError(null);
 
     try {
       const { error } = await authClient.emailOtp.sendVerificationOtp({
-        email: targetEmail,
+        email: requestEmail,
         type: "sign-in",
       });
+
+      if (targetEmailRef.current !== requestEmail) return;
 
       if (error) {
         toast.error(
@@ -218,13 +230,16 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
       setCountdown(RESEND_COOLDOWN_SECONDS);
       toast.success("Новый 6-значный код отправлен на вашу почту.");
     } catch {
-      toast.error("Не удалось отправить код повторно.");
+      if (targetEmailRef.current === requestEmail) {
+        toast.error("Не удалось отправить код повторно.");
+      }
     } finally {
       setIsResending(false);
     }
   }
 
   function handleBackToEmailStep() {
+    targetEmailRef.current = "";
     setOtpError(null);
     setOtpValue("");
     setDirection(-1);
@@ -465,7 +480,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
               {/* Главная кнопка действия с линейной полосой прогресса по нижней кромке */}
               <button
                 type="submit"
-                disabled={isVerifyingOtp || otpValue.length < 6}
+                disabled={isVerifyingOtp || !/^[0-9]{6}$/.test(otpValue)}
                 className="cta-border-beam relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[12px] bg-[#FF5C1A] px-5 text-sm font-bold text-[#0E1014] transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <span>

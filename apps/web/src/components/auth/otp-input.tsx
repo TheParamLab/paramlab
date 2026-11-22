@@ -31,21 +31,18 @@ export function OtpInput({
   );
   const lastSubmittedRef = useRef<string | null>(null);
 
-  const sanitized = value.replace(/\D/g, "").slice(0, OTP_LENGTH);
-  const digits = OTP_SLOT_INDICES.map((index) => sanitized[index] ?? "");
+  const digits = OTP_SLOT_INDICES.map((index) => {
+    const digit = value[index];
+    return digit && /[0-9]/.test(digit) ? digit : "";
+  });
 
   useEffect(() => {
-    if (autoFocus && !disabled) {
-      const targetIndex = Math.min(sanitized.length, OTP_LENGTH - 1);
-      inputRefs.current[targetIndex]?.focus();
-    }
-  }, [autoFocus, disabled, sanitized.length]);
+    if (autoFocus && !disabled) inputRefs.current[0]?.focus();
+  }, [autoFocus, disabled]);
 
   useEffect(() => {
-    if (sanitized.length < OTP_LENGTH) {
-      lastSubmittedRef.current = null;
-    }
-  }, [sanitized]);
+    if (!/^[0-9]{6}$/.test(value)) lastSubmittedRef.current = null;
+  }, [value]);
 
   function focusSlot(index: number) {
     const clamped = Math.max(0, Math.min(OTP_LENGTH - 1, index));
@@ -55,9 +52,9 @@ export function OtpInput({
 
   function applyNextCode(nextDigits: string[], focusTarget?: number) {
     const nextCode = nextDigits
+      .map((digit) => digit || " ")
       .join("")
-      .replace(/\D/g, "")
-      .slice(0, OTP_LENGTH);
+      .trimEnd();
     onChange(nextCode);
 
     if (typeof focusTarget === "number") {
@@ -66,10 +63,7 @@ export function OtpInput({
       });
     }
 
-    if (
-      nextCode.length === OTP_LENGTH &&
-      lastSubmittedRef.current !== nextCode
-    ) {
+    if (/^[0-9]{6}$/.test(nextCode) && lastSubmittedRef.current !== nextCode) {
       lastSubmittedRef.current = nextCode;
       onComplete?.(nextCode);
     }
@@ -188,7 +182,7 @@ export function OtpInput({
   return (
     <fieldset
       aria-label="6-значный код подтверждения"
-      className="flex items-center justify-between gap-2"
+      className="flex min-w-0 items-center justify-between gap-2"
     >
       {OTP_SLOT_INDICES.map((slotIndex) => {
         const digit = digits[slotIndex] ?? "";
@@ -223,7 +217,7 @@ export function OtpInput({
             onKeyDown={(event) => handleKeyDown(slotIndex, event)}
             onPaste={(event) => handlePaste(slotIndex, event)}
             className={cn(
-              "h-[56px] w-[48px] rounded-[12px] border bg-[#0E1014] text-center font-mono text-[24px] leading-none font-bold text-[#F2F4F7] tabular-nums transition-all duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-all disabled:cursor-not-allowed disabled:opacity-50",
+              "h-[56px] min-w-0 max-w-[48px] flex-1 rounded-[12px] border bg-[#0E1014] text-center font-mono text-[24px] leading-none font-bold text-[#F2F4F7] tabular-nums transition-all duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-all disabled:cursor-not-allowed disabled:opacity-50",
               hasError
                 ? "border-[#EF4444] text-[#EF4444] shadow-[0_0_14px_rgba(239,68,68,0.18)]"
                 : isFocused

@@ -66,8 +66,6 @@ export const auth = initAuth({
         logger.info("auth.dev_email_otp", {
           email,
           type,
-          otp,
-          hint: `[ParamLab Auth] 6-значный OTP-код для ${email}: ${otp}`,
         });
       }
       await dispatchEmail({

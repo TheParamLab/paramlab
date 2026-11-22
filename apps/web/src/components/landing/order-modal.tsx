@@ -291,20 +291,19 @@ export function OrderSpecModal() {
                 <a
                   href={`${APP_LINKS.signup}?draft=1&partType=${encodeURIComponent(partType)}&material=${encodeURIComponent(material.id)}&d1=${dimensions.d1}&d2=${effectiveD2}&h=${dimensions.h}&qty=${quantity}&price=${price.total}`}
                   onClick={() => {
-                    saveDraftPart(
-                      buildDraftPart({
-                        partType,
-                        materialId,
-                        dimensions: {
-                          d1: dimensions.d1,
-                          d2: effectiveD2,
-                          h: dimensions.h,
-                        },
-                        quantity,
-                        totalPriceRub: price.total,
-                        city,
-                      }),
-                    );
+                    const draft = buildDraftPart({
+                      partType,
+                      materialId,
+                      dimensions: {
+                        d1: dimensions.d1,
+                        d2: effectiveD2,
+                        h: dimensions.h,
+                      },
+                      quantity,
+                      totalPriceRub: price.total,
+                      city,
+                    });
+                    if (draft) saveDraftPart(draft);
                   }}
                   className="cta-border-beam inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#FF5C1A] px-6 text-sm font-semibold text-[#0E1014] transition-transform duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]"
                 >

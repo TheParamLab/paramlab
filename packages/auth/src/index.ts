@@ -86,7 +86,6 @@ export function initAuth<
           logger.info("auth.verification_otp_generated", {
             email: data.email,
             type: data.type,
-            otp: data.otp,
           });
           if (options.sendEmail) {
             await options.sendEmail({

@@ -4,12 +4,7 @@ import { Layers, ShieldCheck, Truck } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import {
-  type DraftPartData,
-  readDraftPartFromSearchParams,
-  readDraftPartFromStorage,
-  saveDraftPart,
-} from "~/lib/draft-part";
+import { type DraftPartData, restoreDraftPart } from "~/lib/draft-part";
 
 const ENGINEERING_FACTS = [
   {
@@ -273,15 +268,7 @@ export function ContextPanel() {
   const [draft, setDraft] = useState<DraftPartData | null>(null);
 
   useEffect(() => {
-    const fromQuery = readDraftPartFromSearchParams(searchParams);
-    if (fromQuery) {
-      saveDraftPart(fromQuery);
-      setDraft(fromQuery);
-      return;
-    }
-
-    const fromStorage = readDraftPartFromStorage();
-    setDraft(fromStorage);
+    setDraft(restoreDraftPart(searchParams));
   }, [searchParams]);
 
   return (
