@@ -2,6 +2,7 @@ import { Skeleton } from "@paramlab/ui";
 import { Frame, FramePanel } from "@paramlab/ui/reui/frame";
 
 import type { ReactNode } from "react";
+import { SiteHeader } from "~/components/layout";
 
 /**
  * Shared layout for the settings pages and their loading state: a header,
@@ -17,19 +18,22 @@ export function SettingsShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex max-w-5xl flex-col gap-6 p-10 pb-16">
-      <div className="flex flex-col gap-1">{header}</div>
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="shrink-0 lg:w-60">
-          <Frame spacing="xs">
-            <FramePanel>{sidebar}</FramePanel>
+    <>
+      <SiteHeader title="Настройки" />
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 pb-16 lg:p-8">
+        <div className="flex flex-col gap-1">{header}</div>
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <aside className="shrink-0 lg:w-60">
+            <Frame spacing="xs">
+              <FramePanel>{sidebar}</FramePanel>
+            </Frame>
+          </aside>
+          <Frame className="flex-1">
+            <FramePanel>{children}</FramePanel>
           </Frame>
-        </aside>
-        <Frame className="flex-1">
-          <FramePanel>{children}</FramePanel>
-        </Frame>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

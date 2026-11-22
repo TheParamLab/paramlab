@@ -9,11 +9,9 @@ export default function SettingsSecurityPage() {
   return (
     <SettingsShell header={<SettingsHeader />} sidebar={<SettingsSidebar />}>
       <div className="flex flex-col gap-1 pb-6">
-        <h2 className="text-lg font-bold tracking-tight text-[#F2F4F7]">
-          Безопасность и пароль
-        </h2>
-        <p className="text-sm text-[#8A93A2]">
-          Измените пароль, который вы используете для входа в пульт управления.
+        <h2 className="text-lg font-semibold tracking-tight">Пароль</h2>
+        <p className="text-muted-foreground text-sm">
+          Измените пароль, который вы используете для входа.
         </p>
       </div>
       <PasswordForm />

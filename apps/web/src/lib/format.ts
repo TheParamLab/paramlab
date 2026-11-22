@@ -15,3 +15,8 @@ export const formatNumber = (value: number) => number.format(value);
 export const formatRub = (value: number) => `${number.format(value)} ₽`;
 export const formatDate = (value: Date) => date.format(value);
 export const formatDateTime = (value: Date) => dateTime.format(value);
+
+export function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} КБ`;
+  return `${number.format(Math.round((bytes / 1024 / 1024) * 10) / 10)} МБ`;
+}

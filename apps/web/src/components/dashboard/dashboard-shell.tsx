@@ -1,7 +1,7 @@
 "use client";
 
 import { paths } from "@paramlab/config";
-import { cn } from "@paramlab/ui";
+import { cn, toast } from "@paramlab/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
@@ -21,6 +21,7 @@ import { authClient } from "~/auth/client";
 import {
   MOCK_ENGINEER_PROFILE,
   MOCK_SUMMARY_METRICS,
+  resetDashboardStore,
   useDashboardOrders,
   useDashboardPresets,
 } from "~/lib/mock-dashboard";
@@ -45,13 +46,7 @@ function isRouteActive(pathname: string, item: NavItem): boolean {
   );
 }
 
-export function DashboardShell({
-  children,
-  routePrefix,
-}: {
-  children: ReactNode;
-  routePrefix?: "/cabinet" | "";
-}) {
+export function DashboardShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -63,14 +58,11 @@ export function DashboardShell({
   ).length;
   const printingOrder = orders.find((o) => o.currentStage === "printing");
 
-  const isCabinetPath =
-    routePrefix === "/cabinet" || pathname.startsWith("/cabinet");
-
   const navItems: readonly NavItem[] = [
     {
       id: "orders",
-      href: (isCabinetPath ? "/cabinet/orders" : "/orders") as Route,
-      matchPaths: ["/cabinet", "/cabinet/orders", "/orders"],
+      href: "/orders",
+      matchPaths: ["/orders"],
       label: "Заказы и печать",
       shortLabel: "Заказы",
       code: "01 // ORDERS",
@@ -80,8 +72,8 @@ export function DashboardShell({
     },
     {
       id: "parts",
-      href: (isCabinetPath ? "/cabinet/parts" : "/parts") as Route,
-      matchPaths: ["/cabinet/parts", "/parts"],
+      href: "/parts",
+      matchPaths: ["/parts"],
       label: "Библиотека деталей",
       shortLabel: "Детали",
       code: "02 // PRESETS",
@@ -91,8 +83,8 @@ export function DashboardShell({
     },
     {
       id: "profile",
-      href: (isCabinetPath ? "/cabinet/settings" : "/profile") as Route,
-      matchPaths: ["/cabinet/settings", "/profile"],
+      href: "/profile",
+      matchPaths: ["/profile"],
       label: "Профиль и ПВЗ",
       shortLabel: "Профиль",
       code: "03 // PROFILE",
@@ -102,7 +94,7 @@ export function DashboardShell({
 
   const activeNav = navItems.find((item) => isRouteActive(pathname, item)) ?? {
     id: "orders" as const,
-    href: (isCabinetPath ? "/cabinet/orders" : "/orders") as Route,
+    href: "/orders" as Route,
     matchPaths: ["/orders"],
     label: "Заказы и печать",
     shortLabel: "Заказы",
@@ -112,10 +104,14 @@ export function DashboardShell({
 
   async function handleLogout() {
     try {
-      await authClient.signOut();
+      const { error } = await authClient.signOut();
+      if (error) throw error;
     } catch {
-      // Игнорируем ошибку, если сессия уже закрыта
+      toast.error("Не удалось выйти из аккаунта. Попробуйте ещё раз.");
+      return;
     }
+    // Демо-данные не должны пережить смену пользователя в этом же браузере.
+    resetDashboardStore();
     queryClient.clear();
     router.push(paths.auth.login);
   }
@@ -231,47 +227,68 @@ export function DashboardShell({
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#FF5C1A]">
                   <Flame className="size-3.5" />
-                  LIVE ·{" "}
-                  {printingOrder?.layerTelemetry?.machineId ?? "COREXY-CELL-04"}
+                  {printingOrder ? "LIVE" : "IDLE"}
+                  {printingOrder?.layerTelemetry?.machineId
+                    ? ` · ${printingOrder.layerTelemetry.machineId}`
+                    : null}
                 </span>
-                <span className="rounded bg-[#10B981]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#10B981]">
-                  ONLINE
-                </span>
-              </div>
-
-              <p className="mt-2 truncate font-sans text-xs font-medium text-[#F2F4F7]">
-                {printingOrder
-                  ? `${printingOrder.orderNumber} · ${printingOrder.items[0]?.title ?? "Партия в печати"}`
-                  : "PL-2604-891 · Силовая втулка PA12"}
-              </p>
-
-              <div className="mt-2 flex items-baseline justify-between text-[11px]">
-                <span className="text-[#8A93A2]">
-                  Слой{" "}
-                  {printingOrder?.layerTelemetry
-                    ? `${printingOrder.layerTelemetry.currentLayer} / ${printingOrder.layerTelemetry.totalLayers}`
-                    : MOCK_SUMMARY_METRICS.printingLayersNow}
-                </span>
-                <span className="font-bold text-[#FF5C1A]">
-                  {printingOrder?.stageProgressPercent ?? 68}%
+                <span
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-[10px] font-semibold",
+                    printingOrder
+                      ? "bg-[#10B981]/15 text-[#10B981]"
+                      : "bg-[#262B36] text-[#8A93A2]",
+                  )}
+                >
+                  {printingOrder ? "ONLINE" : "OFFLINE"}
                 </span>
               </div>
 
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#262B36]">
-                <div
-                  className="h-full rounded-full bg-[#FF5C1A]"
-                  style={{
-                    width: `${printingOrder?.stageProgressPercent ?? 68}%`,
-                  }}
-                />
-              </div>
+              {printingOrder ? (
+                <>
+                  <p className="mt-2 truncate font-sans text-xs font-medium text-[#F2F4F7]">
+                    {printingOrder.orderNumber} ·{" "}
+                    {printingOrder.items[0]?.title ?? "Партия в печати"}
+                  </p>
 
-              <div className="mt-2.5 flex items-center justify-between border-t border-[#262B36] pt-2 text-[10px] text-[#8A93A2]">
-                <span>
-                  Камера: {printingOrder?.layerTelemetry?.chamberTempC ?? 65} °C
-                </span>
-                <span>Допуск: {MOCK_SUMMARY_METRICS.averageAccuracyMm}</span>
-              </div>
+                  <div className="mt-2 flex items-baseline justify-between text-[11px]">
+                    <span className="text-[#8A93A2]">
+                      Слой{" "}
+                      {printingOrder.layerTelemetry
+                        ? `${printingOrder.layerTelemetry.currentLayer} / ${printingOrder.layerTelemetry.totalLayers}`
+                        : "—"}
+                    </span>
+                    <span className="font-bold text-[#FF5C1A]">
+                      {printingOrder.stageProgressPercent}%
+                    </span>
+                  </div>
+
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#262B36]">
+                    <div
+                      className="h-full rounded-full bg-[#FF5C1A]"
+                      style={{
+                        width: `${printingOrder.stageProgressPercent}%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="mt-2.5 flex items-center justify-between border-t border-[#262B36] pt-2 text-[10px] text-[#8A93A2]">
+                    <span>
+                      Камера:{" "}
+                      {printingOrder.layerTelemetry
+                        ? `${printingOrder.layerTelemetry.chamberTempC} °C`
+                        : "нет данных"}
+                    </span>
+                    <span>
+                      Допуск: {MOCK_SUMMARY_METRICS.averageAccuracyMm}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <p className="mt-2 font-sans text-xs text-[#8A93A2]">
+                  Нет активной печати — все партии завершены или ждут очереди.
+                </p>
+              )}
             </div>
           </div>
 
@@ -350,6 +367,9 @@ export function DashboardShell({
                   <div className="flex items-center gap-2 font-mono text-[11px] text-[#8A93A2]">
                     <span className="hidden sm:inline">{"PARAMLAB //"}</span>
                     <span className="text-[#00D1FF]">{activeNav.code}</span>
+                    <span className="rounded border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-1 py-0.5 text-[9px] font-semibold tracking-wider text-[#F59E0B] uppercase">
+                      Демо
+                    </span>
                   </div>
                   <p className="text-sm font-bold tracking-tight text-[#F2F4F7] sm:text-base">
                     {activeNav.label}
@@ -372,6 +392,16 @@ export function DashboardShell({
                   <span className="text-[#8A93A2]">ОТК:</span>
                   <span className="font-semibold text-[#F2F4F7]">±0.1 мм</span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  aria-label="Выйти из аккаунта"
+                  title="Выйти из аккаунта"
+                  className="flex size-9 items-center justify-center rounded-lg border border-[#262B36] bg-[#161920] text-[#8A93A2] transition-colors hover:border-[#FF5C1A]/50 hover:text-[#FF5C1A] focus-visible:ring-2 focus-visible:ring-[#00D1FF] focus-visible:outline-none lg:hidden"
+                >
+                  <LogOut className="size-4" />
+                </button>
 
                 <Link
                   href={"/#calculator" as Route}
