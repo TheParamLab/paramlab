@@ -36,7 +36,7 @@ export interface CopyableChipProps {
   value: string;
   /** Опциональная отображаемая подпись (по умолчанию равна value) */
   label?: string;
-  /** Префикс перед значением (например, "СДЭК · ") */
+  /** Префикс перед значением (например, "Ozon · ") */
   prefix?: string;
   /** Текст подсказки при наведении */
   tooltipText?: string;

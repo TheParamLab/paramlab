@@ -241,7 +241,7 @@ describe("admin.orders.setStatus", () => {
       {
         id: order.id,
         status: "shipped",
-        carrier: "СДЭК",
+        carrier: "Ozon",
         trackingNumber: "10012345678",
       },
       { context: api.context(admin) },
@@ -254,7 +254,7 @@ describe("admin.orders.setStatus", () => {
     );
     expect(found).toMatchObject({
       status: "shipped",
-      carrier: "СДЭК",
+      carrier: "Ozon",
       trackingNumber: "10012345678",
     });
     expect(found.events.map((e) => e.status)).toEqual([
