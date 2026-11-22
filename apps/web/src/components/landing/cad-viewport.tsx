@@ -16,6 +16,7 @@ import {
   type PartTypeId,
 } from "~/components/landing/data";
 import { clampBore } from "~/components/landing/pricing";
+import { normalizePlantTagLabel } from "~/lib/plant-tag-label";
 
 interface Vec3 {
   x: number;
@@ -46,6 +47,9 @@ interface GeometryResult {
   minY: number;
   maxY: number;
   callouts: Callout3D[];
+  layerContoursAtY?: (
+    y: number,
+  ) => ReadonlyArray<ReadonlyArray<Pick<Vec3, "x" | "z">>>;
   layerRadiusAtY?: (y: number) => number;
   isBoxy?: boolean;
   halfL?: number;
@@ -620,7 +624,7 @@ function buildGeometry(
     const halfL = L / 2;
     const halfW = W / 2;
     const y0 = -H / 2;
-    const baseTop = y0 + H * 0.8;
+    const baseTop = y0 + 2.4;
     const y1 = H / 2;
 
     const tipX = -halfL;
@@ -671,7 +675,9 @@ function buildGeometry(
     const rimZ1 = halfW - 1.8;
     const rimW = 1.2;
 
-    addBoxWall(faces, tipX + 7, rimX0, baseTop, y1, -1.3, 1.3, {
+    const ribStartX = tipX + 7;
+    const ribHalfW = 1.3;
+    addBoxWall(faces, ribStartX, rimX0, baseTop, y1, -ribHalfW, ribHalfW, {
       isAccent: true,
     });
     addBoxWall(faces, rimX0, rimX1, baseTop, y1, rimZ1 - rimW, rimZ1, {
@@ -728,14 +734,40 @@ function buildGeometry(
       },
     ];
 
+    const baseContour = [
+      sb0,
+      sb1,
+      tb1,
+      { x: headEndX, z: -halfW },
+      { x: headEndX, z: halfW },
+      tb2,
+      sb2,
+      sb3,
+    ];
+    const reliefContours = [
+      [
+        { x: rimX0, z: rimZ0 },
+        { x: rimX1, z: rimZ0 },
+        { x: rimX1, z: rimZ1 },
+        { x: rimX0, z: rimZ1 },
+        { x: rimX0, z: ribHalfW },
+        { x: ribStartX, z: ribHalfW },
+        { x: ribStartX, z: -ribHalfW },
+        { x: rimX0, z: -ribHalfW },
+      ],
+      [
+        { x: rimX0 + rimW, z: rimZ0 + rimW },
+        { x: rimX1 - rimW, z: rimZ0 + rimW },
+        { x: rimX1 - rimW, z: rimZ1 - rimW },
+        { x: rimX0 + rimW, z: rimZ1 - rimW },
+      ],
+    ];
     return {
       faces,
       minY: y0,
       maxY: y1,
       callouts,
-      isBoxy: true,
-      halfL,
-      halfW,
+      layerContoursAtY: (y) => (y <= baseTop ? [baseContour] : reliefContours),
     };
   }
 
@@ -1145,7 +1177,16 @@ export function CadViewport3D() {
         ctx.lineWidth = lineWidth;
         ctx.beginPath();
 
-        if (
+        if (geometry.layerContoursAtY) {
+          for (const contour of geometry.layerContoursAtY(ly)) {
+            contour.forEach(({ x, z }, index) => {
+              const p = project({ x, y: ly, z });
+              if (index === 0) ctx.moveTo(p.x, p.y);
+              else ctx.lineTo(p.x, p.y);
+            });
+            ctx.closePath();
+          }
+        } else if (
           geometry.isBoxy &&
           geometry.halfL != null &&
           geometry.halfW != null
@@ -1272,7 +1313,6 @@ export function CadViewport3D() {
         const headEndX = halfL;
         const rimX0 = headStartX + 1.2;
         const rimX1 = headEndX - 6.8;
-        const textCenterX = (rimX0 + rimX1) * 0.5;
         const topY = geometry.maxY + 0.1;
 
         // Крепежное отверстие Ø 3.4 мм в головке
@@ -1296,29 +1336,36 @@ export function CadViewport3D() {
         ctx.stroke();
 
         // Проекция текста вдоль оси X головки бирки
-        const cleanLabel = (labelText || "ТОМАТ").trim().slice(0, 12);
-        if (cleanLabel.length > 0) {
+        const cleanLabel = normalizePlantTagLabel(labelText);
+        if (Math.sin(pitch) > 0.15) {
           const pLeft = project({ x: rimX0 + 3, y: topY, z: 0 });
           const pRight = project({ x: rimX1 - 3, y: topY, z: 0 });
-          const pTextCenter = project({ x: textCenterX, y: topY, z: 0 });
           const angle = Math.atan2(pRight.y - pLeft.y, pRight.x - pLeft.x);
           const spanPx = Math.hypot(pRight.x - pLeft.x, pRight.y - pLeft.y);
-          const fontSizePx = Math.max(
-            9,
-            Math.min(18, (spanPx / Math.max(4.5, cleanLabel.length)) * 1.38),
-          );
-
           ctx.save();
-          ctx.translate(pTextCenter.x, pTextCenter.y);
-          ctx.rotate(angle);
-          ctx.font = `800 ${Math.round(fontSizePx)}px "JetBrains Mono", sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
           ctx.lineWidth = 2.4;
-          ctx.strokeStyle = "#0E1014";
-          ctx.strokeText(cleanLabel, 0, 0);
-          ctx.fillStyle = renderMode === "wireframe" ? "#00D1FF" : "#F2F4F7";
-          ctx.fillText(cleanLabel, 0, 0);
+          for (let fontSizePx = 18; fontSizePx >= 6; fontSizePx--) {
+            ctx.font = `800 ${fontSizePx}px "JetBrains Mono", sans-serif`;
+            const metrics = ctx.measureText(cleanLabel);
+            const inkWidth =
+              2 *
+              Math.max(
+                metrics.actualBoundingBoxLeft,
+                metrics.actualBoundingBoxRight,
+                metrics.width / 2,
+              );
+            if (inkWidth + ctx.lineWidth > spanPx) continue;
+
+            ctx.translate((pLeft.x + pRight.x) / 2, (pLeft.y + pRight.y) / 2);
+            ctx.rotate(angle);
+            ctx.strokeStyle = "#0E1014";
+            ctx.strokeText(cleanLabel, 0, 0);
+            ctx.fillStyle = renderMode === "wireframe" ? "#00D1FF" : "#F2F4F7";
+            ctx.fillText(cleanLabel, 0, 0);
+            break;
+          }
           ctx.restore();
         }
       }

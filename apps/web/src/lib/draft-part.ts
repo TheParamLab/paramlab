@@ -10,6 +10,8 @@ import {
   estimateMass,
 } from "~/components/landing/pricing";
 
+import { normalizePlantTagLabel } from "~/lib/plant-tag-label";
+
 export const DRAFT_PART_STORAGE_KEY = "paramlab_draft_part";
 
 export interface DraftPartData {
@@ -130,12 +132,20 @@ export function buildDraftPart(params: {
 
   const cleanLabelText =
     part.id === "plant-tag"
-      ? params.labelText?.trim().slice(0, 12).toUpperCase() || "ТОМАТ"
+      ? normalizePlantTagLabel(params.labelText)
       : undefined;
 
-  const formula =
-    params.dimensionFormula?.trim() ||
+  const suppliedFormula = params.dimensionFormula?.trim();
+  let formula =
+    suppliedFormula ||
     formatDraftDimensionFormula(part.id, { d1, d2, h }, cleanLabelText);
+
+  if (suppliedFormula && cleanLabelText) {
+    const quotedLabel = `«${cleanLabelText}»`;
+    if (!suppliedFormula.toUpperCase().includes(quotedLabel)) {
+      formula = `${suppliedFormula} · ${quotedLabel}`;
+    }
+  }
 
   const totalPriceRub =
     typeof params.totalPriceRub === "number" &&
