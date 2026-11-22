@@ -45,10 +45,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" className="dark" suppressHydrationWarning>
       <body
         className={cn(
-          "bg-background text-foreground min-h-screen font-sans antialiased",
+          "min-h-screen bg-[#0E1014] font-sans text-[#F2F4F7] antialiased selection:bg-[#FF5C1A] selection:text-[#0E1014]",
           onestSans.variable,
           jetbrainsMono.variable,
         )}

@@ -1011,6 +1011,17 @@ export function setDashboardPresets(
   emitChange();
 }
 
+/**
+ * Сбрасывает клиентское демо-хранилище к исходным данным. Вызывается при
+ * выходе из аккаунта, чтобы введённые одним человеком названия деталей и
+ * заметки не достались следующему пользователю этого же браузера.
+ */
+export function resetDashboardStore() {
+  ordersState = MOCK_ORDERS;
+  presetsState = MOCK_PART_PRESETS;
+  emitChange();
+}
+
 export function repeatDashboardOrder(source: DashboardOrder): DashboardOrder {
   const nextNumber = `PL-2604-${900 + ordersState.length}`;
   const repeatedOrder: DashboardOrder = {

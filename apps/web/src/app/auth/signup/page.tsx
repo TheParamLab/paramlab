@@ -1,28 +1,19 @@
-import { APP_CONFIG, paths } from "@paramlab/config";
-import { GalleryVerticalEnd } from "lucide-react";
 import type { Metadata } from "next";
-import { UnifiedAuthForm } from "~/components/auth";
+import { AuthShell, UnifiedAuthForm } from "~/components/auth";
 
 export const metadata: Metadata = {
-  title: "Регистрация",
-  description: "Создайте новый аккаунт",
+  title: "Регистрация инженера — ParamLab",
+  description:
+    "Создайте аккаунт в сервисе параметрической 3D-печати ParamLab с точностью ±0.1 мм.",
 };
 
 export default function SignUpPage() {
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <a
-          href={paths.dashboard.root}
-          className="flex items-center gap-2 self-center font-medium"
-        >
-          <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-4" aria-label="Company logo" />
-          </div>
-          {APP_CONFIG.name}
-        </a>
-        <UnifiedAuthForm mode="signup" />
-      </div>
-    </div>
+    <AuthShell withBadge>
+      <UnifiedAuthForm
+        mode="signup"
+        className="rounded-[16px] border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl"
+      />
+    </AuthShell>
   );
 }

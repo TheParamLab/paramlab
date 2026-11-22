@@ -1,28 +1,15 @@
-import { APP_CONFIG, paths } from "@paramlab/config";
-import { GalleryVerticalEnd } from "lucide-react";
 import type { Metadata } from "next";
-import { OTPForm } from "~/components/auth";
+import { AuthShell, OTPForm } from "~/components/auth";
 
 export const metadata: Metadata = {
-  title: "Подтверждение кода",
-  description: "Введите код подтверждения",
+  title: "Подтверждение кода — ParamLab",
+  description: "Введите 6-значный код подтверждения для входа в ParamLab",
 };
 
 export default function OTPPage() {
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-xs flex-col gap-6">
-        <a
-          href={paths.dashboard.root}
-          className="flex items-center gap-2 self-center font-medium"
-        >
-          <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-4" aria-label="Company logo" />
-          </div>
-          {APP_CONFIG.name}
-        </a>
-        <OTPForm />
-      </div>
-    </div>
+    <AuthShell width="xs">
+      <OTPForm className="rounded-[16px] border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl" />
+    </AuthShell>
   );
 }

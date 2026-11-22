@@ -15,19 +15,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  toast,
   useSidebar,
 } from "@paramlab/ui";
-import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconUserCircle,
-} from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { KeyRound, LogOut, MoreVertical, UserRound } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "~/auth/client";
+import { resetDashboardStore } from "~/lib/mock-dashboard";
 
 function getInitials(name: string): string {
   return name
@@ -49,14 +46,20 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const initials = getInitials(user.name);
 
-  const queryClient = useQueryClient();
-
   const handleLogout = async () => {
-    await authClient.signOut();
-    // Кеш запросов живёт до перезагрузки страницы: без очистки следующий
-    // пользователь в этой вкладке увидел бы данные предыдущего.
+    try {
+      const { error } = await authClient.signOut();
+      if (error) throw error;
+    } catch {
+      toast.error("Не удалось выйти из аккаунта. Попробуйте ещё раз.");
+      return;
+    }
+    // Кеш запросов и демо-хранилище живут до перезагрузки: без сброса
+    // следующий пользователь этой вкладки увидел бы чужие данные.
+    resetDashboardStore();
     queryClient.clear();
     router.push(paths.auth.login);
   };
@@ -73,17 +76,17 @@ export function NavUser({
               />
             }
           >
-            <Avatar className="h-8 w-8 rounded-lg grayscale">
+            <Avatar className="size-8 rounded-lg">
               <AvatarImage src={user.avatar} alt={user.name} />
               <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>
-              <span className="text-muted-foreground truncate text-xs">
+              <span className="truncate text-xs text-muted-foreground">
                 {user.email}
               </span>
             </div>
-            <IconDotsVertical className="ml-auto size-4" />
+            <MoreVertical className="ml-auto size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
@@ -94,7 +97,7 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="size-8 rounded-lg">
                     <AvatarImage src={user.avatar} alt={user.name} />
                     <AvatarFallback className="rounded-lg">
                       {initials}
@@ -102,7 +105,7 @@ export function NavUser({
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>
-                    <span className="text-muted-foreground truncate text-xs">
+                    <span className="truncate text-xs text-muted-foreground">
                       {user.email}
                     </span>
                   </div>
@@ -111,22 +114,20 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
+              <DropdownMenuItem render={<Link href={paths.settings.root} />}>
+                <UserRound />
                 Аккаунт
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Оплата
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Уведомления
+              <DropdownMenuItem
+                render={<Link href={paths.settings.security} />}
+              >
+                <KeyRound />
+                Безопасность
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <IconLogout />
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+              <LogOut />
               Выйти
             </DropdownMenuItem>
           </DropdownMenuContent>

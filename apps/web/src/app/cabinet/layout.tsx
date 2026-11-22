@@ -5,7 +5,6 @@ import {
   SidebarInset,
   SidebarProvider,
   Skeleton,
-  ThemeToggle,
 } from "@paramlab/ui";
 import { redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
@@ -13,28 +12,25 @@ import { getSession } from "~/auth/server";
 import { AppSidebar } from "~/components/sidebar";
 
 /**
- * The shell (sidebar frame, page slot) is static and prerendered; only the
- * session-dependent sidebar streams in. Reading the session at the layout's
- * top level would hold every dashboard page behind the request.
+ * Оболочка личного кабинета: каркас статичен и пререндерится, а зависимый
+ * от сессии сайдбар приходит отдельным потоком. Чтение сессии на верхнем
+ * уровне layout задержало бы все страницы кабинета до конца запроса.
  * @see https://nextjs.org/docs/app/guides/authentication-with-cache-components
  */
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default function CabinetLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <Suspense fallback={<SidebarSkeleton />}>
         <SessionSidebar />
       </Suspense>
       <SidebarInset>{children}</SidebarInset>
-      <div className="absolute right-4 bottom-4 z-40">
-        <ThemeToggle />
-      </div>
     </SidebarProvider>
   );
 }
 
 async function SessionSidebar() {
   const session = await getSession();
-  // proxy.ts already redirects without a session cookie; this enforces it.
+  // proxy.ts уже редиректит без cookie сессии — здесь проверка обязательна.
   if (!session?.user) redirect(paths.auth.login);
 
   return (
@@ -48,8 +44,8 @@ async function SessionSidebar() {
   );
 }
 
-// Fixed widths: shadcn's SidebarMenuSkeleton uses Math.random(), which can't
-// be part of the prerendered static shell.
+// Фиксированные ширины: shadcn's SidebarMenuSkeleton использует Math.random(),
+// а статический каркас не может содержать случайные значения.
 function SidebarSkeleton() {
   return (
     <Sidebar collapsible="icon">

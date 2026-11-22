@@ -5,6 +5,8 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -12,111 +14,34 @@ import {
   SidebarRail,
 } from "@paramlab/ui";
 import {
-  IconChartBar,
-  IconCube,
-  IconDashboard,
-  IconDatabase,
-  IconFileWord,
-  IconFlame,
-  IconFolder,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconPackage,
-  IconReport,
-  IconSettings,
-  IconUsers,
-} from "@tabler/icons-react";
+  ArrowUpRight,
+  Boxes,
+  KeyRound,
+  LayoutDashboard,
+  Package,
+  UserCog,
+} from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type * as React from "react";
-import {
-  NavDocuments,
-  NavMain,
-  NavSecondary,
-  NavUser,
-} from "~/components/sidebar";
+import { NavUser } from "~/components/sidebar";
 
-const data = {
-  navMain: [
-    {
-      title: "Пульт производства",
-      url: "/orders",
-      icon: IconFlame,
-      isActive: true,
-      items: [
-        { title: "Заказы и печать", url: "/orders" },
-        { title: "Библиотека пресетов", url: "/parts" },
-        { title: "Профиль и ПВЗ", url: "/profile" },
-      ],
-    },
-    {
-      title: "Мои детали",
-      url: paths.parts.root,
-      icon: IconCube,
-      isActive: true,
-      items: [{ title: "Библиотека", url: paths.parts.root }],
-    },
-    {
-      title: "Заказы",
-      url: paths.orders.root,
-      icon: IconPackage,
-      isActive: true,
-      items: [{ title: "Все заказы", url: paths.orders.root }],
-    },
-    {
-      title: "Панель управления",
-      url: paths.dashboard.root,
-      icon: IconDashboard,
-      items: [
-        { title: "Обзор", url: paths.dashboard.root },
-        { title: "Аналитика", url: "#" },
-        { title: "Отчёты", url: "#" },
-      ],
-    },
-    {
-      title: "Жизненный цикл",
-      url: "#",
-      icon: IconListDetails,
-      items: [
-        { title: "Активные", url: "#" },
-        { title: "Архив", url: "#" },
-      ],
-    },
-    {
-      title: "Аналитика",
-      url: "#",
-      icon: IconChartBar,
-      items: [
-        { title: "Обзор", url: "#" },
-        { title: "Тренды", url: "#" },
-      ],
-    },
-    {
-      title: "Проекты",
-      url: "#",
-      icon: IconFolder,
-      items: [
-        { title: "Активные проекты", url: "#" },
-        { title: "Архив", url: "#" },
-      ],
-    },
-    {
-      title: "Команда",
-      url: "#",
-      icon: IconUsers,
-      items: [
-        { title: "Участники", url: "#" },
-        { title: "Роли", url: "#" },
-      ],
-    },
-  ],
-  navSecondary: [
-    { title: "Настройки", url: paths.settings.root, icon: IconSettings },
-  ],
-  documents: [
-    { name: "Библиотека данных", url: "#", icon: IconDatabase },
-    { name: "Отчёты", url: "#", icon: IconReport },
-    { name: "Помощник по Word", url: "#", icon: IconFileWord },
-  ],
-};
+const productionNav = [
+  {
+    title: "Обзор",
+    url: paths.dashboard.root,
+    icon: LayoutDashboard,
+    exact: true,
+  },
+  { title: "Заказы и печать", url: paths.orders.root, icon: Package },
+  { title: "Библиотека деталей", url: paths.parts.root, icon: Boxes },
+] as const;
+
+const accountNav = [
+  { title: "Профиль и ПВЗ", url: paths.settings.root, icon: UserCog },
+  { title: "Безопасность", url: paths.settings.security, icon: KeyRound },
+] as const;
 
 export function AppSidebar({
   user,
@@ -124,6 +49,8 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & {
   user: { name: string; email: string; avatar: string };
 }) {
+  const pathname = usePathname();
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -131,14 +58,17 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              render={<a href={paths.dashboard.root} />}
+              render={<Link href={paths.dashboard.root} />}
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <IconInnerShadowTop className="size-4" />
+                <Boxes className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
                   {APP_CONFIG.name}
+                </span>
+                <span className="truncate font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                  Control deck
                 </span>
               </div>
             </SidebarMenuButton>
@@ -146,9 +76,59 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <SidebarGroup>
+          <SidebarGroupLabel>Пульт производства</SidebarGroupLabel>
+          <SidebarMenu>
+            {productionNav.map((item) => (
+              <SidebarMenuItem key={item.url}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  isActive={
+                    "exact" in item
+                      ? pathname === item.url
+                      : pathname.startsWith(item.url)
+                  }
+                  render={<Link href={item.url} />}
+                >
+                  <item.icon />
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Аккаунт</SidebarGroupLabel>
+          <SidebarMenu>
+            {accountNav.map((item) => (
+              <SidebarMenuItem key={item.url}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  isActive={pathname === item.url}
+                  render={<Link href={item.url} />}
+                >
+                  <item.icon />
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="На сайт"
+                render={<Link href={"/" as Route} />}
+              >
+                <ArrowUpRight />
+                <span>На сайт</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

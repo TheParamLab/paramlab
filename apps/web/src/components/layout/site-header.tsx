@@ -1,5 +1,6 @@
 "use client";
 
+import { paths } from "@paramlab/config";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,14 +11,16 @@ import {
   Separator,
   SidebarTrigger,
 } from "@paramlab/ui";
+import Link from "next/link";
 
 interface SiteHeaderProps {
   title?: string;
 }
 
-export function SiteHeader({ title = "Документы" }: SiteHeaderProps) {
+/** Верхняя панель кабинета: триггер сайдбара и хлебные крошки. */
+export function SiteHeader({ title = "Заказы" }: SiteHeaderProps) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/85 backdrop-blur-md transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -27,7 +30,9 @@ export function SiteHeader({ title = "Документы" }: SiteHeaderProps) {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="#">Панель управления</BreadcrumbLink>
+              <BreadcrumbLink render={<Link href={paths.dashboard.root} />}>
+                Пульт производства
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>
