@@ -21,7 +21,6 @@ import {
   triggerTextDocumentDownload,
 } from "~/lib/mock-dashboard";
 import type {
-  CarrierType,
   CompanyRequisites,
   EngineerProfileData,
   NotificationPreferences,
@@ -43,7 +42,6 @@ const contactsSchema = z.object({
 });
 
 const pvzSchema = z.object({
-  carrier: z.enum(["cdek", "ozon"]),
   city: z.string().trim().min(2, "Укажите город пункта выдачи"),
   address: z.string().trim().min(5, "Укажите улицу, дом и номер пункта выдачи"),
 });
@@ -86,7 +84,6 @@ export function ProfileView() {
     profile.pickupPoints,
   );
   const [isAddingPvz, setIsAddingPvz] = useState(false);
-  const [newPvzCarrier, setNewPvzCarrier] = useState<CarrierType>("cdek");
   const [newPvzCity, setNewPvzCity] = useState("Москва");
   const [newPvzAddress, setNewPvzAddress] = useState("");
   const [pvzError, setPvzError] = useState<string | null>(null);
@@ -146,7 +143,6 @@ export function ProfileView() {
     setPvzError(null);
     const cityValue = newPvzCity.trim() || "Москва";
     const parsed = pvzSchema.safeParse({
-      carrier: newPvzCarrier,
       city: cityValue,
       address: newPvzAddress,
     });
@@ -158,13 +154,11 @@ export function ProfileView() {
       return;
     }
 
-    const codePrefix = parsed.data.carrier === "cdek" ? "MSK" : "OZN";
-    const randomCode = `${codePrefix}-${200 + pickupPoints.length * 19}`;
+    const randomCode = `OZN-${200 + pickupPoints.length * 19}`;
     const created: PickupPointPreset = {
       id: `pvz-${Date.now()}`,
-      carrier: parsed.data.carrier,
-      carrierLabel:
-        parsed.data.carrier === "cdek" ? "СДЭК Экспресс" : "Ozon Посылка",
+      carrier: "ozon",
+      carrierLabel: "Ozon Посылка",
       code: randomCode,
       city: parsed.data.city,
       address: parsed.data.address,
@@ -457,7 +451,7 @@ export function ProfileView() {
             <div className="flex items-center justify-between gap-4 py-2.5">
               <div>
                 <p className="text-sm font-semibold text-[#F2F4F7]">
-                  Прибытие в ПВЗ Ozon / СДЭК и штрихкод
+                  Прибытие в ПВЗ Ozon и штрихкод
                 </p>
                 <p className="text-xs text-[#8A93A2]">
                   Код получения посылки без паспорта сразу после приемки
@@ -488,7 +482,7 @@ export function ProfileView() {
           </div>
         </section>
 
-        {/* 3. СОХРАНЕННЫЕ ПУНКТЫ ВЫДАЧИ (ПВЗ СДЭК И OZON) */}
+        {/* 3. СОХРАНЕННЫЕ ПУНКТЫ ВЫДАЧИ (ПВЗ OZON) */}
         <section className="rounded-[16px] border border-[#262B36] bg-[#161920] p-5">
           <div className="flex items-center justify-between border-b border-[#262B36] pb-3.5">
             <div className="flex items-center gap-2">
@@ -513,44 +507,30 @@ export function ProfileView() {
               onSubmit={handleAddPvz}
               className="mt-4 space-y-3 rounded-[12px] border border-[#00D1FF]/40 bg-[#0E1014] p-3.5"
             >
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label
-                    htmlFor="pvz-carrier"
-                    className="block font-mono text-[11px] text-[#8A93A2]"
-                  >
-                    Логистический оператор
-                  </label>
-                  <select
-                    id="pvz-carrier"
-                    value={newPvzCarrier}
-                    onChange={(e) =>
-                      setNewPvzCarrier(e.target.value as CarrierType)
-                    }
-                    className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 font-mono text-xs text-[#F2F4F7]"
-                  >
-                    <option value="cdek">СДЭК Экспресс</option>
-                    <option value="ozon">Ozon Посылка</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="pvz-city"
-                    className="block font-mono text-[11px] text-[#8A93A2]"
-                  >
-                    Город
-                  </label>
-                  <input
-                    id="pvz-city"
-                    type="text"
-                    value={newPvzCity}
-                    onChange={(e) => {
-                      setPvzError(null);
-                      setNewPvzCity(e.target.value);
-                    }}
-                    className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-xs text-[#F2F4F7]"
-                  />
-                </div>
+              <div className="flex items-center justify-between rounded-lg border border-[#262B36] bg-[#161920] px-2.5 py-2 font-mono text-[11px]">
+                <span className="text-[#8A93A2]">Логистический оператор</span>
+                <span className="font-semibold text-[#00D1FF]">
+                  Ozon Посылка
+                </span>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="pvz-city"
+                  className="block font-mono text-[11px] text-[#8A93A2]"
+                >
+                  Город
+                </label>
+                <input
+                  id="pvz-city"
+                  type="text"
+                  value={newPvzCity}
+                  onChange={(e) => {
+                    setPvzError(null);
+                    setNewPvzCity(e.target.value);
+                  }}
+                  className="mt-1 h-9 w-full rounded-lg border border-[#262B36] bg-[#161920] px-2.5 text-xs text-[#F2F4F7]"
+                />
               </div>
 
               <div>

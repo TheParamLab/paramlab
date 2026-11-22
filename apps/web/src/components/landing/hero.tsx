@@ -178,7 +178,7 @@ export function Hero() {
           <div className="hidden items-center gap-4 font-mono text-xs text-[#8A93A2] sm:flex">
             <span>КАМЕРА: 320×320×300 ММ</span>
             <span className="text-[#262B36]">/</span>
-            <span>ОТГРУЗКА: OZON · СДЭК</span>
+            <span>ОТГРУЗКА: OZON</span>
           </div>
         </div>
 
@@ -510,7 +510,7 @@ export function Hero() {
         </div>
       </section>
 
-      {/* Модальное окно спецификации и выбора доставки (Ozon / СДЭК) */}
+      {/* Модальное окно спецификации и доставки (Ozon) */}
       <OrderSpecModal />
     </section>
   );

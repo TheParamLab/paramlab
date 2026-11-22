@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@paramlab/ui";
 import {
   ArrowRight,
   CheckCircle2,
@@ -21,26 +20,13 @@ import {
   estimateMass,
 } from "~/components/landing/pricing";
 
-const CARRIERS = [
-  {
-    id: "ozon",
-    name: "Ozon Посылка (ПВЗ)",
-    tag: "18 000+ пунктов по РФ",
-    price: 199,
-    eta: "2–3 дня",
-    pvzSample: "Выдача по штрихкоду в приложении Ozon",
-  },
-  {
-    id: "cdek",
-    name: "СДЭК Экспресс (ПВЗ / Курьер)",
-    tag: "Приоритетная авиа/авто-логистика",
-    price: 290,
-    eta: "1–3 дня",
-    pvzSample: "Трек-номер и фотоконтроль со штангенциркулем перед отправкой",
-  },
-] as const;
-
-type CarrierId = (typeof CARRIERS)[number]["id"];
+const OZON_DELIVERY = {
+  name: "Ozon Посылка (ПВЗ)",
+  tag: "18 000+ пунктов по РФ",
+  price: 199,
+  eta: "2–3 дня",
+  pvzSample: "Выдача по штрихкоду в приложении Ozon",
+} as const;
 
 const numberFmt = new Intl.NumberFormat("ru-RU");
 
@@ -66,7 +52,6 @@ export function OrderSpecModal() {
     quantity,
   } = useCalculator();
 
-  const [carrierId, setCarrierId] = useState<CarrierId>("ozon");
   const [city, setCity] = useState("Москва, ПВЗ на выбор");
   const panelRef = useRef<HTMLDivElement | null>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
@@ -114,7 +99,6 @@ export function OrderSpecModal() {
 
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
   const material = MATERIALS.find((m) => m.id === materialId) ?? MATERIALS[0];
-  const carrier = CARRIERS.find((c) => c.id === carrierId) ?? CARRIERS[0];
 
   const massGrams = estimateMass(partType, dimensions, material.density);
   const price = calcPrice({
@@ -250,48 +234,28 @@ export function OrderSpecModal() {
                 </div>
               </div>
 
-              {/* Выбор службы доставки (Ozon / СДЭК) */}
+              {/* Доставка по РФ через Ozon */}
               <div className="flex flex-col gap-2.5">
                 <span className="font-mono text-xs font-medium tracking-wider text-[#8A93A2] uppercase">
                   Способ доставки по РФ
                 </span>
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  {CARRIERS.map((item) => {
-                    const selected = carrierId === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => setCarrierId(item.id)}
-                        className={cn(
-                          "flex flex-col items-start gap-1.5 rounded-[12px] border p-3.5 text-left transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
-                          selected
-                            ? "border-[#00D1FF] bg-[#00D1FF]/10"
-                            : "border-[#262B36] bg-[#0E1014] hover:border-[#8A93A2]/50",
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-sm font-semibold text-[#F2F4F7]">
-                            <Truck className="size-4 text-[#00D1FF]" />
-                            {item.name}
-                          </span>
-                          {selected && (
-                            <CheckCircle2 className="size-4 text-[#00D1FF]" />
-                          )}
-                        </div>
-                        <span className="text-xs text-[#8A93A2]">
-                          {item.tag}
-                        </span>
-                        <div className="mt-1 flex w-full items-center justify-between border-t border-[#262B36]/80 pt-2 font-mono text-xs tabular-nums">
-                          <span className="text-[#F2F4F7]">
-                            +{item.price} ₽
-                          </span>
-                          <span className="text-[#10B981]">{item.eta}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-col items-start gap-1.5 rounded-[12px] border border-[#00D1FF] bg-[#00D1FF]/10 p-3.5 text-left">
+                  <div className="flex w-full items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-[#F2F4F7]">
+                      <Truck className="size-4 text-[#00D1FF]" />
+                      {OZON_DELIVERY.name}
+                    </span>
+                    <CheckCircle2 className="size-4 text-[#00D1FF]" />
+                  </div>
+                  <span className="text-xs text-[#8A93A2]">
+                    {OZON_DELIVERY.tag}
+                  </span>
+                  <div className="mt-1 flex w-full items-center justify-between border-t border-[#262B36]/80 pt-2 font-mono text-xs tabular-nums">
+                    <span className="text-[#F2F4F7]">
+                      +{OZON_DELIVERY.price} ₽
+                    </span>
+                    <span className="text-[#10B981]">{OZON_DELIVERY.eta}</span>
+                  </div>
                 </div>
 
                 <div className="mt-1 flex items-center gap-2.5 rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3.5 py-2.5">
@@ -307,7 +271,7 @@ export function OrderSpecModal() {
                 </div>
                 <p className="flex items-center gap-1.5 font-mono text-[11px] text-[#8A93A2]">
                   <PackageCheck className="size-3.5 text-[#10B981]" />
-                  {carrier.pvzSample}
+                  {OZON_DELIVERY.pvzSample}
                 </p>
               </div>
 
@@ -316,10 +280,10 @@ export function OrderSpecModal() {
                 <div>
                   <p className="font-mono text-xs text-[#8A93A2] tabular-nums">
                     Печать {numberFmt.format(price.total)} ₽ + доставка{" "}
-                    {carrier.price} ₽
+                    {OZON_DELIVERY.price} ₽
                   </p>
                   <p className="font-mono text-2xl font-bold text-[#F2F4F7] tabular-nums">
-                    {numberFmt.format(price.total + carrier.price)} ₽
+                    {numberFmt.format(price.total + OZON_DELIVERY.price)} ₽
                   </p>
                 </div>
 

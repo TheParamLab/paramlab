@@ -191,7 +191,7 @@ function ManifoldCheckVisual() {
 }
 
 /**
- * 4. Визуализация доставки по РФ через Ozon и СДЭК.
+ * 4. Визуализация доставки по РФ через Ozon.
  */
 function LogisticsVisual() {
   return (
@@ -201,23 +201,18 @@ function LogisticsVisual() {
         <span className="text-[#10B981]">ОТГРУЗКА ЗА 24–48 Ч</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 font-mono text-xs tabular-nums">
+      <div className="grid grid-cols-1 gap-2.5 font-mono text-xs tabular-nums">
         <div className="flex flex-col gap-1 rounded-lg border border-[#00D1FF]/30 bg-[#00D1FF]/5 p-2.5">
           <div className="flex items-center justify-between">
             <span className="font-bold text-[#00D1FF]">OZON ПВЗ</span>
             <Truck className="size-3.5 text-[#00D1FF]" />
           </div>
-          <span className="text-[11px] text-[#8A93A2]">18 000+ точек</span>
-          <span className="font-semibold text-[#F2F4F7]">от 199 ₽</span>
-        </div>
-
-        <div className="flex flex-col gap-1 rounded-lg border border-[#10B981]/30 bg-[#10B981]/5 p-2.5">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-[#10B981]">СДЭК РФ</span>
-            <Truck className="size-3.5 text-[#10B981]" />
+            <span className="text-[11px] text-[#8A93A2]">
+              18 000+ точек · 2–3 дня
+            </span>
+            <span className="font-semibold text-[#F2F4F7]">от 199 ₽</span>
           </div>
-          <span className="text-[11px] text-[#8A93A2]">Экспресс / ПВЗ</span>
-          <span className="font-semibold text-[#F2F4F7]">от 290 ₽</span>
         </div>
       </div>
     </div>
@@ -320,7 +315,7 @@ export function BentoAdvantages() {
             </article>
           </LayerReveal>
 
-          {/* Карточка 4: Доставка по РФ через Ozon и СДЭК */}
+          {/* Карточка 4: Доставка по РФ через Ozon */}
           <LayerReveal delay={0.2} className="lg:col-span-6">
             <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-[#262B36] bg-[#161920] p-6 sm:p-7">
               <div className="flex flex-col gap-2.5">
@@ -333,7 +328,7 @@ export function BentoAdvantages() {
                   </span>
                 </div>
                 <h3 className="text-xl font-bold tracking-tight text-[#F2F4F7]">
-                  Доставка по РФ через Ozon и СДЭК
+                  Доставка по РФ через Ozon
                 </h3>
                 <p className="text-sm leading-relaxed text-[#8A93A2]">
                   Перед упаковкой присылаем реальное фото детали со

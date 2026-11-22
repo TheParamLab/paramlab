@@ -144,7 +144,7 @@ export function OrdersView() {
             <Truck className="size-4 text-[#10B981]" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold text-[#F2F4F7] tabular-nums">
-            Ozon / СДЭК
+            Ozon
           </p>
           <p className="mt-1 font-mono text-[11px] text-[#10B981]">
             Авто-трекинг накладных

@@ -22,10 +22,8 @@ interface PrintStageEvent {
   };
 }
 
-export type CarrierType = "ozon" | "cdek";
-
 interface DeliveryInfo {
-  carrier: CarrierType;
+  carrier: "ozon";
   carrierLabel: string;
   trackingNumber?: string;
   pvzCode: string;
@@ -134,7 +132,7 @@ export interface SavedPartPreset {
 
 export interface PickupPointPreset {
   id: string;
-  carrier: CarrierType;
+  carrier: "ozon";
   carrierLabel: string;
   code: string;
   city: string;

@@ -10,7 +10,7 @@ import "~/app/styles.css";
 const title =
   "ParamLab — сервис параметрической 3D-печати деталей и корпусов на заказ";
 const description =
-  "Инженерная параметрическая 3D-печать на заказ с точностью до 0.1 мм. Задайте размеры детали без 3D-моделирования: PETG, ABS, PA12 Nylon, PETG-CF. Доставка через Ozon и СДЭК.";
+  "Инженерная параметрическая 3D-печать на заказ с точностью до 0.1 мм. Задайте размеры детали без 3D-моделирования: PETG, ABS, PA12 Nylon, PETG-CF. Доставка через Ozon.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

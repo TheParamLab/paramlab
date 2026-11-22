@@ -134,7 +134,7 @@ export function ProductionCycle() {
                         ? "CAD → Mesh 0.1 мм"
                         : idx === 1
                           ? "Manifold OK"
-                          : "Ozon · СДЭК РФ"}
+                          : "Ozon РФ"}
                     </span>
                   </div>
                 </LayerReveal>
