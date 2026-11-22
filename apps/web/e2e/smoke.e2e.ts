@@ -16,15 +16,15 @@ test("renders the passwordless auth gateway", async ({ page }) => {
   await page.goto("/auth/login");
 
   await expect(page.getByText("Вход в ParamLab")).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Войти через Telegram" }),
-  ).toBeVisible();
   await expect(page.getByLabel("Рабочая или личная почта")).toHaveAttribute(
     "type",
     "email",
   );
   await expect(
     page.getByRole("button", { name: "Получить код" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Войти через Яндекс ID" }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "← Вернуться в конфигуратор" }),
