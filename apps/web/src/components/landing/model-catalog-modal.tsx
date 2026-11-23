@@ -221,7 +221,7 @@ export function ModelCatalogModal() {
               <div
                 role="tablist"
                 aria-label="Фильтр по категориям деталей"
-                className="flex items-center gap-1.5 overflow-x-auto pb-0.5"
+                className="flex flex-wrap items-center gap-1.5"
               >
                 <button
                   type="button"
@@ -229,7 +229,7 @@ export function ModelCatalogModal() {
                   aria-selected={selectedCategory === "all"}
                   onClick={() => setSelectedCategory("all")}
                   className={cn(
-                    "shrink-0 rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                    "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
                     selectedCategory === "all"
                       ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
                       : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
@@ -250,7 +250,7 @@ export function ModelCatalogModal() {
                       aria-selected={active}
                       onClick={() => setSelectedCategory(cat.id)}
                       className={cn(
-                        "shrink-0 rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                        "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
                         active
                           ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
                           : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
@@ -264,7 +264,7 @@ export function ModelCatalogModal() {
             </div>
 
             {/* Сетка моделей */}
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+            <div className="lab-scrollbar flex-1 overflow-y-auto p-5 sm:p-6">
               {filteredModels.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#262B36] bg-[#0E1014]/60 px-6 py-12 text-center">
                   <p className="font-mono text-xs text-[#00D1FF]">
