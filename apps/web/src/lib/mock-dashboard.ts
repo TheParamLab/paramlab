@@ -961,13 +961,14 @@ export function formatDimensionFormula(
   partType: SavedPartPreset["partType"],
   dims: { d1: number; d2: number; h: number },
 ): string {
-  if (isConcentricBorePart(partType)) {
-    return `D${dims.d1} × d${dims.d2} × H${dims.h}`;
-  }
+  const partMeta = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
+  const effectiveD2 = isConcentricBorePart(partType)
+    ? clampBore(dims.d1, dims.d2)
+    : dims.d2;
   if (partType === "adapter" || partType === "flange-nozzle") {
-    return `D1 ${dims.d1} × D2 ${dims.d2} × H${dims.h}`;
+    return `D1 ${dims.d1} × D2 ${effectiveD2} × H${dims.h}`;
   }
-  return `L${dims.d1} × W${dims.d2} × H${dims.h}`;
+  return `${partMeta.dimensions.d1.code}${dims.d1} × ${partMeta.dimensions.d2.code}${effectiveD2} × ${partMeta.dimensions.h.code}${dims.h}`;
 }
 
 /**

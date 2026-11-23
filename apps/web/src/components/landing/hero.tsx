@@ -89,6 +89,28 @@ export function Hero() {
   const [activeCategory, setActiveCategory] = useState<"all" | PartCategoryId>(
     "all",
   );
+  const [editingDimText, setEditingDimText] = useState<
+    Partial<Record<DimensionKey, string>>
+  >({});
+
+  function commitDimensionText(
+    key: DimensionKey,
+    rawText: string,
+    min: number,
+    max: number,
+  ) {
+    const trimmed = rawText.trim();
+    setEditingDimText((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    if (!trimmed) return;
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) return;
+    const clamped = Math.max(min, Math.min(max, Math.round(parsed)));
+    setDimension(key, clamped);
+  }
 
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
   const material = MATERIALS.find((m) => m.id === materialId) ?? MATERIALS[0];
@@ -518,17 +540,49 @@ export function Hero() {
                             min={meta.min}
                             max={meta.max}
                             step={meta.step}
-                            value={val}
-                            onFocus={() => setActiveDimension(key)}
-                            onBlur={() => setActiveDimension(null)}
-                            onChange={(e) => {
-                              const raw = Number(e.target.value);
-                              if (!Number.isFinite(raw)) return;
-                              const clamped = Math.max(
+                            value={editingDimText[key] ?? String(val)}
+                            onFocus={() => {
+                              setActiveDimension(key);
+                              setEditingDimText((prev) => ({
+                                ...prev,
+                                [key]: String(val),
+                              }));
+                            }}
+                            onBlur={(e) => {
+                              setActiveDimension(null);
+                              commitDimensionText(
+                                key,
+                                e.currentTarget.value,
                                 meta.min,
-                                Math.min(meta.max, Math.round(raw)),
+                                meta.max,
                               );
-                              setDimension(key, clamped);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                commitDimensionText(
+                                  key,
+                                  e.currentTarget.value,
+                                  meta.min,
+                                  meta.max,
+                                );
+                                e.currentTarget.blur();
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                setEditingDimText((prev) => {
+                                  const next = { ...prev };
+                                  delete next[key];
+                                  return next;
+                                });
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            onChange={(e) => {
+                              const nextText = e.target.value;
+                              setEditingDimText((prev) => ({
+                                ...prev,
+                                [key]: nextText,
+                              }));
                             }}
                             className="w-12 bg-transparent text-right font-mono text-xs font-semibold text-[#F2F4F7] focus:outline-none"
                           />

@@ -10,10 +10,16 @@ import {
 } from "./draft-part";
 
 describe("draft-part", () => {
-  test("formats bushing and gear formulas as D × T × H", () => {
+  test("formats bushing and gear formulas as D × T × H and spacer-ring / belt-pulley as D × d × H", () => {
     expect(
       formatDraftDimensionFormula("bushing", { d1: 42, d2: 34, h: 30 }),
     ).toBe("D42 × T4 × H30");
+    expect(
+      formatDraftDimensionFormula("spacer-ring", { d1: 50, d2: 35, h: 30 }),
+    ).toBe("D50 × d35 × H30");
+    expect(
+      formatDraftDimensionFormula("belt-pulley", { d1: 64, d2: 16, h: 28 }),
+    ).toBe("D64 × d16 × H28");
   });
 
   test("builds a complete draft part with PETG-CF defaults and computed price", () => {

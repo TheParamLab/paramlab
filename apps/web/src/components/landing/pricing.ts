@@ -35,13 +35,15 @@ export function calcPrice({ massGrams, rate, quantity, extras }: PriceInput) {
 
 const WALL = 2.5;
 
-/** Шаблоны с внешним диаметром D и соосным внутренним отверстием d. */
+/** Шаблоны с внешним диаметром D (или D1) и ограниченным внутренним/выходным диаметром d (или D2). */
 export function isConcentricBorePart(partType: PartTypeId): boolean {
   return (
     partType === "bushing" ||
     partType === "spacer-ring" ||
     partType === "gear" ||
-    partType === "belt-pulley"
+    partType === "belt-pulley" ||
+    partType === "flange-nozzle" ||
+    partType === "pipe-clamp"
   );
 }
 
@@ -64,10 +66,10 @@ export function estimateMass(
       break;
     case "flange-nozzle": {
       // Круглая монтажная плита D1 + тонкостенный патрубок D2 высотой h.
-      const nozzleR = Math.min(d2, d1 - 6);
-      const plate =
-        (Math.PI / 4) * (d1 ** 2 - Math.max(4, nozzleR - 5) ** 2) * 4;
-      const pipe = Math.PI * WALL * Math.max(6, nozzleR - WALL) * h;
+      const nozzleD = clampBore(d1, d2);
+      const innerBore = Math.max(6, nozzleD - 2 * WALL);
+      const plate = (Math.PI / 4) * (d1 ** 2 - innerBore ** 2) * 4;
+      const pipe = (Math.PI / 4) * (nozzleD ** 2 - innerBore ** 2) * h;
       volume = plate + pipe;
       break;
     }
@@ -106,13 +108,23 @@ export function estimateMass(
     case "end-cap":
       volume = d1 * d2 * 3 + 2 * (d1 + d2) * 2 * Math.min(h, 40);
       break;
-    case "bracket":
-    case "pipe-clamp": {
-      // Угловой профиль / хомут: две пластины толщиной WALL + ребра жесткости.
+    case "bracket": {
+      // Угловой профиль: две пластины толщиной WALL + ребра жесткости.
       const base = d1 * d2 * WALL;
       const upright = d2 * h * WALL;
       const ribs = Math.min(d1, h) * d2 * WALL * 0.5;
       volume = base + upright + ribs;
+      break;
+    }
+    case "pipe-clamp": {
+      // Опорный блок с полукруглым ложементом диаметра d и крепежными фланцами L × H.
+      const bore = clampBore(d1, d2);
+      const collarOuter = Math.min(d1 * 0.72, bore + 12);
+      const baseThickness = Math.max(4, Math.round((d1 - bore) * 0.14));
+      const basePlate = d1 * h * baseThickness;
+      const halfArch =
+        (Math.PI / 8) * Math.max(10, collarOuter ** 2 - bore ** 2) * h;
+      volume = (basePlate + halfArch) * 0.75;
       break;
     }
     case "organizer": {

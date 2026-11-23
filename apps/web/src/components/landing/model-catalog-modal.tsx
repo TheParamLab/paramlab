@@ -56,6 +56,9 @@ export function ModelCatalogModal() {
   useEffect(() => {
     if (!isCatalogModalOpen) return;
 
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
     window.requestAnimationFrame(() => {
       searchInputRef.current?.focus();
@@ -86,6 +89,7 @@ export function ModelCatalogModal() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => {
+      document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKeyDown);
       lastFocusedRef.current?.focus();
     };
@@ -104,6 +108,7 @@ export function ModelCatalogModal() {
       item.description.toLowerCase().includes(normalizedQuery) ||
       item.code.toLowerCase().includes(normalizedQuery) ||
       item.category.toLowerCase().includes(normalizedQuery) ||
+      item.tolerance.toLowerCase().includes(normalizedQuery) ||
       item.presets.some((preset) =>
         preset.title.toLowerCase().includes(normalizedQuery),
       )
@@ -114,6 +119,10 @@ export function ModelCatalogModal() {
     model: (typeof PART_TYPES)[number],
     preset?: PartModelPreset,
   ) {
+    if (model.id === partType && !preset) {
+      setCatalogModalOpen(false);
+      return;
+    }
     setPartType(model.id, preset?.dimensions);
     if (preset?.labelText) {
       setLabelText(preset.labelText);

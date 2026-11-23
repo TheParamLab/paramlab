@@ -73,12 +73,15 @@ export function formatDraftDimensionFormula(
   labelText?: string | null,
 ): string {
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
-  if (isConcentricBorePart(partType)) {
+  if (partType === "bushing" || partType === "gear") {
     const bore = clampBore(dims.d1, dims.d2);
     const wall = Math.max(2, Math.round((dims.d1 - bore) / 2));
     return `D${dims.d1} × T${wall} × H${dims.h}`;
   }
-  const baseFormula = `${part.dimensions.d1.code}${dims.d1} × ${part.dimensions.d2.code}${dims.d2} × ${part.dimensions.h.code}${dims.h}`;
+  const effectiveD2 = isConcentricBorePart(partType)
+    ? clampBore(dims.d1, dims.d2)
+    : dims.d2;
+  const baseFormula = `${part.dimensions.d1.code}${dims.d1} × ${part.dimensions.d2.code}${effectiveD2} × ${part.dimensions.h.code}${dims.h}`;
   if (partType === "plant-tag" && labelText?.trim()) {
     return `${baseFormula} · «${labelText.trim().slice(0, 12)}»`;
   }
