@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import type { Session } from "@acme/auth";
-import { eq, OrderEvent, OrderItem } from "@acme/db";
 import { call } from "@orpc/server";
+import type { Session } from "@paramlab/auth";
+import { eq, OrderEvent, OrderItem } from "@paramlab/db";
 
 import { createSession, setupTestApi } from "../../../test/helpers";
 import { adminOrdersRouter } from "../admin/orders";
@@ -241,7 +241,7 @@ describe("admin.orders.setStatus", () => {
       {
         id: order.id,
         status: "shipped",
-        carrier: "СДЭК",
+        carrier: "Ozon",
         trackingNumber: "10012345678",
       },
       { context: api.context(admin) },
@@ -254,7 +254,7 @@ describe("admin.orders.setStatus", () => {
     );
     expect(found).toMatchObject({
       status: "shipped",
-      carrier: "СДЭК",
+      carrier: "Ozon",
       trackingNumber: "10012345678",
     });
     expect(found.events.map((e) => e.status)).toEqual([
@@ -580,5 +580,45 @@ describe("event order", () => {
       "paid",
       "printing",
     ]);
+  });
+});
+
+describe("order summary", () => {
+  it("counts every order of the caller, not just the first page", async () => {
+    const session = await createSession(api.db);
+    const other = await createSession(api.db);
+    const admin = await createSession(api.db, { role: "admin" });
+    const part = await createPart(session);
+
+    const orders = [];
+    for (const quantity of [1, 2, 3]) {
+      orders.push(
+        await call(
+          orderRouter.create,
+          { partId: part.id, materialId: "petg", quantity },
+          { context: api.context(session) },
+        ),
+      );
+    }
+    const [first] = orders;
+    if (!first) throw new Error("order was not created");
+    await call(
+      adminOrdersRouter.setStatus,
+      { id: first.id, status: "printing" },
+      { context: api.context(admin) },
+    );
+
+    expect(
+      await call(orderRouter.summary, undefined, {
+        context: api.context(session),
+      }),
+    ).toEqual({ total: 3, active: 1 });
+
+    // Чужие заказы в счётчики не попадают.
+    expect(
+      await call(orderRouter.summary, undefined, {
+        context: api.context(other),
+      }),
+    ).toEqual({ total: 0, active: 0 });
   });
 });

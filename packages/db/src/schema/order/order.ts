@@ -1,4 +1,4 @@
-import type { MaterialId, OrderStatus } from "@acme/validators";
+import type { MaterialId, OrderStatus } from "@paramlab/validators";
 import { relations, sql } from "drizzle-orm";
 import { index, pgTable } from "drizzle-orm/pg-core";
 

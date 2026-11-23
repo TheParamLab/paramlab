@@ -1,9 +1,9 @@
-import { env } from "@acme/config";
+import { env } from "@paramlab/config";
 
 /**
- * Role checks shared by Better Auth (`initAuth`) and `@acme/api`
+ * Role checks shared by Better Auth (`initAuth`) and `@paramlab/api`
  * (`adminProcedure`). Kept free of `better-auth` imports so the API can use
- * it without pulling in the auth runtime (`@acme/auth/roles`).
+ * it without pulling in the auth runtime (`@paramlab/auth/roles`).
  */
 
 export const ADMIN_ROLE = "admin";

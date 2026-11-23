@@ -1,4 +1,4 @@
-import { desc, eq, Order, OrderItem, Part } from "@acme/db";
+import { desc, eq, Order, OrderItem, Part } from "@paramlab/db";
 
 import { protectedProcedure } from "../../orpc";
 

@@ -1,12 +1,10 @@
 export const SITE_URL = "https://paramlab.ru";
 
 export const NAV_LINKS = [
-  { href: "#calculator", label: "Калькулятор" },
-  { href: "#generators", label: "Генераторы деталей" },
-  { href: "#capabilities", label: "Возможности" },
-  { href: "#products", label: "Готовые приборы" },
-  { href: "#delivery", label: "Доставка в ПВЗ" },
-  { href: "#pricing", label: "Цены" },
+  { href: "#calculator", label: "Конфигуратор" },
+  { href: "#advantages", label: "Лаборатория" },
+  { href: "#templates", label: "Шаблоны CAD" },
+  { href: "#workflow", label: "Цикл печати" },
   { href: "#faq", label: "Вопросы" },
 ] as const;
 
@@ -20,47 +18,77 @@ export interface Material {
   rate: number;
   /** Плотность, г/см³ — для оценки массы детали из генератора. */
   density: number;
-  /** Карбоновый пластик: темный бейдж кода. */
+  /** Карбоновый пластик: матовая текстура с углеволокном. */
   carbon?: boolean;
+  /** Основной цвет детали на 3D CAD-вьюпорте. */
+  color: string;
+  /** Вторичный оттенок граней для глубины 3D-шейдинга. */
+  shade: string;
+  /** Акцент блика / ребер материала. */
+  specular: string;
+  /** Индекс прочности (МПа, для сравнения в Bento-сетке). */
+  strengthMpa: number;
+  /** Максимальная рабочая температура (°C). */
+  maxTempC: number;
 }
 
 export const MATERIALS = [
   {
     id: "petg",
-    title: "Базовый прочный",
+    title: "Базовый конструкционный",
     code: "PETG",
     temp: "до 75 °C",
-    description: "Корпуса, крепеж, кронштейны",
+    description: "Корпуса приборов, кронштейны, технические крепления",
     rate: 18,
     density: 1.27,
+    color: "#384152",
+    shade: "#232936",
+    specular: "#64748B",
+    strengthMpa: 52,
+    maxTempC: 75,
   },
   {
-    id: "asa",
-    title: "Улица, авто и станки",
-    code: "ASA / ABS",
+    id: "abs",
+    title: "Термостойкий технический",
+    code: "ABS",
     temp: "до 105 °C",
-    description: "Стойкий к УФ, маслам и морозу",
-    rate: 24,
-    density: 1.07,
+    description: "Автомобильные узлы, кожухи станков, работа под нагрузкой",
+    rate: 23,
+    density: 1.05,
+    color: "#2E3A46",
+    shade: "#1D252E",
+    specular: "#52667A",
+    strengthMpa: 64,
+    maxTempC: 105,
   },
   {
-    id: "pa6cf",
-    title: "Замена металла",
-    code: "PA6-CF / PC",
-    temp: "до 160 °C",
-    description: "Полиамид с углеволокном для шестерен и нагруженных узлов",
-    rate: 38,
-    density: 1.2,
+    id: "pa12",
+    title: "Инженерный полиамид",
+    code: "PA12 Nylon",
+    temp: "до 135 °C",
+    description: "Шестерни, силовые втулки скольжения, износостойкие узлы",
+    rate: 32,
+    density: 1.02,
+    color: "#434957",
+    shade: "#2A2E38",
+    specular: "#8B95A8",
+    strengthMpa: 78,
+    maxTempC: 135,
+  },
+  {
+    id: "petgcf",
+    title: "Угленаполненный композит",
+    code: "PETG-CF",
+    temp: "до 115 °C",
+    description: "Матрица с рубленым углеволокном (15% CF), высокая жесткость",
+    rate: 36,
+    density: 1.32,
     carbon: true,
-  },
-  {
-    id: "tpu",
-    title: "Гибкий демпфер",
-    code: "TPU 95A",
-    temp: "до 80 °C",
-    description: "Пыльники, манжеты, виброопоры, прокладки",
-    rate: 28,
-    density: 1.21,
+    color: "#1E222B",
+    shade: "#12151B",
+    specular: "#485164",
+    strengthMpa: 88,
+    maxTempC: 115,
   },
 ] as const satisfies readonly Material[];
 
@@ -69,229 +97,547 @@ export type MaterialId = (typeof MATERIALS)[number]["id"];
 export type DimensionKey = "d1" | "d2" | "h";
 export type Dimensions = Record<DimensionKey, number>;
 
-export const DIMENSION_LIMITS: Record<
-  DimensionKey,
-  { min: number; max: number; initial: number }
-> = {
-  d1: { min: 20, max: 250, initial: 50 },
-  d2: { min: 10, max: 200, initial: 35 },
-  h: { min: 20, max: 200, initial: 80 },
-};
+interface PartParameterMeta {
+  code: string;
+  label: string;
+  unit: string;
+  min: number;
+  max: number;
+  step: number;
+  initial: number;
+}
+
+interface PartTextParamMeta {
+  code: string;
+  label: string;
+  placeholder: string;
+  maxLength: number;
+  initial: string;
+  presets: readonly string[];
+}
 
 export interface PartType {
   id: string;
+  shortLabel: string;
   label: string;
-  /** Подписи ползунков и коды размеров на чертеже. */
-  dimensions: Record<DimensionKey, { code: string; label: string }>;
+  code: string;
+  tolerance: string;
+  /** Подписи ползунков и диапазоны размеров в Hero-конфигураторе. */
+  dimensions: Record<DimensionKey, PartParameterMeta>;
+  /** Опциональная параметрическая надпись (например, для двухцветной бирки). */
+  textParam?: PartTextParamMeta;
 }
 
 export const PART_TYPES = [
   {
-    id: "adapter",
-    label: "Ступенчатый переходник (трубы / пылесос)",
-    dimensions: {
-      d1: { code: "D1", label: "Внешний диаметр D1" },
-      d2: { code: "D2", label: "Диаметр второй ступени D2" },
-      h: { code: "H", label: "Высота детали H" },
-    },
-  },
-  {
     id: "bushing",
-    label: "Силовая втулка с буртиком",
+    shortLabel: "Втулка / Фланец",
+    label: "Втулка / Фланец с центрирующим буртиком",
+    code: "CAD-BSH-01",
+    tolerance: "ISO 2768-mK · ±0.1 мм",
     dimensions: {
-      d1: { code: "D1", label: "Внешний диаметр D1" },
-      d2: { code: "D2", label: "Внутренний диаметр D2" },
-      h: { code: "H", label: "Высота детали H" },
+      d1: {
+        code: "D",
+        label: "Наружный диаметр D",
+        unit: "мм",
+        min: 20,
+        max: 160,
+        step: 1,
+        initial: 56,
+      },
+      d2: {
+        code: "d",
+        label: "Внутренний канал d",
+        unit: "мм",
+        min: 8,
+        max: 140,
+        step: 1,
+        initial: 32,
+      },
+      h: {
+        code: "H",
+        label: "Высота профиля H",
+        unit: "мм",
+        min: 15,
+        max: 140,
+        step: 1,
+        initial: 48,
+      },
     },
   },
   {
     id: "din-box",
-    label: "Приборный бокс на DIN-рейку",
+    shortLabel: "Корпус РЭА",
+    label: "Корпус РЭА с монтажными стойками PCB",
+    code: "CAD-ENC-02",
+    tolerance: "IP54 · Стенка ≥ 2.0 мм",
     dimensions: {
-      d1: { code: "L", label: "Длина L" },
-      d2: { code: "W", label: "Ширина W" },
-      h: { code: "H", label: "Высота бокса H" },
+      d1: {
+        code: "L",
+        label: "Длина корпуса L",
+        unit: "мм",
+        min: 40,
+        max: 220,
+        step: 1,
+        initial: 110,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина корпуса W",
+        unit: "мм",
+        min: 30,
+        max: 180,
+        step: 1,
+        initial: 74,
+      },
+      h: {
+        code: "H",
+        label: "Высота корпуса H",
+        unit: "мм",
+        min: 20,
+        max: 120,
+        step: 1,
+        initial: 42,
+      },
+    },
+  },
+  {
+    id: "gear",
+    shortLabel: "Шестерня",
+    label: "Прямозубая цилиндрическая шестерня",
+    code: "CAD-GR-03",
+    tolerance: "DIN 3962 · α = 20°",
+    dimensions: {
+      d1: {
+        code: "D",
+        label: "Делительный диаметр D",
+        unit: "мм",
+        min: 28,
+        max: 160,
+        step: 1,
+        initial: 72,
+      },
+      d2: {
+        code: "d",
+        label: "Посадочный вал d",
+        unit: "мм",
+        min: 6,
+        max: 90,
+        step: 1,
+        initial: 20,
+      },
+      h: {
+        code: "H",
+        label: "Ширина венца H",
+        unit: "мм",
+        min: 10,
+        max: 80,
+        step: 1,
+        initial: 24,
+      },
+    },
+  },
+  {
+    id: "adapter",
+    shortLabel: "Переходник",
+    label: "Ступенчатый переходник воздуховода",
+    code: "CAD-ADP-04",
+    tolerance: "Герметичный шов · ±0.15 мм",
+    dimensions: {
+      d1: {
+        code: "D1",
+        label: "Диаметр ступени D1",
+        unit: "мм",
+        min: 25,
+        max: 200,
+        step: 1,
+        initial: 68,
+      },
+      d2: {
+        code: "D2",
+        label: "Диаметр ступени D2",
+        unit: "мм",
+        min: 18,
+        max: 160,
+        step: 1,
+        initial: 42,
+      },
+      h: {
+        code: "H",
+        label: "Общая длина H",
+        unit: "мм",
+        min: 25,
+        max: 160,
+        step: 1,
+        initial: 64,
+      },
     },
   },
   {
     id: "end-cap",
-    label: "Торцевая заглушка в профиль",
+    shortLabel: "Крепление / Заглушка",
+    label: "Опорный фланец-заглушка в профиль",
+    code: "CAD-MNT-05",
+    tolerance: "Натяг +0.15 мм",
     dimensions: {
-      d1: { code: "L", label: "Длина профиля L" },
-      d2: { code: "W", label: "Ширина профиля W" },
-      h: { code: "H", label: "Глубина посадки H" },
+      d1: {
+        code: "L",
+        label: "Габарит профиля L",
+        unit: "мм",
+        min: 20,
+        max: 160,
+        step: 1,
+        initial: 60,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина посадки W",
+        unit: "мм",
+        min: 20,
+        max: 160,
+        step: 1,
+        initial: 40,
+      },
+      h: {
+        code: "H",
+        label: "Глубина захода H",
+        unit: "мм",
+        min: 15,
+        max: 100,
+        step: 1,
+        initial: 30,
+      },
+    },
+  },
+  {
+    id: "bracket",
+    shortLabel: "Кронштейн",
+    label: "Угловой кронштейн с ребрами жесткости",
+    code: "CAD-BRK-06",
+    tolerance: "ISO 2768-mK · Отверстия H8",
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Длина базы L",
+        unit: "мм",
+        min: 30,
+        max: 160,
+        step: 1,
+        initial: 68,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина кронштейна W",
+        unit: "мм",
+        min: 20,
+        max: 120,
+        step: 1,
+        initial: 44,
+      },
+      h: {
+        code: "H",
+        label: "Высота опоры H",
+        unit: "мм",
+        min: 20,
+        max: 120,
+        step: 1,
+        initial: 52,
+      },
+    },
+  },
+  {
+    id: "organizer",
+    shortLabel: "Органайзер",
+    label: "Модульный ложемент с ячейками",
+    code: "CAD-ORG-07",
+    tolerance: "Ячейки ±0.2 мм · R дно",
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Длина лотка L",
+        unit: "мм",
+        min: 40,
+        max: 220,
+        step: 1,
+        initial: 140,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина лотка W",
+        unit: "мм",
+        min: 40,
+        max: 160,
+        step: 1,
+        initial: 95,
+      },
+      h: {
+        code: "H",
+        label: "Глубина ячейки H",
+        unit: "мм",
+        min: 15,
+        max: 90,
+        step: 1,
+        initial: 36,
+      },
+    },
+  },
+  {
+    id: "plant-tag",
+    shortLabel: "Садовая бирка",
+    label: "Двухцветная бирка-колышек с рельефной надписью",
+    code: "CAD-TAG-08",
+    tolerance: "2 цвета (Z = 2.4 мм) · Ребро жесткости",
+    textParam: {
+      code: "TXT",
+      label: "Надпись на бирке (кириллица / цифры)",
+      placeholder: "Например: ТОМАТ",
+      maxLength: 12,
+      initial: "ТОМАТ",
+      presets: ["ТОМАТ", "ПЕРЕЦ", "ОГУРЕЦ", "БАКЛАЖАН"],
+    },
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Общая длина с колышком L",
+        unit: "мм",
+        min: 80,
+        max: 150,
+        step: 1,
+        initial: 124,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина таблички W",
+        unit: "мм",
+        min: 22,
+        max: 36,
+        step: 1,
+        initial: 26,
+      },
+      h: {
+        code: "H",
+        label: "Общая толщина с рельефом H",
+        unit: "мм",
+        min: 3,
+        max: 6,
+        step: 1,
+        initial: 3,
+      },
     },
   },
 ] as const satisfies readonly PartType[];
 
 export type PartTypeId = (typeof PART_TYPES)[number]["id"];
 
-export const GENERATORS: readonly {
-  partType: PartTypeId;
-  title: string;
-  text: string;
-  range: string;
-}[] = [
-  {
-    partType: "adapter",
-    title: "Аспирация и вентиляция",
-    text: "Переходники под строительные пылесосы (Makita, Bosch, Karcher), циклоны, шлифмашинки и воздуховоды от 20 до 250 мм.",
-    range: "Ø 20–250 мм",
-  },
-  {
-    partType: "bushing",
-    title: "Силовые втулки и проставки",
-    text: "Износостойкие капролоновые/полиамидные (PA6-CF) втулки для рулевых реек, тракторов, ворот и садовой техники.",
-    range: "PA6-CF",
-  },
-  {
-    partType: "din-box",
-    title: "Корпуса электроники и щитков",
-    text: "Коробки на DIN-рейку и герметичные боксы с кастомными окнами под экраны, датчики и гермовводы.",
-    range: "DIN 35 мм",
-  },
-  {
-    partType: "end-cap",
-    title: "Заглушки и опоры для сварки",
-    text: "Радиусные и угловые торцевые заглушки из уличного пластика ASA под профильную трубу и стальные каркасы.",
-    range: "ASA",
-  },
+/** Четыре основных шаблона для быстрого переключения в Hero. */
+export const HERO_PART_TYPES: readonly PartTypeId[] = [
+  "bushing",
+  "din-box",
+  "gear",
+  "plant-tag",
 ];
 
-export const PRODUCTS = [
+export interface ParametricTemplateCard {
+  id: string;
+  partType: PartTypeId;
+  category: string;
+  code: string;
+  title: string;
+  description: string;
+  materialCode: string;
+  presetDimensions: Dimensions;
+  presetLabelText?: string;
+  params: readonly {
+    code: string;
+    name: string;
+    value: string;
+  }[];
+  visualKind:
+    | "gear"
+    | "enclosure"
+    | "bushing"
+    | "adapter"
+    | "bracket"
+    | "organizer"
+    | "plant-tag";
+}
+
+export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
   {
-    name: "ParamLab DewPoint",
-    title: "Умный контроллер вентиляции подпола и погреба по точке росы",
-    specs: [
-      "ESP32-S3",
-      'Дисплей 3.5"',
-      "2 выносных датчика SHT30 в защитных гильзах",
-      "Реле вентилятора",
+    id: "spur-gear",
+    partType: "gear",
+    category: "Приводы и редукторы",
+    code: "TPL-GR-20",
+    title: "Цилиндрическая шестерня со шпоночным пазом",
+    description:
+      "Эвольвентный профиль зуба α=20°, усиленная ступица и точная посадка на вал без люфта.",
+    materialCode: "PA12 Nylon",
+    presetDimensions: { d1: 76, d2: 20, h: 24 },
+    params: [
+      { code: "D", name: "Делительный Ø", value: "28–160 мм" },
+      { code: "H", name: "Ширина венца", value: "10–80 мм" },
+      { code: "Z", name: "Число зубьев", value: "по D" },
     ],
-    text: "Считает абсолютную влажность в г/м³ по формуле Магнуса и включает продув только тогда, когда уличный воздух реально сушит подвал, исключая выпадение летнего конденсата на лагах.",
-    price: 13400,
-    pricePrefix: "",
-    availability: "В наличии",
-    cta: "Заказать прибор",
+    visualKind: "gear",
   },
   {
-    name: "ParamLab Vision",
-    title: "Потолочный нейросетевой (Edge AI) счетчик посетителей для ритейла",
-    specs: [
-      "NPU-модуль (Top-Down AI 25 fps)",
-      "Фильтр сотрудников по BLE-меткам",
-      "Уведомления в Telegram и MAX",
+    id: "rea-enclosure",
+    partType: "din-box",
+    category: "Приборостроение",
+    code: "TPL-ENC-54",
+    title: "Корпус РЭА на DIN-рейку и под печатную плату",
+    description:
+      "Внутренние бобышки под винты М3, вентиляционные пазы и защелка на профиль 35 мм.",
+    materialCode: "PETG-CF",
+    presetDimensions: { d1: 115, d2: 78, h: 44 },
+    params: [
+      { code: "D", name: "Габарит L×W", value: "40–220 мм" },
+      { code: "H", name: "Высота бокса", value: "20–120 мм" },
+      { code: "Z", name: "Сетка стоек PCB", value: "шаг 0.5 мм" },
     ],
-    text: "Крепится на потолок Армстронг/Грильято за 10 секунд без сверления. Не пишет видео (152-ФЗ), отсекает курьеров и перекуры продавцов, присылает ежедневный отчет трафика и конверсии.",
-    price: 9800,
-    pricePrefix: "",
-    availability: "Сборка 1 день",
-    cta: "Заказать прибор",
+    visualKind: "enclosure",
   },
   {
-    name: "ParamLab WeldJig",
-    title: "Комплект силовых сварочных позиционеров и магнитных угольников",
-    specs: [
-      "Термостойкий пластик ASA",
-      "Неодимовые магниты",
-      "Стальные закладные",
+    id: "flange-bushing",
+    partType: "bushing",
+    category: "Узлы трения",
+    code: "TPL-BSH-12",
+    title: "Силовая втулка с опорным фланцем и фаской",
+    description:
+      "Замена бронзовых и капролоновых втулок для станков, рулевых реек и шарниров.",
+    materialCode: "PA12 Nylon",
+    presetDimensions: { d1: 58, d2: 32, h: 50 },
+    params: [
+      { code: "D", name: "Наружный Ø", value: "20–160 мм" },
+      { code: "H", name: "Длина рабочей зоны", value: "15–140 мм" },
+      { code: "Z", name: "Допуск канала", value: "H8 (±0.1 мм)" },
     ],
-    text: "Быстрая фиксация профильной трубы под 90° и 45° для полуавтоматической сварки MIG/MAG без дорогого стапеля.",
-    price: 1400,
-    pricePrefix: "от ",
-    availability: "В наличии",
-    cta: "Выбрать под свой профиль",
+    visualKind: "bushing",
+  },
+  {
+    id: "step-adapter",
+    partType: "adapter",
+    category: "Аспирация и пневматика",
+    code: "TPL-ADP-08",
+    title: "Конусный переходник воздуховодов и патрубков",
+    description:
+      "Плавный аэродинамический переход между разными диаметрами труб и пылесосов.",
+    materialCode: "ABS",
+    presetDimensions: { d1: 75, d2: 45, h: 68 },
+    params: [
+      { code: "D", name: "Диаметры D1 / D2", value: "18–200 мм" },
+      { code: "H", name: "Длина муфты", value: "25–160 мм" },
+      { code: "Z", name: "Толщина стенки", value: "2.0–4.5 мм" },
+    ],
+    visualKind: "adapter",
+  },
+  {
+    id: "shaft-bracket",
+    partType: "bracket",
+    category: "Станочная оснастка",
+    code: "TPL-BRK-19",
+    title: "Фланцевое крепление вала и профиля",
+    description:
+      "Жесткий кронштейн с ребрами жесткости и потайными гнездами под крепеж М4–М6.",
+    materialCode: "PETG-CF",
+    presetDimensions: { d1: 68, d2: 44, h: 32 },
+    params: [
+      { code: "L", name: "Длина базы", value: "30–160 мм" },
+      { code: "H", name: "Высота опоры", value: "20–120 мм" },
+      { code: "Z", name: "Межцентровое", value: "по размеру" },
+    ],
+    visualKind: "bracket",
+  },
+  {
+    id: "grid-organizer",
+    partType: "organizer",
+    category: "Лабораторное хранение",
+    code: "TPL-ORG-42",
+    title: "Модульный органайзер-ложемент под инструмент",
+    description:
+      "Точные ячейки с радиусным дном и маркировкой для оснастки, фрез и крепежа.",
+    materialCode: "PETG",
+    presetDimensions: { d1: 140, d2: 95, h: 36 },
+    params: [
+      { code: "L", name: "Длина лотка", value: "40–220 мм" },
+      { code: "W", name: "Ширина лотка", value: "40–160 мм" },
+      { code: "Z", name: "Число секций", value: "1–12 ячеек" },
+    ],
+    visualKind: "organizer",
+  },
+  {
+    id: "seedling-plant-tag",
+    partType: "plant-tag",
+    category: "Агротехника и маркировка",
+    code: "TPL-TAG-08",
+    title: "Двухцветная бирка для рассады с вашей надписью",
+    description:
+      "Удлинённый колышек с ребром жесткости, контрастный рельефный текст и кант для двухцветной печати.",
+    materialCode: "PETG",
+    presetDimensions: { d1: 124, d2: 26, h: 3 },
+    presetLabelText: "БАКЛАЖАН",
+    params: [
+      { code: "L", name: "Общая длина", value: "80–150 мм" },
+      { code: "W", name: "Ширина головки", value: "22–36 мм" },
+      { code: "TXT", name: "Текст рельефа", value: "до 12 симв." },
+    ],
+    visualKind: "plant-tag",
   },
 ] as const;
 
-export const DELIVERY_STEPS = [
+export const PRODUCTION_CYCLE = [
   {
-    title: "Расчет за 5 секунд",
-    text: "Загружаете STL/STEP или задаете размеры в генераторе — сайт сразу фиксирует финальную стоимость.",
+    step: "01",
+    code: "STEP_01 // PARAM_INPUT",
+    metric: "~30 сек",
+    title: "Задал размеры",
+    description:
+      "Настройка параметров в браузере за 30 секунд. Двигайте ползунки D, T и H — CAD-ядро перестраивает твердотельную геометрию без участия конструктора.",
   },
   {
-    title: "Выбор ПВЗ у дома",
-    text: "Выбираете удобный пункт выдачи Ozon Посылка, Яндекс Доставка или СДЭК на карте (доставка по РФ от 199 ₽).",
+    step: "02",
+    code: "STEP_02 // MESH_VERIFY",
+    metric: "100% фикс",
+    title: "Проверил 3D и цену",
+    description:
+      "Расчетная оценка массы, времени печати и цены без скрытых доплат. Автоматический контроль толщины стенок и замкнутости сетки перед запуском станка.",
   },
   {
-    title: "Печать и фотоконтроль в Telegram / ЛК",
-    text: "Перед упаковкой отправляем вам в личный кабинет или бот реальное фото готовой детали со штангенциркулем.",
-  },
-  {
-    title: "Получение по штрихкоду",
-    text: "Забираете надежно упакованный заказ в ближайшем ПВЗ без очередей.",
-  },
-] as const;
-
-export const TARIFFS = [
-  {
-    title: "Печать по вашему файлу",
-    formats: "STL / STEP / 3MF",
-    text: "Старт станка 400 ₽ + вес и время по калькулятору.",
-    priceLabel: "Минимальный заказ",
-    price: "от 1 400 ₽",
-    term: "1–2 дня",
-  },
-  {
-    title: "Деталь из онлайн-генератора",
-    formats: "Без чертежа",
-    text: "3D-модель генерируется бесплатно автоматически по вашим ползункам.",
-    priceLabel: "Минимальный заказ",
-    price: "от 1 400 ₽",
-    term: "1–2 дня",
-  },
-  {
-    title: "3D-моделирование по фото или сломанному образцу",
-    formats: "Исходник STEP / STL — ваш навсегда",
-    text: "Отрисовка инженером от 1 700 ₽ + печать детали.",
-    priceLabel: "Под ключ",
-    price: "от 3 500 ₽",
-    term: "2–3 дня",
-  },
-  {
-    title: "Мелкосерийное производство для B2B",
-    formats: "От 10 шт.",
-    text: "Скидка 20–35% при загрузке полного стола 320×320 мм. Оплата по счету для ИП и ООО, ЭДО.",
-    priceLabel: "Чек",
-    price: "от 8 000 ₽",
-    term: "2–5 дней",
+    step: "03",
+    code: "STEP_03 // PRINT_DISPATCH",
+    metric: "24–48 ч",
+    title: "Забрал готовую деталь",
+    description:
+      "Печать в термокамере с точностью 0.1 мм, ОТК со штангенциркулем и отправка в ближайший ПВЗ Ozon по всей России.",
   },
 ] as const;
 
 export const FAQ = [
   {
     question:
-      "Какой пластик выбрать, если деталь работает под капотом авто или на улице в мороз?",
+      "Какой пластик выбрать, если деталь работает под нагрузкой или при высокой температуре?",
     answer:
-      "Для улицы, мороза и ультрафиолета берите ASA: он не желтеет на солнце, не боится масел и держит до 105 °C. Под капотом рядом с двигателем и для нагруженных узлов нужен угленаполненный полиамид PA6-CF или поликарбонат — они работают до 160 °C. PETG подходит для корпусов и кронштейнов в помещении, где не бывает выше 75 °C.",
+      "Для шестерен, втулок скольжения и деталей с трением выбирайте PA12 Nylon (до 135 °C) — он обладает низким коэффициентом трения и высокой усталостной прочностью. Для жестких корпусов и кронштейнов без усадки идеален PETG-CF с углеволокном. ABS подходит для кожухов и автокомпонентов (до 105 °C), а базовый PETG — для приборных корпусов и креплений в помещении.",
+  },
+  {
+    question: "Насколько точно соблюдаются заданные в конфигураторе размеры?",
+    answer:
+      "Кинематика CoreXY с калибровкой коэффициента тепловой усадки под каждую партию филамента обеспечивает точность линейных размеров ±0.1 мм (допуск ISO 2768-m). Перед упаковкой каждая деталь проходит замер цифровым штангенциркулем.",
   },
   {
     question:
-      "У меня нет 3D-модели, только сломанная пластмасса в руках — как сделать заказ?",
+      "Что происходит, если я задам слишком тонкую стенку в параметрах?",
     answer:
-      "Типовые переходники, втулки, боксы и заглушки соберите в онлайн-генераторе: задайте размеры ползунками, модель построится автоматически и бесплатно. Для остального пришлите фото детали на листе в клетку и 3 замера штангенциркулем — инженер отрисует 3D-модель от 1 700 ₽ и усилит слабые места. Исходник STEP/STL остается у вас навсегда.",
+      "Встроенный валидатор геометрии в реальном времени проверяет минимальную толщину стенки (от 2.0 мм для конструкционных деталей) и предупреждает, если внутренний диаметр слишком близок к наружному. Система автоматически удерживает безопасный конструктивный зазор.",
   },
   {
-    question: "Не сломается ли напечатанная деталь по слоям под нагрузкой?",
+    question: "Как быстро заказ приедет в ПВЗ Ozon?",
     answer:
-      "Инженерные пластики мы печатаем в закрытой камере, прогретой до 65 °C, а нить подаем прямо из сушильной станции — слои спекаются без трещин и расслоения. Деталь ориентируем на столе так, чтобы нагрузка шла вдоль слоев, а для самых нагруженных узлов закладываем стальные шпильки и шайбы или печатаем из PA6-CF.",
+      "Производство занимает от 12 до 36 часов в зависимости от объема партии. Сразу после печати и проверки ОТК заказ передается в логистику Ozon — доставка в большинство городов РФ занимает 2–4 дня от 199 ₽.",
   },
   {
-    question:
-      "Как устроена доставка через ПВЗ Ozon и Яндекс Доставку в регионы?",
+    question: "Работаете ли вы с юридическими лицами и серийными партиями?",
     answer:
-      "При оформлении заказа вы выбираете на карте удобный пункт выдачи Ozon Посылка, Яндекс Доставки или СДЭК. Отгружаем за 24–48 часов, доставка по России — от 199 ₽. Перед упаковкой присылаем фото готовой детали со штангенциркулем, а забираете заказ по штрихкоду.",
-  },
-  {
-    question:
-      "Можно ли сделать прочную металлическую резьбу внутри пластикового корпуса?",
-    answer:
-      "Да. Вплавляем на горячую латунные насечные втулки под винты М2.5–М8 — такая резьба держит нагрузку на отрыв до 100 кг и выдерживает многократную сборку. В калькуляторе это опция «Вплавить латунные резьбовые втулки М3–М6» за 350 ₽. Для силовых узлов закладываем стальные шайбы и шпильки на паузе печати.",
-  },
-  {
-    question:
-      "Работаете ли вы с юридическими лицами и ИП по безналичному расчету?",
-    answer:
-      "Да. Выставляем счет для ИП и ООО, работаем без НДС, закрывающие документы (УПД) отправляем через ЭДО — Диадок. Делаем и единичные прототипы, и партии в 50–500 корпусов; от 10 штук действует скидка за серию 20–35%.",
+      "Да. При заказе от 10 одинаковых деталей автоматически применяется серийный коэффициент (−20%). Выставляем счета для ИП и ООО, передаем закрывающие документы (УПД) через ЭДО.",
   },
 ] as const;

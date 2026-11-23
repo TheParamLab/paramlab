@@ -1,5 +1,5 @@
 {
-  "name": "@acme/api",
+  "name": "@paramlab/api",
   "private": true,
   "type": "module",
   "exports": {
@@ -20,17 +20,18 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@acme/auth": "workspace:*",
-    "@acme/config": "workspace:*",
-    "@acme/db": "workspace:*",
-    "@acme/storage": "workspace:*",
-    "@acme/validators": "workspace:*",
-    "@orpc/server": "2.0.0-beta.51",
+    "@orpc/server": "2.0.0-beta.52",
+    "@paramlab/auth": "workspace:*",
+    "@paramlab/config": "workspace:*",
+    "@paramlab/db": "workspace:*",
+    "@paramlab/storage": "workspace:*",
+    "@paramlab/validators": "workspace:*",
+
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "@acme/tsconfig": "workspace:*",
-    "@types/bun": "1.4.4",
+    "@paramlab/tsconfig": "workspace:*",
+    "@types/bun": "1.4.5",
     "@types/node": "26.6.6",
     "typescript": "7.0.2"
   }

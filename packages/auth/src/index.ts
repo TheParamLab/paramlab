@@ -1,9 +1,9 @@
-import { logger } from "@acme/config";
-import { type Database, db } from "@acme/db";
+import { logger } from "@paramlab/config";
+import { type Database, db } from "@paramlab/db";
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin, emailOTP, oAuthProxy } from "better-auth/plugins";
+import { admin, emailOTP } from "better-auth/plugins";
 
 import { ADMIN_ROLE, hasAdminRole, isAdminEmail } from "./roles";
 
@@ -11,10 +11,7 @@ export function initAuth<
   TExtraPlugins extends BetterAuthPlugin[] = [],
 >(options: {
   baseUrl: string;
-  productionUrl: string;
   secret: string | undefined;
-  googleClientId?: string;
-  googleClientSecret?: string;
   sendEmail?: (data: {
     email: string;
     otp?: string;
@@ -36,6 +33,13 @@ export function initAuth<
     }),
     baseURL: options.baseUrl,
     secret: options.secret,
+    /**
+     * Origins the site is served from. The browser reports
+     * `Origin: https://paramlab.ru` (the public site, e.g. via a proxy or a
+     * custom domain) while `APP_URL` stays the localhost default, so Better
+     * Auth would otherwise reject the request with "Invalid origin".
+     */
+    trustedOrigins: ["https://paramlab.ru"],
     /**
      * OTP, password-reset and verification emails go through Better Auth's
      * background tasks: the response no longer waits for the email provider,
@@ -77,11 +81,12 @@ export function initAuth<
       },
     },
     plugins: [
-      oAuthProxy({
-        productionURL: options.productionUrl,
-      }),
       emailOTP({
         async sendVerificationOTP(data) {
+          logger.info("auth.verification_otp_generated", {
+            email: data.email,
+            type: data.type,
+          });
           if (options.sendEmail) {
             await options.sendEmail({
               email: data.email,
@@ -124,16 +129,6 @@ export function initAuth<
         },
       },
     },
-    socialProviders:
-      options.googleClientId && options.googleClientSecret
-        ? {
-            google: {
-              clientId: options.googleClientId,
-              clientSecret: options.googleClientSecret,
-              redirectURI: `${options.productionUrl}/api/auth/callback/google`,
-            },
-          }
-        : {},
     onAPIError: {
       onError(error) {
         logger.error("auth.api_error", error);

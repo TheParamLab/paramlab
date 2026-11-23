@@ -1,22 +1,22 @@
-import { cn, ThemeProvider } from "@acme/ui";
+import { cn, ThemeProvider, Toaster } from "@paramlab/ui";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono, Onest } from "next/font/google";
 import type { ReactNode } from "react";
 import { SITE_URL } from "~/components/landing/data";
 import { YandexMetrika } from "~/components/landing/yandex-metrika";
+import { ORPCReactProvider } from "~/orpc/react";
 
 import "~/app/styles.css";
 
 const title =
-  "ParamLab — инженерная 3D-печать деталей и корпусов на заказ, расчет онлайн";
+  "ParamLab — сервис параметрической 3D-печати деталей и корпусов на заказ";
 const description =
-  "Печатаем технические детали и корпуса из PETG, ASA, PA6-CF и поликарбоната. Цена за 5 секунд по файлу STL/STEP или по размерам в генераторе. Доставка в ПВЗ Ozon от 199 ₽.";
+  "Инженерная параметрическая 3D-печать на заказ с точностью до 0.1 мм. Задайте размеры детали без 3D-моделирования: PETG, ABS, PA12 Nylon, PETG-CF. Доставка через Ozon.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title,
   description,
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "ru_RU",
@@ -29,32 +29,35 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    { media: "(prefers-color-scheme: light)", color: "#0E1014" },
+    { media: "(prefers-color-scheme: dark)", color: "#0E1014" },
   ],
 };
 
 // Кириллица нужна обоим шрифтам: весь текст страницы на русском.
-const geistSans = Geist({
+const onestSans = Onest({
   subsets: ["latin", "cyrillic"],
   variable: "--font-geist-sans",
 });
-const geistMono = Geist_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
   variable: "--font-geist-mono",
 });
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" className="dark" suppressHydrationWarning>
       <body
         className={cn(
-          "bg-background text-foreground min-h-screen font-sans antialiased",
-          geistSans.variable,
-          geistMono.variable,
+          "min-h-screen bg-[#0E1014] font-sans text-[#F2F4F7] antialiased selection:bg-[#FF5C1A] selection:text-[#0E1014]",
+          onestSans.variable,
+          jetbrainsMono.variable,
         )}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ORPCReactProvider>{children}</ORPCReactProvider>
+          <Toaster />
+        </ThemeProvider>
         <YandexMetrika />
       </body>
     </html>

@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>ParamLab</title>
-  <rect width="64" height="64" rx="14" fill="#18181b" />
-  <g fill="none" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M32 6 54 19v26L32 58 10 45V19L32 6Z" stroke="#fafafa" />
-    <path d="M10 19 32 32l22-13M32 32v26" stroke="#fafafa" />
-    <path d="M17 31v10.4l9 5.2V36.2" stroke="#f9700e" />
-  </g>
-</svg>

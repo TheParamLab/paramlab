@@ -1,12 +1,13 @@
 {
-  "extends": "@acme/tsconfig/base.json",
+  "extends": "@paramlab/tsconfig/base.json",
   "compilerOptions": {
     "lib": ["ES2022", "dom", "dom.iterable"],
     "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@/*": ["./src/*"]
     },
     "plugins": [{ "name": "next" }]
   },

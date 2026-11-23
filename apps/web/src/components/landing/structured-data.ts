@@ -1,10 +1,10 @@
-import { FAQ, PRODUCTS, SITE_URL } from "./data";
+import { FAQ, SITE_URL } from "./data";
 import { MIN_ORDER } from "./pricing";
 
 const organizationId = `${SITE_URL}/#organization`;
 const inStock = "https://schema.org/InStock";
 
-/** Schema.org-граф главной страницы: организация, услуга, приборы, FAQ. */
+/** Schema.org-граф главной страницы: организация, услуга, FAQ. */
 export const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -32,28 +32,6 @@ export const structuredData = {
         seller: { "@id": organizationId },
       },
     },
-    ...PRODUCTS.map((product) => ({
-      "@type": "Product",
-      name: product.name,
-      description: `${product.title}. ${product.text}`,
-      brand: { "@id": organizationId },
-      offers: product.pricePrefix
-        ? {
-            "@type": "AggregateOffer",
-            lowPrice: product.price,
-            priceCurrency: "RUB",
-            availability: inStock,
-            seller: { "@id": organizationId },
-          }
-        : {
-            "@type": "Offer",
-            price: product.price,
-            priceCurrency: "RUB",
-            availability: inStock,
-            url: `${SITE_URL}/#products`,
-            seller: { "@id": organizationId },
-          },
-    })),
     {
       "@type": "FAQPage",
       mainEntity: FAQ.map((item) => ({

@@ -1,4 +1,4 @@
-import type { MaterialId, PartFormat } from "@acme/validators";
+import type { MaterialId, PartFormat } from "@paramlab/validators";
 import { sql } from "drizzle-orm";
 import { index, pgTable } from "drizzle-orm/pg-core";
 

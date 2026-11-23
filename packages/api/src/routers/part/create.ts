@@ -1,9 +1,9 @@
-import { Part } from "@acme/db";
+import { Part } from "@paramlab/db";
 import {
   createPartSchema,
   estimateMassFromVolume,
   partFormatFromFileName,
-} from "@acme/validators";
+} from "@paramlab/validators";
 
 import { protectedProcedure } from "../../orpc";
 import { partKeyPrefix } from "./request-upload";

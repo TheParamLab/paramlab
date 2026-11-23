@@ -1,4 +1,4 @@
-import { eq, user } from "@acme/db";
+import { eq, user } from "@paramlab/db";
 
 import { protectedProcedure } from "../../orpc";
 

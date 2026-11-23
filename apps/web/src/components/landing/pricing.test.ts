@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { calcPrice, estimateMass, MIN_ORDER, parseBinaryStl } from "./pricing";
+import {
+  calcPrice,
+  estimateMass,
+  MIN_ORDER,
+  parseBinaryStl,
+} from "~/components/landing/pricing";
 
 describe("calcPrice", () => {
   test("adds the machine start to mass × rate", () => {
@@ -54,7 +59,16 @@ describe("calcPrice", () => {
 
 describe("estimateMass", () => {
   test("grows with dimensions for every part type", () => {
-    for (const type of ["adapter", "bushing", "din-box", "end-cap"] as const) {
+    for (const type of [
+      "adapter",
+      "bushing",
+      "gear",
+      "din-box",
+      "end-cap",
+      "bracket",
+      "organizer",
+      "plant-tag",
+    ] as const) {
       const small = estimateMass(type, { d1: 50, d2: 35, h: 30 }, 1.2);
       const large = estimateMass(type, { d1: 100, d2: 35, h: 30 }, 1.2);
       expect(small).toBeGreaterThan(0);

@@ -1,11 +1,7 @@
-import { env } from "~/env";
-
-const appUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-
-/** Ссылки в клиентское приложение (`apps/app`). */
+/** Ссылки на внутренние страницы: кабинет и вход живут на том же домене. */
 export const APP_LINKS = {
-  /** Личный кабинет; без сессии приложение само отправит на вход. */
-  cabinet: appUrl,
-  /** Оформление заказа начинается с регистрации. */
-  signup: `${appUrl}/auth/signup`,
+  /** Личный кабинет; без сессии proxy отправит на вход. */
+  cabinet: "/cabinet",
+  /** Единый шлюз входа и регистрации без паролей (Passwordless-first). */
+  signup: "/auth/login",
 } as const;

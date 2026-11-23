@@ -1,4 +1,3 @@
-import { env } from "@acme/config";
 import {
   GetObjectCommand,
   HeadObjectCommand,
@@ -6,21 +5,24 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { env, logger } from "@paramlab/config";
 
-const s3Endpoint = env.AWS_S3_ENDPOINT;
-const s3ForcePathStyle = env.AWS_S3_FORCE_PATH_STYLE !== "false";
-
-// Validate AWS credentials before creating the client
-const accessKeyId = env.AWS_ACCESS_KEY_ID;
-const secretAccessKey = env.AWS_SECRET_ACCESS_KEY;
-if (!accessKeyId || !secretAccessKey) {
+// Validate Yandex Object Storage config before creating the client
+const accessKeyId = env.YANDEX_STORAGE_ACCESS_KEY_ID;
+const secretAccessKey = env.YANDEX_STORAGE_SECRET_ACCESS_KEY;
+const bucketName = env.YANDEX_STORAGE_BUCKET;
+if (!accessKeyId || !secretAccessKey || !bucketName) {
   throw new Error(
-    "AWS credentials (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are required",
+    "Yandex Object Storage is not configured: set YANDEX_STORAGE_ACCESS_KEY_ID, " +
+      "YANDEX_STORAGE_SECRET_ACCESS_KEY and YANDEX_STORAGE_BUCKET",
   );
 }
 
+// После guard'а тип `bucketName` сужен до string — функции ниже рассчитывают на это.
+const BUCKET_NAME = bucketName;
+
 const s3Client = new S3Client({
-  region: env.AWS_REGION,
+  region: env.YANDEX_STORAGE_REGION,
   // Иначе SDK подписывает в presigned PUT контрольную сумму пустого тела,
   // и загрузка настоящего файла отклоняется хранилищем.
   requestChecksumCalculation: "WHEN_REQUIRED",
@@ -28,15 +30,11 @@ const s3Client = new S3Client({
     accessKeyId,
     secretAccessKey,
   },
-  ...(s3Endpoint
-    ? {
-        endpoint: s3Endpoint,
-        forcePathStyle: s3ForcePathStyle, // MinIO-friendly by default when endpoint provided
-      }
-    : {}),
+  // Object Storage понимает оба стиля адресации; path-style
+  // (storage.yandexcloud.net/<bucket>/<key>) держит хост стабильным.
+  endpoint: env.YANDEX_STORAGE_ENDPOINT,
+  forcePathStyle: true,
 });
-
-const BUCKET_NAME = env.AWS_S3_BUCKET;
 
 /**
  * Presigned PUT. С `contentLength` размер тела входит в подпись: хранилище
@@ -81,12 +79,7 @@ export async function uploadBufferToS3(
     return { key, bucket: BUCKET_NAME, etag: res.ETag };
   } catch (err) {
     const e = err as Error;
-    console.error("S3 upload failed", {
-      bucket: BUCKET_NAME,
-      key,
-      error: e?.message ?? String(err),
-      stack: e?.stack,
-    });
+    logger.error("S3 upload failed", err, { bucket: BUCKET_NAME, key });
     throw new Error(
       `Failed to upload to S3 bucket '${BUCKET_NAME}' key '${key}': ${e?.message ?? String(err)}`,
     );

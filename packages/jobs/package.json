@@ -1,5 +1,5 @@
 {
-  "name": "@acme/jobs",
+  "name": "@paramlab/jobs",
   "private": true,
   "type": "module",
   "exports": {
@@ -24,12 +24,12 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@acme/config": "workspace:*",
-    "@acme/emails": "workspace:*",
-    "@hatchet-dev/typescript-sdk": "1.46.2"
+    "@hatchet-dev/typescript-sdk": "1.47.4",
+    "@paramlab/config": "workspace:*",
+    "@paramlab/emails": "workspace:*"
   },
   "devDependencies": {
-    "@acme/tsconfig": "workspace:*",
+    "@paramlab/tsconfig": "workspace:*",
     "@types/node": "26.6.6",
     "typescript": "7.0.2"
   }

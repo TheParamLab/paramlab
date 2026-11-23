@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import { eq, user } from "@acme/db";
-import { createTestDb } from "@acme/db/testing";
+import { eq, user } from "@paramlab/db";
+import { createTestDb } from "@paramlab/db/testing";
 
 import { initAuth } from ".";
 import { hasAdminRole, isAdmin } from "./roles";

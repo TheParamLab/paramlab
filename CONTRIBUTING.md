@@ -81,7 +81,7 @@ Edit `.env` and add required values:
 
 - `POSTGRES_URL` — Neon database URL
 - `BETTER_AUTH_SECRET` — authentication secret
-- `RESEND_API_KEY` — API key for email sending
+- `RESEND_API_KEY` — API key for the fallback email provider (primary is Yandex Cloud Postbox via `YANDEX_POSTBOX_ACCESS_KEY_ID` / `YANDEX_POSTBOX_SECRET_ACCESS_KEY`)
 
 5. Apply database migrations:
 
@@ -131,7 +131,7 @@ bun-turbo-starter/
 
 ### Key Packages
 
-- **apps/app** — main Next.js application
+- **apps/web** — Next.js application (landing + personal account)
 - **packages/api** — tRPC API endpoints
 - **packages/db** — database schemas and migrations
 - **packages/ui** — reusable UI components

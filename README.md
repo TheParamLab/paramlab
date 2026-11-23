@@ -58,9 +58,9 @@ packages
   ├─ db
   │   └─ Drizzle ORM with an env-aware driver (node-postgres / Neon HTTP)
   ├─ emails
-  │   └─ Email templates with React Email + Resend / nodemailer
+  │   └─ Email templates with React Email + Yandex Postbox / Resend / nodemailer
   ├─ storage
-  │   └─ S3-compatible storage (AWS SDK v3, works with MinIO locally)
+  │   └─ S3-compatible storage (AWS SDK v3, Yandex Object Storage)
   ├─ ui
   │   └─ UI package for the webapp using shadcn-ui
   └─ validators
@@ -118,7 +118,7 @@ tooling
 ### 📧 Communication & Observability
 
 - **React Email** — Beautiful email templates
-- **Resend / Nodemailer** — Reliable email delivery (inbucket sandbox locally)
+- **Yandex Cloud Postbox / Resend** — Reliable email delivery (Postbox as primary via the AWS-SES-compatible API, Resend as fallback; inbucket sandbox locally)
 - **OpenTelemetry** — Built-in tracing via `instrumentation.ts`
 - **Structured logging** — JSON logs through a shared logger
 
@@ -163,7 +163,7 @@ bun install
 ### Setup
 
 > [!NOTE]
-> The database driver is selected automatically: a `*.neon.tech` URL uses the Neon HTTP driver, anything else (local Docker Postgres, Supabase, self-hosted) uses `node-postgres`. Override with `DB_DRIVER=node|neon-http`. A local Postgres, MinIO (S3) and inbucket (email) are provided via `docker-compose.yml`.
+> The database driver is selected automatically: a `*.neon.tech` URL uses the Neon HTTP driver, anything else (local Docker Postgres, Supabase, self-hosted) uses `node-postgres`. Override with `DB_DRIVER=node|neon-http`. A local Postgres and inbucket (email) are provided via `docker-compose.yml`; files live in Yandex Object Storage (`YANDEX_STORAGE_*`).
 
 **Step 1: Install dependencies & configure environment**
 
@@ -177,10 +177,47 @@ cp .env.example .env
 # Edit .env with your credentials
 # - POSTGRES_URL (local docker-compose Postgres, or get one from neon.tech)
 # - AUTH_SECRET (generate with: openssl rand -base64 32)
-# - RESEND_API_KEY (optional, get from resend.com)
+# - YANDEX_POSTBOX_ACCESS_KEY_ID / YANDEX_POSTBOX_SECRET_ACCESS_KEY
+#   (optional, primary provider: Yandex Cloud Postbox, postbox.sender role)
+# - RESEND_API_KEY (optional, fallback provider, get from resend.com)
+# - YANDEX_STORAGE_ACCESS_KEY_ID / YANDEX_STORAGE_SECRET_ACCESS_KEY /
+#   YANDEX_STORAGE_BUCKET (see Step 2)
 ```
 
-**Step 2: Setup database**
+**Step 2: Setup file storage (Yandex Object Storage)**
+
+```bash
+# In the Yandex Cloud console:
+# 1. Create a bucket (e.g. paramlab-files)
+# 2. Create a service account with the `storage.editor` role
+# 3. Create a static key for it (IAM → Service accounts → Static keys)
+# 4. Fill in .env:
+#    YANDEX_STORAGE_ACCESS_KEY_ID, YANDEX_STORAGE_SECRET_ACCESS_KEY,
+#    YANDEX_STORAGE_BUCKET
+```
+
+Files are uploaded by the browser directly to the bucket via a presigned `PUT`
+with a `Content-Type` header, so add a CORS rule to the bucket (Yandex Cloud
+console → bucket → CORS):
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://paramlab.ru"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"]
+  }
+]
+```
+
+> [!WARNING]
+> Database records store only object keys, not the bucket name. If your
+> installation already keeps files in another bucket (e.g. local MinIO or AWS
+> S3), copy them into the new bucket **keeping their keys** (`aws s3 sync` or
+> `mc mirror`) before switching `YANDEX_STORAGE_BUCKET`, otherwise old records
+> keep pointing at missing files. Fresh installations can skip this.
+
+**Step 3: Setup database**
 
 ```bash
 # Apply migrations (packages/db/migrations)
@@ -190,14 +227,14 @@ bun db:migrate
 bun db:studio
 ```
 
-**Step 3: Generate authentication schema**
+**Step 4: Generate authentication schema**
 
 ```bash
 # Generate Better Auth schema
 bun auth:generate
 ```
 
-**Step 4: Start development server**
+**Step 5: Start development server**
 
 ```bash
 # Start the self-contained Next.js app (UI + /api routes)
@@ -314,7 +351,7 @@ This project is optimized for **zero-config deployment** on Vercel.
 
 1. Push your code to GitHub
 2. Import project on [Vercel](https://vercel.com/new)
-3. Select `apps/app` as root directory
+3. Select `apps/web` as root directory
 4. Add environment variables (see below)
 5. Deploy! 🎉
 
@@ -328,10 +365,12 @@ POSTGRES_URL=postgresql://user:pass@host/db
 
 # Authentication
 AUTH_SECRET=your-secret-key
-AUTH_GOOGLE_ID=optional-google-oauth-id
-AUTH_GOOGLE_SECRET=optional-google-oauth-secret
 
 # Email (optional)
+# Primary: Yandex Cloud Postbox (AWS-SES-compatible API, postbox.sender role)
+# YANDEX_POSTBOX_ACCESS_KEY_ID=
+# YANDEX_POSTBOX_SECRET_ACCESS_KEY=
+# Fallback: Resend
 RESEND_API_KEY=re_your_api_key
 
 # API origin (optional) — point the web client at a standalone app-server
@@ -342,7 +381,7 @@ RESEND_API_KEY=re_your_api_key
 
 This starter can be deployed to any platform that supports Next.js:
 
-- **Netlify** — Add `apps/app` as base directory
+- **Netlify** — Add `apps/web` as base directory
 - **Railway** — Auto-detects Next.js configuration
 - **Fly.io** — Use provided Dockerfile
 - **Self-hosted** — Run `bun build` and serve the output
@@ -353,9 +392,7 @@ This starter can be deployed to any platform that supports Next.js:
 
 ```
 ├── apps/
-│   ├── app/              # Next.js application (serves the API itself)
-│   ├── app-server/       # Optional standalone API server (Hono)
-│   └── docs/             # Documentation site
+│   └── web/              # Next.js application: landing, /cabinet, /auth (serves the API itself)
 ├── packages/
 │   ├── api/              # oRPC router & procedures
 │   ├── auth/             # Authentication logic (better-auth)

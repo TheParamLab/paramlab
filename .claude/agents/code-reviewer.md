@@ -17,17 +17,17 @@ Check, in priority order:
 1. **Auth & data exposure** — procedures in `packages/api` use the right base
    (`publicProcedure` / `protectedProcedure` / `adminProcedure`); protected
    handlers check ownership before returning or mutating another user's rows;
-   nothing relies on `apps/app/src/proxy.ts` for security; no secrets or
+   nothing relies on `apps/web/src/proxy.ts` for security; no secrets or
    `.env` values in code, logs, or client bundles (`NEXT_PUBLIC_*` only for
    public values).
 2. **Correctness** — Drizzle queries (missing `where` on update/delete,
    `.returning()` destructured with `noUncheckedIndexedAccess` in mind),
    `ORPCError` codes, Zod input bounds, React Query invalidation after
    mutations.
-3. **Boundaries** — `server-only` code (`~/orpc/server`, `@acme/db`,
-   `@acme/auth`) not imported from `"use client"` files; `"use client"` only
+3. **Boundaries** — `server-only` code (`~/orpc/server`, `@paramlab/db`,
+   `@paramlab/auth`) not imported from `"use client"` files; `"use client"` only
    where needed.
-4. **Conventions** — env vars go through `@acme/config` / `~/env` (and
+4. **Conventions** — env vars go through `@paramlab/config` / `~/env` (and
    `.env.example`, `turbo.json` `globalEnv`); `logger` not `console.log`;
    `import type`; new procedures wired into routers; new UI components
    exported from `packages/ui/src/components/index.ts`; new schema domains

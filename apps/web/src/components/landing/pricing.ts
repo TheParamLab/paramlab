@@ -1,4 +1,4 @@
-import type { Dimensions, PartTypeId } from "./data";
+import type { Dimensions, PartTypeId } from "~/components/landing/data";
 
 export const MIN_ORDER = 1400;
 const MACHINE_START = 400;
@@ -60,12 +60,43 @@ export function estimateMass(
       volume = (body + flange) * 0.6;
       break;
     }
+    case "gear": {
+      const bore = clampBore(d1, d2);
+      const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
+      // Учет впадин зубьев и силового заполнения ~68 %.
+      volume = body * 0.68;
+      break;
+    }
     case "din-box":
       volume = 2 * (d1 * d2 + d1 * h + d2 * h) * WALL;
       break;
     case "end-cap":
       volume = d1 * d2 * 3 + 2 * (d1 + d2) * 2 * Math.min(h, 40);
       break;
+    case "bracket": {
+      // Угловой профиль: две пластины толщиной WALL + ребра жесткости.
+      const base = d1 * d2 * WALL;
+      const upright = d2 * h * WALL;
+      const ribs = Math.min(d1, h) * d2 * WALL * 0.5;
+      volume = base + upright + ribs;
+      break;
+    }
+    case "organizer": {
+      // Лоток со стенками и 2–3 перегородками.
+      const floor = d1 * d2 * WALL;
+      const walls = 2 * (d1 + d2) * h * WALL;
+      const dividers = Math.min(d1, d2) * h * WALL * 1.5;
+      volume = floor + walls + dividers;
+      break;
+    }
+    case "plant-tag": {
+      // Плоская головка (~50% длины) + конусный колышек (~50% длины) + рельефный кант/текст/ребро.
+      const headArea = d1 * 0.5 * d2;
+      const stakeArea = d1 * 0.5 * (d2 * 0.36);
+      const effectiveThickness = Math.max(2.4, h * 0.85);
+      volume = (headArea + stakeArea) * effectiveThickness;
+      break;
+    }
   }
   return Math.max(1, Math.round((volume / 1000) * density));
 }

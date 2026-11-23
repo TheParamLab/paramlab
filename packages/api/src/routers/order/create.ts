@@ -1,9 +1,9 @@
-import { and, eq, Order, OrderEvent, OrderItem, Part, sql } from "@acme/db";
+import { and, eq, Order, OrderEvent, OrderItem, Part, sql } from "@paramlab/db";
 import {
   calcPartPrice,
   createOrderSchema,
   partMassFor,
-} from "@acme/validators";
+} from "@paramlab/validators";
 
 import { protectedProcedure } from "../../orpc";
 

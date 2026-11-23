@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@acme/tailwind-config/theme";
+@import "@paramlab/tailwind-config/theme";
 
 @source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
@@ -8,31 +8,203 @@
 @custom-variant light (&:where(.light, .light *));
 @custom-variant auto (&:where(.auto, .auto *));
 
-/* Акцент лендинга: сигнальный оранжевый размерных линий и цены. */
-:root {
-  --brand: oklch(0.7 0.19 47);
-  --brand-foreground: oklch(0.17 0.02 47);
+/* Dark Engineering Theme — палитра лаборатории paramlab.ru */
+:root,
+.dark,
+.light {
+  --brand: #ff5c1a;
+  --brand-foreground: #0e1014;
+  --lab-bg: #0e1014;
+  --lab-surface: #161920;
+  --lab-border: #262b36;
+  --lab-text: #f2f4f7;
+  --lab-muted: #8a93a2;
+  --lab-accent: #ff5c1a;
+  --lab-cyan: #00d1ff;
+  --lab-ready: #10b981;
+  --ease-mechanical: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Семантические токены shadcn/ui переведены на Dark Engineering палитру */
+  --background: #0e1014;
+  --foreground: #f2f4f7;
+  --card: #161920;
+  --card-foreground: #f2f4f7;
+  --popover: #161920;
+  --popover-foreground: #f2f4f7;
+  --primary: #ff5c1a;
+  --primary-foreground: #0e1014;
+  --secondary: #1e232d;
+  --secondary-foreground: #f2f4f7;
+  --muted: #161920;
+  --muted-foreground: #8a93a2;
+  --accent: #1e232d;
+  --accent-foreground: #f2f4f7;
+  --border: #262b36;
+  --input: #262b36;
+  --ring: #00d1ff;
+  --sidebar: #161920;
+  --sidebar-foreground: #f2f4f7;
+  --sidebar-primary: #ff5c1a;
+  --sidebar-primary-foreground: #0e1014;
+  --sidebar-accent: #0e1014;
+  --sidebar-accent-foreground: #f2f4f7;
+  --sidebar-border: #262b36;
+  --sidebar-ring: #00d1ff;
 }
 
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-lab-bg: var(--lab-bg);
+  --color-lab-surface: var(--lab-surface);
+  --color-lab-border: var(--lab-border);
+  --color-lab-text: var(--lab-text);
+  --color-lab-muted: var(--lab-muted);
+  --color-lab-accent: var(--lab-accent);
+  --color-lab-cyan: var(--lab-cyan);
+  --color-lab-ready: var(--lab-ready);
 }
 
-/* Чертежная сетка из тонких линий цвета границ. */
+/* Чертежная миллиметровка (световой стол). */
 @utility bg-blueprint {
   background-image:
-    linear-gradient(to right, var(--border) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(to right, rgba(242, 244, 247, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(242, 244, 247, 0.45) 1px, transparent 1px),
+    linear-gradient(to right, rgba(242, 244, 247, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(242, 244, 247, 0.16) 1px, transparent 1px);
+  background-size:
+    64px 64px,
+    64px 64px,
+    16px 16px,
+    16px 16px;
 }
 
 @utility bg-blueprint-fine {
   background-image:
-    linear-gradient(to right, var(--border) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    linear-gradient(to right, rgba(38, 43, 54, 0.75) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(38, 43, 54, 0.75) 1px, transparent 1px);
   background-size: 16px 16px;
   background-position: center;
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+/* Световой блик по контуру CTA-кнопки (border-beam) */
+@keyframes border-beam-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cta-border-beam {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.cta-border-beam::before {
+  content: "";
+  position: absolute;
+  inset: -140%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 265deg,
+    rgba(255, 255, 255, 0.95) 315deg,
+    #00d1ff 345deg,
+    transparent 360deg
+  );
+  opacity: 0;
+  transition: opacity 240ms var(--ease-mechanical);
+  animation: border-beam-spin 2.4s linear infinite;
+  pointer-events: none;
+  z-index: -2;
+}
+
+.cta-border-beam::after {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  border-radius: calc(0.75rem - 1.5px);
+  background: #ff5c1a;
+  transition: background-color 240ms var(--ease-mechanical);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.cta-border-beam:hover::before,
+.cta-border-beam:focus-visible::before {
+  opacity: 1;
+}
+
+.cta-border-beam:hover::after {
+  background: #ff6a2e;
+}
+
+/* Тактильный инженерный слайдер */
+.lab-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lab-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+}
+
+.lab-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 14px;
+  margin-top: -6px;
+  border-radius: 4px;
+  background: #ff5c1a;
+  border: 1.5px solid #f2f4f7;
+  box-shadow: 0 0 12px rgba(255, 92, 26, 0.55);
+  transition:
+    transform 240ms var(--ease-mechanical),
+    background-color 240ms var(--ease-mechanical),
+    box-shadow 240ms var(--ease-mechanical);
+}
+
+.lab-slider:hover::-webkit-slider-thumb,
+.lab-slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.1);
+  background: #ff7138;
+  box-shadow: 0 0 16px rgba(255, 92, 26, 0.85);
+}
+
+.lab-slider::-moz-range-thumb {
+  height: 18px;
+  width: 14px;
+  border-radius: 4px;
+  background: #ff5c1a;
+  border: 1.5px solid #f2f4f7;
+  box-shadow: 0 0 12px rgba(255, 92, 26, 0.55);
+  transition:
+    transform 240ms var(--ease-mechanical),
+    background-color 240ms var(--ease-mechanical);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-border-beam::before {
+    animation: none;
+  }
 }
 
 @layer base {
