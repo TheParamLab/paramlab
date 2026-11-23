@@ -35,6 +35,18 @@ export function calcPrice({ massGrams, rate, quantity, extras }: PriceInput) {
 
 const WALL = 2.5;
 
+/** Шаблоны с внешним диаметром D (или D1) и ограниченным внутренним/выходным диаметром d (или D2). */
+export function isConcentricBorePart(partType: PartTypeId): boolean {
+  return (
+    partType === "bushing" ||
+    partType === "spacer-ring" ||
+    partType === "gear" ||
+    partType === "belt-pulley" ||
+    partType === "flange-nozzle" ||
+    partType === "pipe-clamp"
+  );
+}
+
 /** Внутренний диаметр втулки не может быть больше внешнего. */
 export function clampBore(d1: number, d2: number) {
   return Math.min(d2, d1 - 4);
@@ -52,12 +64,27 @@ export function estimateMass(
       // Две тонкостенные ступени со средним диаметром (D1 + D2) / 2.
       volume = Math.PI * WALL * ((d1 + d2) / 2 - WALL) * h;
       break;
+    case "flange-nozzle": {
+      // Круглая монтажная плита D1 + тонкостенный патрубок D2 высотой h.
+      const nozzleD = clampBore(d1, d2);
+      const innerBore = Math.max(6, nozzleD - 2 * WALL);
+      const plate = (Math.PI / 4) * (d1 ** 2 - innerBore ** 2) * 4;
+      const pipe = (Math.PI / 4) * (nozzleD ** 2 - innerBore ** 2) * h;
+      volume = plate + pipe;
+      break;
+    }
     case "bushing": {
       const bore = clampBore(d1, d2);
       const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
       const flange = (Math.PI / 4) * ((d1 + 10) ** 2 - d1 ** 2) * 4;
       // Силовая деталь: плотное заполнение ~60 %.
       volume = (body + flange) * 0.6;
+      break;
+    }
+    case "spacer-ring": {
+      const bore = clampBore(d1, d2);
+      const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
+      volume = body * 0.65;
       break;
     }
     case "gear": {
@@ -67,7 +94,15 @@ export function estimateMass(
       volume = body * 0.68;
       break;
     }
+    case "belt-pulley": {
+      const bore = clampBore(d1, d2);
+      const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
+      const rims = (Math.PI / 4) * ((d1 + 8) ** 2 - d1 ** 2) * 5;
+      volume = (body + rims) * 0.64;
+      break;
+    }
     case "din-box":
+    case "junction-box":
       volume = 2 * (d1 * d2 + d1 * h + d2 * h) * WALL;
       break;
     case "end-cap":
@@ -79,6 +114,17 @@ export function estimateMass(
       const upright = d2 * h * WALL;
       const ribs = Math.min(d1, h) * d2 * WALL * 0.5;
       volume = base + upright + ribs;
+      break;
+    }
+    case "pipe-clamp": {
+      // Опорный блок с полукруглым ложементом диаметра d и крепежными фланцами L × H.
+      const bore = clampBore(d1, d2);
+      const collarOuter = Math.min(d1 * 0.72, bore + 12);
+      const baseThickness = Math.max(4, Math.round((d1 - bore) * 0.14));
+      const basePlate = d1 * h * baseThickness;
+      const halfArch =
+        (Math.PI / 8) * Math.max(10, collarOuter ** 2 - bore ** 2) * h;
+      volume = (basePlate + halfArch) * 0.75;
       break;
     }
     case "organizer": {

@@ -198,12 +198,13 @@ function buildGeometry(
   const { d1, d2, h } = dimensions;
   const halfH = h / 2;
 
-  if (partType === "bushing") {
+  if (partType === "bushing" || partType === "spacer-ring") {
     const rOuter = d1 / 2;
     const bore = clampBore(d1, d2);
     const rInner = Math.max(3, bore / 2);
-    const flangeR = rOuter + Math.max(5, d1 * 0.11);
-    const flangeH = Math.min(h * 0.24, 12);
+    const hasFlange = partType === "bushing";
+    const flangeR = hasFlange ? rOuter + Math.max(5, d1 * 0.11) : rOuter;
+    const flangeH = hasFlange ? Math.min(h * 0.24, 12) : 0;
     const yBottom = -halfH;
     const yFlangeTop = yBottom + flangeH;
     const yTop = halfH;
@@ -234,10 +235,12 @@ function buildGeometry(
 
       // Внутренняя цилиндрическая поверхность на полную высоту
       faces.push(quadFace(ib1, it1, it0, ib0, { isInner: true }));
-      // Наружная поверхность фланца
-      faces.push(quadFace(f0b, f0t, f1t, f1b));
-      // Горизонтальный ступенчатый буртик
-      faces.push(quadFace(f0t, f1t, o1b, o0b, { isTop: true }));
+      if (hasFlange) {
+        // Наружная поверхность фланца
+        faces.push(quadFace(f0b, f0t, f1t, f1b));
+        // Горизонтальный ступенчатый буртик
+        faces.push(quadFace(f0t, f1t, o1b, o0b, { isTop: true }));
+      }
       // Наружная поверхность основного тела
       faces.push(quadFace(o0b, o0t, o1t, o1b));
       // Нижняя крышка (rInner..flangeR)
@@ -278,7 +281,58 @@ function buildGeometry(
       minY: yBottom,
       maxY: yTop,
       callouts,
-      layerRadiusAtY: (y) => (y <= yFlangeTop ? flangeR : rOuter),
+      layerRadiusAtY: (y) => (hasFlange && y <= yFlangeTop ? flangeR : rOuter),
+    };
+  }
+
+  if (partType === "belt-pulley") {
+    const rBody = d1 / 2;
+    const bore = clampBore(d1, d2);
+    const rInner = Math.max(3, bore / 2);
+    const rimR = rBody + Math.max(3.5, d1 * 0.075);
+    const rimH = Math.min(4, h * 0.16);
+    const y0 = -halfH;
+    const y1 = y0 + rimH;
+    const y2 = halfH - rimH;
+    const y3 = halfH;
+
+    addPrismRing(faces, rimR, rimR, rInner, rInner, y0, y1, 28);
+    addPrismRing(faces, rBody, rBody, rInner, rInner, y1, y2, 28);
+    addPrismRing(faces, rimR, rimR, rInner, rInner, y2, y3, 28);
+
+    const callouts: Callout3D[] = [
+      {
+        key: "d1",
+        code: "D",
+        value: d1,
+        start: { x: -rBody, y: y3 + 6, z: 0 },
+        end: { x: rBody, y: y3 + 6, z: 0 },
+        labelPos: { x: 0, y: y3 + 15, z: 0 },
+      },
+      {
+        key: "d2",
+        code: "d",
+        value: bore,
+        start: { x: -rInner, y: y3 + 3, z: 0 },
+        end: { x: rInner, y: y3 + 3, z: 0 },
+        labelPos: { x: 0, y: y3 + 23, z: 12 },
+      },
+      {
+        key: "h",
+        code: "H",
+        value: h,
+        start: { x: rimR + 10, y: y0, z: 0 },
+        end: { x: rimR + 10, y: y3, z: 0 },
+        labelPos: { x: rimR + 22, y: 0, z: 0 },
+      },
+    ];
+
+    return {
+      faces,
+      minY: y0,
+      maxY: y3,
+      callouts,
+      layerRadiusAtY: (y) => (y <= y1 || y >= y2 ? rimR : rBody),
     };
   }
 
@@ -366,21 +420,23 @@ function buildGeometry(
     };
   }
 
-  if (partType === "adapter") {
+  if (partType === "adapter" || partType === "flange-nozzle") {
+    const isNozzle = partType === "flange-nozzle";
+    const effectiveD2 = isNozzle ? clampBore(d1, d2) : d2;
     const r1 = d1 / 2;
-    const r2 = d2 / 2;
+    const r2 = effectiveD2 / 2;
     const wall = 2.8;
     const y0 = -halfH;
-    const y1 = -halfH + h * 0.38;
-    const y2 = -halfH + h * 0.64;
+    const y1 = isNozzle ? y0 + Math.min(8, h * 0.16) : -halfH + h * 0.38;
+    const y2 = isNozzle ? y1 + Math.min(6, h * 0.12) : -halfH + h * 0.64;
     const y3 = halfH;
 
     addPrismRing(
       faces,
       r1,
       r1,
-      Math.max(3, r1 - wall),
-      Math.max(3, r1 - wall),
+      Math.max(3, (isNozzle ? r2 : r1) - wall),
+      Math.max(3, (isNozzle ? r2 : r1) - wall),
       y0,
       y1,
       26,
@@ -389,7 +445,7 @@ function buildGeometry(
       faces,
       r1,
       r2,
-      Math.max(3, r1 - wall),
+      Math.max(3, (isNozzle ? r2 : r1) - wall),
       Math.max(3, r2 - wall),
       y1,
       y2,
@@ -419,7 +475,7 @@ function buildGeometry(
       {
         key: "d2",
         code: "D2",
-        value: d2,
+        value: effectiveD2,
         start: { x: -r2, y: y3 + 6, z: 0 },
         end: { x: r2, y: y3 + 6, z: 0 },
         labelPos: { x: 0, y: y3 + 15, z: 0 },
@@ -445,6 +501,104 @@ function buildGeometry(
         const t = (y - y1) / (y2 - y1);
         return r1 + (r2 - r1) * t;
       },
+    };
+  }
+
+  if (partType === "pipe-clamp") {
+    const L = d1;
+    const bore = clampBore(d1, d2);
+    const W = h;
+    const halfL = L / 2;
+    const halfW = W / 2;
+    const rInner = Math.max(4, bore / 2);
+    const archWall = Math.max(4, Math.min(8, (L - bore) * 0.22));
+    const rOuter = Math.min(halfL - 4, rInner + archWall);
+    const baseThick = Math.max(5, Math.min(10, archWall * 1.1));
+    const totalH = baseThick + rOuter;
+    const y0 = -totalH / 2;
+    const ySplit = y0 + baseThick;
+    const yTop = y0 + totalH;
+
+    // Боковые монтажные уши основания (слева и справа от полукруглого ложемента)
+    if (halfL > rInner + 2) {
+      addBoxWall(faces, -halfL, -rInner, y0, ySplit, -halfW, halfW);
+      addBoxWall(faces, rInner, halfL, y0, ySplit, -halfW, halfW);
+    }
+
+    // Полукруглый ложемент-хомут (арка от 0 до π над ySplit)
+    const segments = 18;
+    for (let i = 0; i < segments; i++) {
+      const a0 = (i / segments) * Math.PI;
+      const a1 = ((i + 1) / segments) * Math.PI;
+      const c0 = Math.cos(a0);
+      const s0 = Math.sin(a0);
+      const c1 = Math.cos(a1);
+      const s1 = Math.sin(a1);
+
+      const ox0 = rOuter * c0;
+      const oy0 = ySplit + rOuter * s0;
+      const ox1 = rOuter * c1;
+      const oy1 = ySplit + rOuter * s1;
+
+      const ix0 = rInner * c0;
+      const iy0 = ySplit + rInner * s0;
+      const ix1 = rInner * c1;
+      const iy1 = ySplit + rInner * s1;
+
+      const of0: Vec3 = { x: ox0, y: oy0, z: halfW };
+      const of1: Vec3 = { x: ox1, y: oy1, z: halfW };
+      const ob1: Vec3 = { x: ox1, y: oy1, z: -halfW };
+      const ob0: Vec3 = { x: ox0, y: oy0, z: -halfW };
+
+      const if0: Vec3 = { x: ix0, y: iy0, z: halfW };
+      const if1: Vec3 = { x: ix1, y: iy1, z: halfW };
+      const ib1: Vec3 = { x: ix1, y: iy1, z: -halfW };
+      const ib0: Vec3 = { x: ix0, y: iy0, z: -halfW };
+
+      // Наружный свод арки
+      faces.push(quadFace(of0, ob0, ob1, of1, { isTop: s0 > 0.5 && s1 > 0.5 }));
+      // Внутренний полукруглый ложемент под трубу/вал
+      faces.push(quadFace(if1, ib1, ib0, if0, { isInner: true }));
+      // Передний и задний торцы арки
+      faces.push(quadFace(if0, of0, of1, if1));
+      faces.push(quadFace(ob0, ib0, ib1, ob1));
+    }
+
+    const callouts: Callout3D[] = [
+      {
+        key: "d1",
+        code: "L",
+        value: L,
+        start: { x: -halfL, y: y0 - 5, z: halfW },
+        end: { x: halfL, y: y0 - 5, z: halfW },
+        labelPos: { x: 0, y: y0 - 14, z: halfW },
+      },
+      {
+        key: "d2",
+        code: "d",
+        value: bore,
+        start: { x: -rInner, y: ySplit + 2, z: halfW + 3 },
+        end: { x: rInner, y: ySplit + 2, z: halfW + 3 },
+        labelPos: { x: 0, y: yTop + 14, z: halfW },
+      },
+      {
+        key: "h",
+        code: "H",
+        value: W,
+        start: { x: halfL + 10, y: y0, z: -halfW },
+        end: { x: halfL + 10, y: y0, z: halfW },
+        labelPos: { x: halfL + 20, y: y0, z: 0 },
+      },
+    ];
+
+    return {
+      faces,
+      minY: y0,
+      maxY: yTop,
+      callouts,
+      isBoxy: true,
+      halfL,
+      halfW,
     };
   }
 

@@ -120,7 +120,66 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "din-box" && (
+        {partType === "spacer-ring" && (
+          <g>
+            {/* Нижний контур прямого цилиндра без буртика */}
+            <path
+              d="M84,44 L84,92 A36,11 0 0,0 156,92 L156,44"
+              fill="rgba(22, 25, 32, 0.78)"
+              stroke="#00D1FF"
+              strokeWidth="1.4"
+            />
+            <ellipse
+              cx="120"
+              cy="92"
+              rx="36"
+              ry="11"
+              fill="none"
+              stroke="#00D1FF"
+              strokeDasharray="3 2"
+              strokeOpacity="0.55"
+            />
+            <ellipse
+              cx="120"
+              cy="44"
+              rx="36"
+              ry="11"
+              fill="rgba(0, 209, 255, 0.14)"
+              stroke="#00D1FF"
+              strokeWidth="1.4"
+            />
+            {/* Внутренний канал d */}
+            <ellipse
+              cx="120"
+              cy="44"
+              rx="18"
+              ry="6"
+              fill="#0E1014"
+              stroke="#FF5C1A"
+              strokeWidth="1.6"
+            />
+            <line
+              x1="102"
+              y1="44"
+              x2="102"
+              y2="92"
+              stroke="#FF5C1A"
+              strokeDasharray="3 2"
+              strokeOpacity="0.7"
+            />
+            <line
+              x1="138"
+              y1="44"
+              x2="138"
+              y2="92"
+              stroke="#FF5C1A"
+              strokeDasharray="3 2"
+              strokeOpacity="0.7"
+            />
+          </g>
+        )}
+
+        {(partType === "din-box" || partType === "junction-box") && (
           <g>
             <polygon
               points="64,46 122,26 180,48 122,68"
@@ -148,7 +207,7 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "gear" && (
+        {(partType === "gear" || partType === "belt-pulley") && (
           <g transform="translate(120,68)">
             <circle
               r="42"
@@ -224,7 +283,49 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "adapter" && (
+        {partType === "pipe-clamp" && (
+          <g>
+            {/* Боковые уши основания */}
+            <rect
+              x="56"
+              y="82"
+              width="36"
+              height="16"
+              rx="2"
+              fill="rgba(0, 209, 255, 0.1)"
+              stroke="#00D1FF"
+              strokeWidth="1.4"
+            />
+            <rect
+              x="148"
+              y="82"
+              width="36"
+              height="16"
+              rx="2"
+              fill="rgba(0, 209, 255, 0.1)"
+              stroke="#00D1FF"
+              strokeWidth="1.4"
+            />
+            {/* Наружная арка хомута и полукруглый ложемент */}
+            <path
+              d="M 80 82 A 40 40 0 0 1 160 82 L 144 82 A 24 24 0 0 0 96 82 Z"
+              fill="rgba(22, 25, 32, 0.88)"
+              stroke="#00D1FF"
+              strokeWidth="1.4"
+            />
+            {/* Внутренняя посадочная дуга под трубу / вал */}
+            <path
+              d="M 96 82 A 24 24 0 0 1 144 82"
+              fill="none"
+              stroke="#FF5C1A"
+              strokeWidth="1.8"
+            />
+            <circle cx="72" cy="90" r="3" fill="#0E1014" stroke="#FF5C1A" />
+            <circle cx="168" cy="90" r="3" fill="#0E1014" stroke="#FF5C1A" />
+          </g>
+        )}
+
+        {(partType === "adapter" || partType === "flange-nozzle") && (
           <g>
             <polygon
               points="76,104 164,104 164,80 144,58 144,32 96,32 96,58 76,80"

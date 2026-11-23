@@ -116,14 +116,64 @@ interface PartTextParamMeta {
   presets: readonly string[];
 }
 
+export type PartCategoryId =
+  | "bearings"
+  | "drives"
+  | "enclosures"
+  | "piping"
+  | "mounting"
+  | "storage"
+  | "marking";
+
+export interface PartCategoryMeta {
+  id: PartCategoryId;
+  label: string;
+  shortLabel: string;
+}
+
+export const PART_CATEGORIES = [
+  { id: "bearings", label: "Узлы трения и втулки", shortLabel: "Втулки" },
+  { id: "drives", label: "Приводы и редукторы", shortLabel: "Приводы" },
+  { id: "enclosures", label: "Приборостроение и РЭА", shortLabel: "Корпуса" },
+  {
+    id: "piping",
+    label: "Аспирация, трубы и пневматика",
+    shortLabel: "Патрубки",
+  },
+  {
+    id: "mounting",
+    label: "Станочная оснастка и крепеж",
+    shortLabel: "Крепеж",
+  },
+  { id: "storage", label: "Лабораторное хранение", shortLabel: "Хранение" },
+  {
+    id: "marking",
+    label: "Агротехника и маркировка",
+    shortLabel: "Маркировка",
+  },
+] as const satisfies readonly PartCategoryMeta[];
+
+export interface PartModelPreset {
+  id: string;
+  title: string;
+  dimensions: Dimensions;
+  labelText?: string;
+}
+
 export interface PartType {
   id: string;
+  categoryId: PartCategoryId;
+  category: string;
   shortLabel: string;
   label: string;
+  description: string;
   code: string;
   tolerance: string;
+  recommendedMaterialId: MaterialId;
   /** Подписи ползунков и диапазоны размеров в Hero-конфигураторе. */
   dimensions: Record<DimensionKey, PartParameterMeta>;
+  /** Готовые типоразмеры (быстрые пресеты внутри выбранной модели). */
+  presets: readonly PartModelPreset[];
   /** Опциональная параметрическая надпись (например, для двухцветной бирки). */
   textParam?: PartTextParamMeta;
 }
@@ -131,10 +181,37 @@ export interface PartType {
 export const PART_TYPES = [
   {
     id: "bushing",
+    categoryId: "bearings",
+    category: "Узлы трения и втулки",
     shortLabel: "Втулка / Фланец",
     label: "Втулка / Фланец с центрирующим буртиком",
+    description:
+      "Силовая втулка скольжения с опорным буртиком для валов, шарниров и направляющих.",
     code: "CAD-BSH-01",
     tolerance: "ISO 2768-mK · ±0.1 мм",
+    recommendedMaterialId: "pa12",
+    presets: [
+      {
+        id: "bsh-std",
+        title: "Ø56×32 · H48",
+        dimensions: { d1: 56, d2: 32, h: 48 },
+      },
+      {
+        id: "bsh-m12",
+        title: "Под вал Ø12",
+        dimensions: { d1: 28, d2: 12, h: 30 },
+      },
+      {
+        id: "bsh-m20",
+        title: "Под вал Ø20",
+        dimensions: { d1: 42, d2: 20, h: 40 },
+      },
+      {
+        id: "bsh-heavy",
+        title: "Силовая Ø90",
+        dimensions: { d1: 90, d2: 50, h: 65 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "D",
@@ -166,11 +243,91 @@ export const PART_TYPES = [
     },
   },
   {
+    id: "spacer-ring",
+    categoryId: "bearings",
+    category: "Узлы трения и втулки",
+    shortLabel: "Дистанционная шайба",
+    label: "Дистанционная втулка-проставка без буртика",
+    description:
+      "Точное проставочное кольцо с плоскопараллельными торцами для выставления осевых зазоров.",
+    code: "CAD-SPC-09",
+    tolerance: "Параллельность 0.08 мм",
+    recommendedMaterialId: "pa12",
+    presets: [
+      {
+        id: "spc-std",
+        title: "Ø45×22 · H18",
+        dimensions: { d1: 45, d2: 22, h: 18 },
+      },
+      {
+        id: "spc-m10",
+        title: "Шайба М10",
+        dimensions: { d1: 26, d2: 10, h: 8 },
+      },
+      {
+        id: "spc-m16",
+        title: "Проставка М16",
+        dimensions: { d1: 38, d2: 16, h: 25 },
+      },
+    ],
+    dimensions: {
+      d1: {
+        code: "D",
+        label: "Наружный диаметр D",
+        unit: "мм",
+        min: 16,
+        max: 160,
+        step: 1,
+        initial: 45,
+      },
+      d2: {
+        code: "d",
+        label: "Посадочный канал d",
+        unit: "мм",
+        min: 6,
+        max: 130,
+        step: 1,
+        initial: 22,
+      },
+      h: {
+        code: "H",
+        label: "Толщина кольца H",
+        unit: "мм",
+        min: 5,
+        max: 120,
+        step: 1,
+        initial: 18,
+      },
+    },
+  },
+  {
     id: "din-box",
+    categoryId: "enclosures",
+    category: "Приборостроение и РЭА",
     shortLabel: "Корпус РЭА",
     label: "Корпус РЭА с монтажными стойками PCB",
+    description:
+      "Приборный бокс с угловыми бобышками под печатную плату и внешними крепежными проушинами.",
     code: "CAD-ENC-02",
     tolerance: "IP54 · Стенка ≥ 2.0 мм",
+    recommendedMaterialId: "petgcf",
+    presets: [
+      {
+        id: "enc-std",
+        title: "110×74×42 мм",
+        dimensions: { d1: 110, d2: 74, h: 42 },
+      },
+      {
+        id: "enc-mini",
+        title: "Мини-датчик 65×45",
+        dimensions: { d1: 65, d2: 45, h: 28 },
+      },
+      {
+        id: "enc-plc",
+        title: "Блок ПЛК 160×110",
+        dimensions: { d1: 160, d2: 110, h: 58 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "L",
@@ -202,11 +359,91 @@ export const PART_TYPES = [
     },
   },
   {
+    id: "junction-box",
+    categoryId: "enclosures",
+    category: "Приборостроение и РЭА",
+    shortLabel: "Распредкоробка",
+    label: "Герметичная клеммная коробка с фланцами",
+    description:
+      "Усиленный распределительный бокс с утолщенным периметром под уплотнитель и кабельные вводы.",
+    code: "CAD-JBX-10",
+    tolerance: "IP65 · Буртик крышки",
+    recommendedMaterialId: "abs",
+    presets: [
+      {
+        id: "jbx-std",
+        title: "120×90×55 мм",
+        dimensions: { d1: 120, d2: 90, h: 55 },
+      },
+      {
+        id: "jbx-sq",
+        title: "Квадрат 100×100",
+        dimensions: { d1: 100, d2: 100, h: 50 },
+      },
+      {
+        id: "jbx-lg",
+        title: "Силовая 180×130",
+        dimensions: { d1: 180, d2: 130, h: 75 },
+      },
+    ],
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Длина коробки L",
+        unit: "мм",
+        min: 50,
+        max: 220,
+        step: 1,
+        initial: 120,
+      },
+      d2: {
+        code: "W",
+        label: "Ширина коробки W",
+        unit: "мм",
+        min: 50,
+        max: 180,
+        step: 1,
+        initial: 90,
+      },
+      h: {
+        code: "H",
+        label: "Глубина коробки H",
+        unit: "мм",
+        min: 25,
+        max: 120,
+        step: 1,
+        initial: 55,
+      },
+    },
+  },
+  {
     id: "gear",
+    categoryId: "drives",
+    category: "Приводы и редукторы",
     shortLabel: "Шестерня",
     label: "Прямозубая цилиндрическая шестерня",
+    description:
+      "Зубчатое колесо с углом зацепления α = 20° и усиленной ступицей для приводных механизмов.",
     code: "CAD-GR-03",
     tolerance: "DIN 3962 · α = 20°",
+    recommendedMaterialId: "pa12",
+    presets: [
+      {
+        id: "gr-std",
+        title: "Ø72×20 · H24",
+        dimensions: { d1: 72, d2: 20, h: 24 },
+      },
+      {
+        id: "gr-pinion",
+        title: "Вал-шестерня Ø36",
+        dimensions: { d1: 36, d2: 10, h: 18 },
+      },
+      {
+        id: "gr-power",
+        title: "Ведомая Ø120",
+        dimensions: { d1: 120, d2: 32, h: 35 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "D",
@@ -238,11 +475,91 @@ export const PART_TYPES = [
     },
   },
   {
+    id: "belt-pulley",
+    categoryId: "drives",
+    category: "Приводы и редукторы",
+    shortLabel: "Зубчатый шкив",
+    label: "Шкив приводного ремня с ребордами",
+    description:
+      "Приводной шкив с боковыми удерживающими фланцами и центральным посадочным отверстием под вал.",
+    code: "CAD-PLY-11",
+    tolerance: "Биение ≤ 0.1 мм",
+    recommendedMaterialId: "pa12",
+    presets: [
+      {
+        id: "ply-std",
+        title: "Ø64×16 · H28",
+        dimensions: { d1: 64, d2: 16, h: 28 },
+      },
+      {
+        id: "ply-gt2",
+        title: "Малый Ø38×8",
+        dimensions: { d1: 38, d2: 8, h: 20 },
+      },
+      {
+        id: "ply-htd",
+        title: "Силовой Ø96×25",
+        dimensions: { d1: 96, d2: 25, h: 36 },
+      },
+    ],
+    dimensions: {
+      d1: {
+        code: "D",
+        label: "Рабочий диаметр шкива D",
+        unit: "мм",
+        min: 28,
+        max: 150,
+        step: 1,
+        initial: 64,
+      },
+      d2: {
+        code: "d",
+        label: "Диаметр вала d",
+        unit: "мм",
+        min: 6,
+        max: 80,
+        step: 1,
+        initial: 16,
+      },
+      h: {
+        code: "H",
+        label: "Ширина под ремень H",
+        unit: "мм",
+        min: 12,
+        max: 80,
+        step: 1,
+        initial: 28,
+      },
+    },
+  },
+  {
     id: "adapter",
+    categoryId: "piping",
+    category: "Аспирация, трубы и пневматика",
     shortLabel: "Переходник",
     label: "Ступенчатый переходник воздуховода",
+    description:
+      "Конический адаптер для стыковки патрубков разного диаметра в системах вытяжки и аспирации.",
     code: "CAD-ADP-04",
     tolerance: "Герметичный шов · ±0.15 мм",
+    recommendedMaterialId: "abs",
+    presets: [
+      {
+        id: "adp-std",
+        title: "Ø68 → Ø42 · H64",
+        dimensions: { d1: 68, d2: 42, h: 64 },
+      },
+      {
+        id: "adp-vac",
+        title: "Пылесос 50→35",
+        dimensions: { d1: 50, d2: 35, h: 58 },
+      },
+      {
+        id: "adp-vent",
+        title: "Вентканал 125→100",
+        dimensions: { d1: 125, d2: 100, h: 85 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "D1",
@@ -274,11 +591,91 @@ export const PART_TYPES = [
     },
   },
   {
+    id: "flange-nozzle",
+    categoryId: "piping",
+    category: "Аспирация, трубы и пневматика",
+    shortLabel: "Фланцевый патрубок",
+    label: "Врезной патрубок с монтажным фланцем",
+    description:
+      "Цилиндрический штуцер с широкой опорной плитой для подключения шлангов к корпусам и коллекторам.",
+    code: "CAD-NZL-12",
+    tolerance: "Фланец 4 мм · Герметично",
+    recommendedMaterialId: "abs",
+    presets: [
+      {
+        id: "nzl-std",
+        title: "Плита Ø90 / Труба Ø50",
+        dimensions: { d1: 90, d2: 50, h: 55 },
+      },
+      {
+        id: "nzl-100",
+        title: "Вытяжка Ø140 / Ø100",
+        dimensions: { d1: 140, d2: 100, h: 70 },
+      },
+      {
+        id: "nzl-compact",
+        title: "Штуцер Ø60 / Ø28",
+        dimensions: { d1: 60, d2: 28, h: 42 },
+      },
+    ],
+    dimensions: {
+      d1: {
+        code: "D1",
+        label: "Диаметр фланца D1",
+        unit: "мм",
+        min: 45,
+        max: 200,
+        step: 1,
+        initial: 90,
+      },
+      d2: {
+        code: "D2",
+        label: "Диаметр патрубка D2",
+        unit: "мм",
+        min: 20,
+        max: 150,
+        step: 1,
+        initial: 50,
+      },
+      h: {
+        code: "H",
+        label: "Вылет патрубка H",
+        unit: "мм",
+        min: 25,
+        max: 140,
+        step: 1,
+        initial: 55,
+      },
+    },
+  },
+  {
     id: "end-cap",
+    categoryId: "mounting",
+    category: "Станочная оснастка и крепеж",
     shortLabel: "Крепление / Заглушка",
     label: "Опорный фланец-заглушка в профиль",
+    description:
+      "Торцевая опора и заглушка для конструкционного профиля и прямоугольных труб с посадкой внатяг.",
     code: "CAD-MNT-05",
     tolerance: "Натяг +0.15 мм",
+    recommendedMaterialId: "petg",
+    presets: [
+      {
+        id: "cap-60x40",
+        title: "Профиль 60×40",
+        dimensions: { d1: 60, d2: 40, h: 30 },
+      },
+      {
+        id: "cap-40x40",
+        title: "Станок 40×40",
+        dimensions: { d1: 40, d2: 40, h: 25 },
+      },
+      {
+        id: "cap-80x40",
+        title: "Силовой 80×40",
+        dimensions: { d1: 80, d2: 40, h: 35 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "L",
@@ -311,10 +708,32 @@ export const PART_TYPES = [
   },
   {
     id: "bracket",
+    categoryId: "mounting",
+    category: "Станочная оснастка и крепеж",
     shortLabel: "Кронштейн",
     label: "Угловой кронштейн с ребрами жесткости",
+    description:
+      "Силовой L-образный уголок с двумя треугольными косынками жесткости для монтажа приводов и датчиков.",
     code: "CAD-BRK-06",
     tolerance: "ISO 2768-mK · Отверстия H8",
+    recommendedMaterialId: "petgcf",
+    presets: [
+      {
+        id: "brk-std",
+        title: "68×44×52 мм",
+        dimensions: { d1: 68, d2: 44, h: 52 },
+      },
+      {
+        id: "brk-nema17",
+        title: "Под NEMA17 (50×44)",
+        dimensions: { d1: 50, d2: 44, h: 50 },
+      },
+      {
+        id: "brk-heavy",
+        title: "Консоль 110×65×85",
+        dimensions: { d1: 110, d2: 65, h: 85 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "L",
@@ -346,11 +765,91 @@ export const PART_TYPES = [
     },
   },
   {
+    id: "pipe-clamp",
+    categoryId: "mounting",
+    category: "Станочная оснастка и крепеж",
+    shortLabel: "Опора вала / трубы",
+    label: "Хомут-держатель трубы и направляющего вала",
+    description:
+      "Опорный блок с полукруглым ложементом и крепежными фланцами для фиксации труб, кабелей и валов.",
+    code: "CAD-CLM-13",
+    tolerance: "Посадка ±0.1 мм",
+    recommendedMaterialId: "petgcf",
+    presets: [
+      {
+        id: "clm-std",
+        title: "База 76 · Труба Ø32",
+        dimensions: { d1: 76, d2: 32, h: 28 },
+      },
+      {
+        id: "clm-d20",
+        title: "Опора вала Ø20",
+        dimensions: { d1: 60, d2: 20, h: 24 },
+      },
+      {
+        id: "clm-d50",
+        title: "Хомут трубы Ø50",
+        dimensions: { d1: 110, d2: 50, h: 36 },
+      },
+    ],
+    dimensions: {
+      d1: {
+        code: "L",
+        label: "Длина базы с ушами L",
+        unit: "мм",
+        min: 40,
+        max: 160,
+        step: 1,
+        initial: 76,
+      },
+      d2: {
+        code: "d",
+        label: "Посадочный диаметр трубы d",
+        unit: "мм",
+        min: 12,
+        max: 90,
+        step: 1,
+        initial: 32,
+      },
+      h: {
+        code: "H",
+        label: "Ширина прижима H",
+        unit: "мм",
+        min: 16,
+        max: 80,
+        step: 1,
+        initial: 28,
+      },
+    },
+  },
+  {
     id: "organizer",
+    categoryId: "storage",
+    category: "Лабораторное хранение",
     shortLabel: "Органайзер",
     label: "Модульный ложемент с ячейками",
+    description:
+      "Инструментальный лоток с жесткими перегородками для хранения фрез, крепежа и радиокомпонентов.",
     code: "CAD-ORG-07",
     tolerance: "Ячейки ±0.2 мм · R дно",
+    recommendedMaterialId: "petg",
+    presets: [
+      {
+        id: "org-std",
+        title: "140×95×36 мм",
+        dimensions: { d1: 140, d2: 95, h: 36 },
+      },
+      {
+        id: "org-grid2x1",
+        title: "Кассета 100×60×30",
+        dimensions: { d1: 100, d2: 60, h: 30 },
+      },
+      {
+        id: "org-tray",
+        title: "Лоток 200×140×48",
+        dimensions: { d1: 200, d2: 140, h: 48 },
+      },
+    ],
     dimensions: {
       d1: {
         code: "L",
@@ -383,10 +882,35 @@ export const PART_TYPES = [
   },
   {
     id: "plant-tag",
+    categoryId: "marking",
+    category: "Агротехника и маркировка",
     shortLabel: "Садовая бирка",
     label: "Двухцветная бирка-колышек с рельефной надписью",
+    description:
+      "Маркировочный колышек с продольным ребром жесткости и контрастным рельефным текстом.",
     code: "CAD-TAG-08",
     tolerance: "2 цвета (Z = 2.4 мм) · Ребро жесткости",
+    recommendedMaterialId: "petg",
+    presets: [
+      {
+        id: "tag-tomat",
+        title: "124×26 · ТОМАТ",
+        dimensions: { d1: 124, d2: 26, h: 3 },
+        labelText: "ТОМАТ",
+      },
+      {
+        id: "tag-perec",
+        title: "110×24 · ПЕРЕЦ",
+        dimensions: { d1: 110, d2: 24, h: 3 },
+        labelText: "ПЕРЕЦ",
+      },
+      {
+        id: "tag-bakl",
+        title: "140×30 · БАКЛАЖАН",
+        dimensions: { d1: 140, d2: 30, h: 4 },
+        labelText: "БАКЛАЖАН",
+      },
+    ],
     textParam: {
       code: "TXT",
       label: "Надпись на бирке (кириллица / цифры)",
@@ -428,14 +952,6 @@ export const PART_TYPES = [
 ] as const satisfies readonly PartType[];
 
 export type PartTypeId = (typeof PART_TYPES)[number]["id"];
-
-/** Четыре основных шаблона для быстрого переключения в Hero. */
-export const HERO_PART_TYPES: readonly PartTypeId[] = [
-  "bushing",
-  "din-box",
-  "gear",
-  "plant-tag",
-];
 
 export interface ParametricTemplateCard {
   id: string;
@@ -582,6 +1098,91 @@ export const TEMPLATE_SHOWCASE: readonly ParametricTemplateCard[] = [
       { code: "TXT", name: "Текст рельефа", value: "до 12 симв." },
     ],
     visualKind: "plant-tag",
+  },
+  {
+    id: "spacer-ring-card",
+    partType: "spacer-ring",
+    category: "Узлы трения",
+    code: "TPL-SPC-09",
+    title: "Дистанционная втулка-проставка без буртика",
+    description:
+      "Плоскопараллельная шайба и распорная втулка на вал для точной выставки осевых зазоров.",
+    materialCode: "PA12 Nylon",
+    presetDimensions: { d1: 45, d2: 22, h: 18 },
+    params: [
+      { code: "D", name: "Наружный Ø", value: "16–160 мм" },
+      { code: "d", name: "Внутренний Ø", value: "6–130 мм" },
+      { code: "H", name: "Толщина", value: "5–120 мм" },
+    ],
+    visualKind: "bushing",
+  },
+  {
+    id: "belt-pulley-card",
+    partType: "belt-pulley",
+    category: "Приводы и редукторы",
+    code: "TPL-PLY-11",
+    title: "Шкив приводного ремня с боковыми ребордами",
+    description:
+      "Приводной шкив с удерживающими фланцами и точной посадкой на вал шагового или коллекторного двигателя.",
+    materialCode: "PA12 Nylon",
+    presetDimensions: { d1: 64, d2: 16, h: 28 },
+    params: [
+      { code: "D", name: "Рабочий Ø", value: "28–150 мм" },
+      { code: "d", name: "Посадочный вал", value: "6–80 мм" },
+      { code: "H", name: "Ширина ремня", value: "12–80 мм" },
+    ],
+    visualKind: "gear",
+  },
+  {
+    id: "junction-box-card",
+    partType: "junction-box",
+    category: "Приборостроение",
+    code: "TPL-JBX-10",
+    title: "Герметичная распределительная коробка IP65",
+    description:
+      "Клеммный бокс с утолщенным периметром под уплотнение и боковыми монтажными фланцами.",
+    materialCode: "ABS",
+    presetDimensions: { d1: 120, d2: 90, h: 55 },
+    params: [
+      { code: "L", name: "Длина коробки", value: "50–220 мм" },
+      { code: "W", name: "Ширина коробки", value: "50–180 мм" },
+      { code: "H", name: "Глубина", value: "25–120 мм" },
+    ],
+    visualKind: "enclosure",
+  },
+  {
+    id: "flange-nozzle-card",
+    partType: "flange-nozzle",
+    category: "Аспирация и пневматика",
+    code: "TPL-NZL-12",
+    title: "Врезной фланцевый патрубок для шланга",
+    description:
+      "Круглый штуцер с опорной монтажной плитой для подключения воздуховодов к кожухам станков.",
+    materialCode: "ABS",
+    presetDimensions: { d1: 90, d2: 50, h: 55 },
+    params: [
+      { code: "D1", name: "Фланец плиты", value: "45–200 мм" },
+      { code: "D2", name: "Штуцер трубы", value: "20–150 мм" },
+      { code: "H", name: "Вылет трубы", value: "25–140 мм" },
+    ],
+    visualKind: "adapter",
+  },
+  {
+    id: "pipe-clamp-card",
+    partType: "pipe-clamp",
+    category: "Станочная оснастка",
+    code: "TPL-CLM-13",
+    title: "Опорный хомут-держатель трубы и вала",
+    description:
+      "Жесткая опора с полукруглым ложементом и прижимными ушами под крепеж для фиксации направляющих и магистралей.",
+    materialCode: "PETG-CF",
+    presetDimensions: { d1: 76, d2: 32, h: 28 },
+    params: [
+      { code: "L", name: "База с ушами", value: "40–160 мм" },
+      { code: "d", name: "Диаметр трубы", value: "12–90 мм" },
+      { code: "H", name: "Ширина прижима", value: "16–80 мм" },
+    ],
+    visualKind: "bracket",
   },
 ] as const;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@paramlab/ui";
-import { ArrowUpRight, SlidersHorizontal } from "lucide-react";
+import { ArrowUpRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
 import { CalculatorTrigger } from "~/components/landing/calculator-context";
 import {
@@ -527,6 +527,28 @@ function TemplateCadPreview({
 
 export function TemplateShowcase() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const categories = Array.from(
+    new Set(TEMPLATE_SHOWCASE.map((item) => item.category)),
+  );
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredTemplates = TEMPLATE_SHOWCASE.filter((item) => {
+    if (selectedCategory !== "all" && item.category !== selectedCategory) {
+      return false;
+    }
+    if (!normalizedQuery) return true;
+    return (
+      item.title.toLowerCase().includes(normalizedQuery) ||
+      item.description.toLowerCase().includes(normalizedQuery) ||
+      item.code.toLowerCase().includes(normalizedQuery) ||
+      item.category.toLowerCase().includes(normalizedQuery) ||
+      item.materialCode.toLowerCase().includes(normalizedQuery)
+    );
+  });
 
   return (
     <section
@@ -537,7 +559,8 @@ export function TemplateShowcase() {
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div className="flex flex-col gap-3">
             <p className="font-mono text-xs tracking-widest text-[#FF5C1A] uppercase">
-              02 · Библиотека параметрических заготовок
+              02 · Библиотека параметрических заготовок (
+              {TEMPLATE_SHOWCASE.length})
             </p>
             <h2 className="max-w-3xl text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:text-4xl">
               Витрина параметрических шаблонов
@@ -553,8 +576,68 @@ export function TemplateShowcase() {
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {TEMPLATE_SHOWCASE.map((item, idx) => {
+        {/* Панель фильтрации по рубрикам и быстрого поиска */}
+        <div className="mt-8 flex flex-col justify-between gap-3 rounded-[18px] border border-[#262B36] bg-[#161920] p-3.5 lg:flex-row lg:items-center">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              aria-pressed={selectedCategory === "all"}
+              onClick={() => setSelectedCategory("all")}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                selectedCategory === "all"
+                  ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
+                  : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+              )}
+            >
+              Все шаблоны ({TEMPLATE_SHOWCASE.length})
+            </button>
+            {categories.map((category) => {
+              const active = selectedCategory === category;
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSelectedCategory(category)}
+                  className={cn(
+                    "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                    active
+                      ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
+                      : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+                  )}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative w-full lg:max-w-xs">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#8A93A2]" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Поиск шаблона: шкив, втулка, РЭА..."
+              aria-label="Поиск параметрических шаблонов"
+              className="h-9 w-full rounded-[10px] border border-[#262B36] bg-[#0E1014] pr-8 pl-9 font-mono text-xs text-[#F2F4F7] placeholder:text-[#8A93A2] focus:border-[#00D1FF] focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                aria-label="Очистить поиск"
+                onClick={() => setSearchQuery("")}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-[#8A93A2] hover:text-[#F2F4F7]"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {filteredTemplates.map((item, idx) => {
             const isHovered = hoveredId === item.id;
             return (
               <LayerReveal key={item.id} delay={idx * 0.06}>

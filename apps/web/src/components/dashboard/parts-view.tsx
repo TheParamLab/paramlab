@@ -18,7 +18,11 @@ import {
   PART_TYPES,
   type PartTypeId,
 } from "~/components/landing/data";
-import { clampBore, estimateMass } from "~/components/landing/pricing";
+import {
+  clampBore,
+  estimateMass,
+  isConcentricBorePart,
+} from "~/components/landing/pricing";
 import {
   calculateMinWallMm,
   createOrderFromPreset,
@@ -209,7 +213,7 @@ export function PartsView() {
       })
       .refine(
         (val) => {
-          if (newPartType === "bushing" || newPartType === "gear") {
+          if (isConcentricBorePart(newPartType)) {
             return val.d2 <= clampBore(val.d1, val.d2);
           }
           return true;

@@ -61,11 +61,16 @@ describe("estimateMass", () => {
   test("grows with dimensions for every part type", () => {
     for (const type of [
       "adapter",
+      "flange-nozzle",
       "bushing",
+      "spacer-ring",
       "gear",
+      "belt-pulley",
       "din-box",
+      "junction-box",
       "end-cap",
       "bracket",
+      "pipe-clamp",
       "organizer",
       "plant-tag",
     ] as const) {

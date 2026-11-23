@@ -9,6 +9,7 @@ import {
   calcPrice,
   clampBore,
   estimateMass,
+  isConcentricBorePart,
 } from "~/components/landing/pricing";
 import type {
   DashboardOrder,
@@ -877,10 +878,10 @@ export function calculateMinWallMm(
   partType: PartTypeId,
   dims: { d1: number; d2: number; h: number },
 ): number {
-  if (partType === "bushing" || partType === "gear") {
+  if (isConcentricBorePart(partType)) {
     return Number(((dims.d1 - dims.d2) / 2).toFixed(1));
   }
-  if (partType === "adapter") {
+  if (partType === "adapter" || partType === "flange-nozzle") {
     return 2.8;
   }
   if (partType === "plant-tag") {
@@ -895,7 +896,7 @@ export function isManifoldWallValid(
   dims: { d1: number; d2: number; h: number },
 ): boolean {
   const minWall = calculateMinWallMm(partType, dims);
-  if (partType === "bushing" || partType === "gear") {
+  if (isConcentricBorePart(partType)) {
     return dims.d2 <= clampBore(dims.d1, dims.d2) && minWall >= 2.0;
   }
   return minWall >= 2.0;
@@ -914,10 +915,9 @@ export function normalizePartDimensions(
     partMeta.dimensions.d2.min,
     Math.min(partMeta.dimensions.d2.max, Math.round(dims.d2)),
   );
-  const d2 =
-    partType === "bushing" || partType === "gear"
-      ? Math.max(partMeta.dimensions.d2.min, clampBore(d1, rawD2))
-      : rawD2;
+  const d2 = isConcentricBorePart(partType)
+    ? Math.max(partMeta.dimensions.d2.min, clampBore(d1, rawD2))
+    : rawD2;
   const h = Math.max(
     partMeta.dimensions.h.min,
     Math.min(partMeta.dimensions.h.max, Math.round(dims.h)),
@@ -961,13 +961,14 @@ export function formatDimensionFormula(
   partType: SavedPartPreset["partType"],
   dims: { d1: number; d2: number; h: number },
 ): string {
-  if (partType === "bushing" || partType === "gear") {
-    return `D${dims.d1} × d${dims.d2} × H${dims.h}`;
+  const partMeta = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
+  const effectiveD2 = isConcentricBorePart(partType)
+    ? clampBore(dims.d1, dims.d2)
+    : dims.d2;
+  if (partType === "adapter" || partType === "flange-nozzle") {
+    return `D1 ${dims.d1} × D2 ${effectiveD2} × H${dims.h}`;
   }
-  if (partType === "adapter") {
-    return `D1 ${dims.d1} × D2 ${dims.d2} × H${dims.h}`;
-  }
-  return `L${dims.d1} × W${dims.d2} × H${dims.h}`;
+  return `${partMeta.dimensions.d1.code}${dims.d1} × ${partMeta.dimensions.d2.code}${effectiveD2} × ${partMeta.dimensions.h.code}${dims.h}`;
 }
 
 /**
