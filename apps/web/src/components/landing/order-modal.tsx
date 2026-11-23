@@ -18,6 +18,7 @@ import {
   calcPrice,
   clampBore,
   estimateMass,
+  isConcentricBorePart,
 } from "~/components/landing/pricing";
 import { buildDraftPart, saveDraftPart } from "~/lib/draft-part";
 
@@ -114,10 +115,9 @@ export function OrderSpecModal() {
     extras: 0,
   });
 
-  const effectiveD2 =
-    partType === "bushing" || partType === "gear"
-      ? clampBore(dimensions.d1, dimensions.d2)
-      : dimensions.d2;
+  const effectiveD2 = isConcentricBorePart(partType)
+    ? clampBore(dimensions.d1, dimensions.d2)
+    : dimensions.d2;
 
   return (
     <AnimatePresence>

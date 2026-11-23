@@ -35,6 +35,16 @@ export function calcPrice({ massGrams, rate, quantity, extras }: PriceInput) {
 
 const WALL = 2.5;
 
+/** Шаблоны с внешним диаметром D и соосным внутренним отверстием d. */
+export function isConcentricBorePart(partType: PartTypeId): boolean {
+  return (
+    partType === "bushing" ||
+    partType === "spacer-ring" ||
+    partType === "gear" ||
+    partType === "belt-pulley"
+  );
+}
+
 /** Внутренний диаметр втулки не может быть больше внешнего. */
 export function clampBore(d1: number, d2: number) {
   return Math.min(d2, d1 - 4);
@@ -52,12 +62,27 @@ export function estimateMass(
       // Две тонкостенные ступени со средним диаметром (D1 + D2) / 2.
       volume = Math.PI * WALL * ((d1 + d2) / 2 - WALL) * h;
       break;
+    case "flange-nozzle": {
+      // Круглая монтажная плита D1 + тонкостенный патрубок D2 высотой h.
+      const nozzleR = Math.min(d2, d1 - 6);
+      const plate =
+        (Math.PI / 4) * (d1 ** 2 - Math.max(4, nozzleR - 5) ** 2) * 4;
+      const pipe = Math.PI * WALL * Math.max(6, nozzleR - WALL) * h;
+      volume = plate + pipe;
+      break;
+    }
     case "bushing": {
       const bore = clampBore(d1, d2);
       const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
       const flange = (Math.PI / 4) * ((d1 + 10) ** 2 - d1 ** 2) * 4;
       // Силовая деталь: плотное заполнение ~60 %.
       volume = (body + flange) * 0.6;
+      break;
+    }
+    case "spacer-ring": {
+      const bore = clampBore(d1, d2);
+      const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
+      volume = body * 0.65;
       break;
     }
     case "gear": {
@@ -67,14 +92,23 @@ export function estimateMass(
       volume = body * 0.68;
       break;
     }
+    case "belt-pulley": {
+      const bore = clampBore(d1, d2);
+      const body = (Math.PI / 4) * (d1 ** 2 - bore ** 2) * h;
+      const rims = (Math.PI / 4) * ((d1 + 8) ** 2 - d1 ** 2) * 5;
+      volume = (body + rims) * 0.64;
+      break;
+    }
     case "din-box":
+    case "junction-box":
       volume = 2 * (d1 * d2 + d1 * h + d2 * h) * WALL;
       break;
     case "end-cap":
       volume = d1 * d2 * 3 + 2 * (d1 + d2) * 2 * Math.min(h, 40);
       break;
-    case "bracket": {
-      // Угловой профиль: две пластины толщиной WALL + ребра жесткости.
+    case "bracket":
+    case "pipe-clamp": {
+      // Угловой профиль / хомут: две пластины толщиной WALL + ребра жесткости.
       const base = d1 * d2 * WALL;
       const upright = d2 * h * WALL;
       const ribs = Math.min(d1, h) * d2 * WALL * 0.5;

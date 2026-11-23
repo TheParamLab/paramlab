@@ -8,6 +8,7 @@ import {
   calcPrice,
   clampBore,
   estimateMass,
+  isConcentricBorePart,
 } from "~/components/landing/pricing";
 
 import { normalizePlantTagLabel } from "~/lib/plant-tag-label";
@@ -72,7 +73,7 @@ export function formatDraftDimensionFormula(
   labelText?: string | null,
 ): string {
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
-  if (partType === "bushing" || partType === "gear") {
+  if (isConcentricBorePart(partType)) {
     const bore = clampBore(dims.d1, dims.d2);
     const wall = Math.max(2, Math.round((dims.d1 - bore) / 2));
     return `D${dims.d1} × T${wall} × H${dims.h}`;
@@ -111,8 +112,7 @@ export function buildDraftPart(params: {
   const d1 = Math.round(rawDimensions.d1);
   const rawD2 = Math.round(rawDimensions.d2);
   const h = Math.round(rawDimensions.h);
-  const d2 =
-    part.id === "bushing" || part.id === "gear" ? clampBore(d1, rawD2) : rawD2;
+  const d2 = isConcentricBorePart(part.id) ? clampBore(d1, rawD2) : rawD2;
   if (d2 < part.dimensions.d2.min) return null;
 
   const quantity =

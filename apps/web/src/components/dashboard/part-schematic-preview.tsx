@@ -61,7 +61,9 @@ export function PartSchematicPreview({
         className="relative z-0 h-full w-full"
         fill="none"
       >
-        {(partType === "bushing" || partType === "end-cap") && (
+        {(partType === "bushing" ||
+          partType === "spacer-ring" ||
+          partType === "end-cap") && (
           <g>
             {/* Фланец */}
             <ellipse
@@ -120,7 +122,7 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "din-box" && (
+        {(partType === "din-box" || partType === "junction-box") && (
           <g>
             <polygon
               points="64,46 122,26 180,48 122,68"
@@ -148,7 +150,7 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "gear" && (
+        {(partType === "gear" || partType === "belt-pulley") && (
           <g transform="translate(120,68)">
             <circle
               r="42"
@@ -181,7 +183,7 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "bracket" && (
+        {(partType === "bracket" || partType === "pipe-clamp") && (
           <g>
             <rect
               x="64"
@@ -224,7 +226,7 @@ export function PartSchematicPreview({
           </g>
         )}
 
-        {partType === "adapter" && (
+        {(partType === "adapter" || partType === "flange-nozzle") && (
           <g>
             <polygon
               points="76,104 164,104 164,80 144,58 144,32 96,32 96,58 76,80"

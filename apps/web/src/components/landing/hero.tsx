@@ -7,11 +7,13 @@ import {
   CheckCircle2,
   Clock,
   Cpu,
+  Grid3X3,
   Layers,
   Minus,
   Plus,
   Scale,
   Settings2,
+  Sparkles,
   Tag,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -19,17 +21,20 @@ import { CadViewport3D } from "~/components/landing/cad-viewport";
 import { useCalculator } from "~/components/landing/calculator-context";
 import {
   type DimensionKey,
-  HERO_PART_TYPES,
   MATERIALS,
+  PART_CATEGORIES,
   PART_TYPES,
+  type PartCategoryId,
   type PartTypeId,
 } from "~/components/landing/data";
 import { SpringNumber } from "~/components/landing/layer-reveal";
+import { ModelCatalogModal } from "~/components/landing/model-catalog-modal";
 import { OrderSpecModal } from "~/components/landing/order-modal";
 import {
   calcPrice,
   clampBore,
   estimateMass,
+  isConcentricBorePart,
   SERIES_QUANTITY,
 } from "~/components/landing/pricing";
 
@@ -37,11 +42,16 @@ const DIMENSION_KEYS: readonly DimensionKey[] = ["d1", "d2", "h"];
 
 const TEMPLATE_ICONS: Record<PartTypeId, typeof Settings2> = {
   bushing: Layers,
+  "spacer-ring": Layers,
   "din-box": Cpu,
+  "junction-box": Cpu,
   gear: Settings2,
+  "belt-pulley": Settings2,
   adapter: Layers,
+  "flange-nozzle": Layers,
   "end-cap": Cpu,
   bracket: Settings2,
+  "pipe-clamp": Settings2,
   organizer: Layers,
   "plant-tag": Tag,
 };
@@ -65,15 +75,20 @@ export function Hero() {
     setMaterialId,
     dimensions,
     setDimension,
+    setDimensions,
     labelText,
     setLabelText,
     setActiveDimension,
     quantity,
     setQuantity,
     setOrderModalOpen,
+    setCatalogModalOpen,
   } = useCalculator();
 
   const [cursorPos, setCursorPos] = useState({ x: 520, y: 320 });
+  const [activeCategory, setActiveCategory] = useState<"all" | PartCategoryId>(
+    "all",
+  );
 
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
   const material = MATERIALS.find((m) => m.id === materialId) ?? MATERIALS[0];
@@ -87,43 +102,41 @@ export function Hero() {
   });
 
   // Инженерная валидация параметров (контроль толщины стенки и посадки)
-  const effectiveBore =
-    partType === "bushing" || partType === "gear"
-      ? clampBore(dimensions.d1, dimensions.d2)
-      : dimensions.d2;
+  const isConcentric = isConcentricBorePart(partType);
+  const effectiveBore = isConcentric
+    ? clampBore(dimensions.d1, dimensions.d2)
+    : dimensions.d2;
 
-  const rawWall =
-    partType === "bushing" || partType === "gear"
-      ? (dimensions.d1 - effectiveBore) / 2
-      : partType === "adapter"
-        ? 2.8
-        : Math.min(dimensions.d1, dimensions.d2) * 0.08;
+  const rawWall = isConcentric
+    ? (dimensions.d1 - effectiveBore) / 2
+    : partType === "adapter" || partType === "flange-nozzle"
+      ? 2.8
+      : Math.min(dimensions.d1, dimensions.d2) * 0.08;
 
-  const isWallClamped =
-    (partType === "bushing" || partType === "gear") &&
-    effectiveBore < dimensions.d2;
+  const isWallClamped = isConcentric && effectiveBore < dimensions.d2;
 
   const isThinWallWarning =
     isWallClamped ||
-    ((partType === "bushing" ||
-      partType === "gear" ||
-      partType === "adapter") &&
+    ((isConcentric || partType === "adapter" || partType === "flange-nozzle") &&
       rawWall < 3.5);
 
-  const heroTemplates = HERO_PART_TYPES.map(
-    (id) => PART_TYPES.find((item) => item.id === id) ?? PART_TYPES[0],
-  );
+  const visibleTemplates =
+    activeCategory === "all"
+      ? PART_TYPES
+      : PART_TYPES.filter((item) => item.categoryId === activeCategory);
 
   const templateTabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   function handleTemplateKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    const currentIndex = heroTemplates.findIndex((t) => t.id === partType);
+    const currentIndex = visibleTemplates.findIndex((t) => t.id === partType);
+    const baseIndex = currentIndex === -1 ? 0 : currentIndex;
     const direction = event.key === "ArrowRight" ? 1 : -1;
     const nextIndex =
-      (currentIndex + direction + heroTemplates.length) % heroTemplates.length;
-    const nextId = heroTemplates[nextIndex]?.id;
+      (baseIndex + direction + visibleTemplates.length) %
+      visibleTemplates.length;
+    const nextId = visibleTemplates[nextIndex]?.id;
     if (nextId) {
       setPartType(nextId);
       templateTabRefs.current[nextIndex]?.focus();
@@ -205,23 +218,75 @@ export function Hero() {
 
             {/* Панель управления параметрами */}
             <div className="flex flex-col gap-5 rounded-[24px] border border-[#262B36] bg-[#161920] p-5 sm:p-6">
-              {/* 1. Переключатель 3 базовых шаблонов */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] font-medium tracking-wider text-[#8A93A2] uppercase">
-                    01 · Базовый CAD-шаблон
-                  </span>
-                  <span className="font-mono text-[11px] text-[#00D1FF] tabular-nums">
-                    {part.code}
-                  </span>
+              {/* 1. Навигация по большому каталогу CAD-шаблонов + категории + быстрые типоразмеры */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] font-medium tracking-wider text-[#8A93A2] uppercase">
+                      01 · Модель для редактирования
+                    </span>
+                    <span className="rounded border border-[#262B36] bg-[#0E1014] px-1.5 py-0.5 font-mono text-[10px] text-[#00D1FF] tabular-nums">
+                      {part.code}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCatalogModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#00D1FF]/45 bg-[#00D1FF]/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#00D1FF] transition-colors hover:border-[#00D1FF] hover:bg-[#00D1FF]/20 focus-visible:ring-2 focus-visible:ring-[#00D1FF] focus-visible:outline-none"
+                  >
+                    <Grid3X3 className="size-3.5" />
+                    <span>Каталог моделей ({PART_TYPES.length})</span>
+                  </button>
                 </div>
+
+                {/* Фильтр по инженерным рубрикам */}
+                <fieldset
+                  aria-label="Категории готовых моделей"
+                  className="flex items-center gap-1.5 overflow-x-auto pb-0.5"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={activeCategory === "all"}
+                    onClick={() => setActiveCategory("all")}
+                    className={cn(
+                      "shrink-0 rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                      activeCategory === "all"
+                        ? "border-[#00D1FF]/60 bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
+                        : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
+                    )}
+                  >
+                    Все ({PART_TYPES.length})
+                  </button>
+                  {PART_CATEGORIES.map((cat) => {
+                    const active = activeCategory === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setActiveCategory(cat.id)}
+                        className={cn(
+                          "shrink-0 rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                          active
+                            ? "border-[#00D1FF]/60 bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
+                            : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
+                        )}
+                      >
+                        {cat.shortLabel}
+                      </button>
+                    );
+                  })}
+                </fieldset>
+
+                {/* Список моделей выбранной категории (компактная прокручиваемая сетка) */}
                 <div
                   role="tablist"
                   aria-label="Выбор базового шаблона детали"
                   onKeyDown={handleTemplateKeyDown}
-                  className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+                  className="grid max-h-44 grid-cols-2 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-3"
                 >
-                  {heroTemplates.map((item, idx) => {
+                  {visibleTemplates.map((item, idx) => {
                     const Icon = TEMPLATE_ICONS[item.id];
                     const selected = partType === item.id;
                     return (
@@ -235,15 +300,15 @@ export function Hero() {
                         aria-selected={selected}
                         onClick={() => setPartType(item.id)}
                         className={cn(
-                          "flex items-center justify-center gap-2 rounded-[12px] border px-3 py-2.5 text-sm font-medium transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                          "flex items-center gap-2 rounded-[10px] border px-2.5 py-2 text-left text-xs font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
                           selected
-                            ? "border-[#FF5C1A] bg-[#FF5C1A]/15 text-[#F2F4F7] shadow-[0_0_20px_rgba(255,92,26,0.16)]"
+                            ? "border-[#FF5C1A] bg-[#FF5C1A]/15 text-[#F2F4F7] shadow-[0_0_16px_rgba(255,92,26,0.14)]"
                             : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
                         )}
                       >
                         <Icon
                           className={cn(
-                            "size-4 shrink-0",
+                            "size-3.5 shrink-0",
                             selected ? "text-[#FF5C1A]" : "text-[#8A93A2]",
                           )}
                         />
@@ -251,6 +316,60 @@ export function Hero() {
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Паспорт активной модели + быстрые типоразмеры */}
+                <div className="flex flex-col gap-2 rounded-[12px] border border-[#262B36] bg-[#0E1014]/80 px-3.5 py-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold text-[#F2F4F7]">
+                        {part.label}
+                      </p>
+                      <p className="font-mono text-[11px] text-[#8A93A2]">
+                        {part.category} · {part.tolerance}
+                      </p>
+                    </div>
+                  </div>
+
+                  {part.presets.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 border-t border-[#262B36]/80 pt-2">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#8A93A2] uppercase">
+                        <Sparkles className="size-3 text-[#00D1FF]" />
+                        Типоразмеры:
+                      </span>
+                      {part.presets.map((preset) => {
+                        const presetLabelText =
+                          "labelText" in preset ? preset.labelText : undefined;
+                        const isCurrentPreset =
+                          dimensions.d1 === preset.dimensions.d1 &&
+                          dimensions.d2 === preset.dimensions.d2 &&
+                          dimensions.h === preset.dimensions.h &&
+                          (!presetLabelText ||
+                            labelText.trim().toUpperCase() === presetLabelText);
+
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              setDimensions(preset.dimensions);
+                              if (presetLabelText) {
+                                setLabelText(presetLabelText);
+                              }
+                            }}
+                            className={cn(
+                              "rounded-md border px-2 py-0.5 font-mono text-[11px] transition-colors",
+                              isCurrentPreset
+                                ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
+                                : "border-[#262B36] bg-[#161920] text-[#8A93A2] hover:border-[#00D1FF]/45 hover:text-[#F2F4F7]",
+                            )}
+                          >
+                            {preset.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -392,9 +511,31 @@ export function Hero() {
                           </span>
                           <span>{meta.label}</span>
                         </label>
-                        <span className="rounded-md border border-[#262B36] bg-[#161920] px-2 py-0.5 font-mono text-xs font-semibold text-[#F2F4F7] tabular-nums">
-                          {val}.0 {meta.unit}
-                        </span>
+                        <div className="flex items-center gap-1 rounded-md border border-[#262B36] bg-[#161920] px-2 py-0.5 font-mono text-xs font-semibold text-[#F2F4F7] tabular-nums focus-within:border-[#00D1FF]">
+                          <input
+                            type="number"
+                            aria-label={`${meta.label}, ${meta.unit}`}
+                            min={meta.min}
+                            max={meta.max}
+                            step={meta.step}
+                            value={val}
+                            onFocus={() => setActiveDimension(key)}
+                            onBlur={() => setActiveDimension(null)}
+                            onChange={(e) => {
+                              const raw = Number(e.target.value);
+                              if (!Number.isFinite(raw)) return;
+                              const clamped = Math.max(
+                                meta.min,
+                                Math.min(meta.max, Math.round(raw)),
+                              );
+                              setDimension(key, clamped);
+                            }}
+                            className="w-12 bg-transparent text-right font-mono text-xs font-semibold text-[#F2F4F7] focus:outline-none"
+                          />
+                          <span className="text-[11px] text-[#8A93A2]">
+                            {meta.unit}
+                          </span>
+                        </div>
                       </div>
 
                       <input
@@ -570,6 +711,9 @@ export function Hero() {
           </div>
         </div>
       </section>
+
+      {/* Модальное окно каталога параметрических CAD-моделей */}
+      <ModelCatalogModal />
 
       {/* Модальное окно спецификации и доставки (Ozon) */}
       <OrderSpecModal />

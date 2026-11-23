@@ -198,12 +198,13 @@ function buildGeometry(
   const { d1, d2, h } = dimensions;
   const halfH = h / 2;
 
-  if (partType === "bushing") {
+  if (partType === "bushing" || partType === "spacer-ring") {
     const rOuter = d1 / 2;
     const bore = clampBore(d1, d2);
     const rInner = Math.max(3, bore / 2);
-    const flangeR = rOuter + Math.max(5, d1 * 0.11);
-    const flangeH = Math.min(h * 0.24, 12);
+    const hasFlange = partType === "bushing";
+    const flangeR = hasFlange ? rOuter + Math.max(5, d1 * 0.11) : rOuter;
+    const flangeH = hasFlange ? Math.min(h * 0.24, 12) : 0;
     const yBottom = -halfH;
     const yFlangeTop = yBottom + flangeH;
     const yTop = halfH;
@@ -234,10 +235,12 @@ function buildGeometry(
 
       // Внутренняя цилиндрическая поверхность на полную высоту
       faces.push(quadFace(ib1, it1, it0, ib0, { isInner: true }));
-      // Наружная поверхность фланца
-      faces.push(quadFace(f0b, f0t, f1t, f1b));
-      // Горизонтальный ступенчатый буртик
-      faces.push(quadFace(f0t, f1t, o1b, o0b, { isTop: true }));
+      if (hasFlange) {
+        // Наружная поверхность фланца
+        faces.push(quadFace(f0b, f0t, f1t, f1b));
+        // Горизонтальный ступенчатый буртик
+        faces.push(quadFace(f0t, f1t, o1b, o0b, { isTop: true }));
+      }
       // Наружная поверхность основного тела
       faces.push(quadFace(o0b, o0t, o1t, o1b));
       // Нижняя крышка (rInner..flangeR)
@@ -278,7 +281,58 @@ function buildGeometry(
       minY: yBottom,
       maxY: yTop,
       callouts,
-      layerRadiusAtY: (y) => (y <= yFlangeTop ? flangeR : rOuter),
+      layerRadiusAtY: (y) => (hasFlange && y <= yFlangeTop ? flangeR : rOuter),
+    };
+  }
+
+  if (partType === "belt-pulley") {
+    const rBody = d1 / 2;
+    const bore = clampBore(d1, d2);
+    const rInner = Math.max(3, bore / 2);
+    const rimR = rBody + Math.max(3.5, d1 * 0.075);
+    const rimH = Math.min(4, h * 0.16);
+    const y0 = -halfH;
+    const y1 = y0 + rimH;
+    const y2 = halfH - rimH;
+    const y3 = halfH;
+
+    addPrismRing(faces, rimR, rimR, rInner, rInner, y0, y1, 28);
+    addPrismRing(faces, rBody, rBody, rInner, rInner, y1, y2, 28);
+    addPrismRing(faces, rimR, rimR, rInner, rInner, y2, y3, 28);
+
+    const callouts: Callout3D[] = [
+      {
+        key: "d1",
+        code: "D",
+        value: d1,
+        start: { x: -rBody, y: y3 + 6, z: 0 },
+        end: { x: rBody, y: y3 + 6, z: 0 },
+        labelPos: { x: 0, y: y3 + 15, z: 0 },
+      },
+      {
+        key: "d2",
+        code: "d",
+        value: bore,
+        start: { x: -rInner, y: y3 + 3, z: 0 },
+        end: { x: rInner, y: y3 + 3, z: 0 },
+        labelPos: { x: 0, y: y3 + 23, z: 12 },
+      },
+      {
+        key: "h",
+        code: "H",
+        value: h,
+        start: { x: rimR + 10, y: y0, z: 0 },
+        end: { x: rimR + 10, y: y3, z: 0 },
+        labelPos: { x: rimR + 22, y: 0, z: 0 },
+      },
+    ];
+
+    return {
+      faces,
+      minY: y0,
+      maxY: y3,
+      callouts,
+      layerRadiusAtY: (y) => (y <= y1 || y >= y2 ? rimR : rBody),
     };
   }
 
@@ -366,21 +420,22 @@ function buildGeometry(
     };
   }
 
-  if (partType === "adapter") {
+  if (partType === "adapter" || partType === "flange-nozzle") {
     const r1 = d1 / 2;
     const r2 = d2 / 2;
     const wall = 2.8;
+    const isNozzle = partType === "flange-nozzle";
     const y0 = -halfH;
-    const y1 = -halfH + h * 0.38;
-    const y2 = -halfH + h * 0.64;
+    const y1 = isNozzle ? y0 + Math.min(8, h * 0.16) : -halfH + h * 0.38;
+    const y2 = isNozzle ? y1 + Math.min(6, h * 0.12) : -halfH + h * 0.64;
     const y3 = halfH;
 
     addPrismRing(
       faces,
       r1,
       r1,
-      Math.max(3, r1 - wall),
-      Math.max(3, r1 - wall),
+      Math.max(3, (isNozzle ? r2 : r1) - wall),
+      Math.max(3, (isNozzle ? r2 : r1) - wall),
       y0,
       y1,
       26,
@@ -389,7 +444,7 @@ function buildGeometry(
       faces,
       r1,
       r2,
-      Math.max(3, r1 - wall),
+      Math.max(3, (isNozzle ? r2 : r1) - wall),
       Math.max(3, r2 - wall),
       y1,
       y2,
@@ -448,7 +503,7 @@ function buildGeometry(
     };
   }
 
-  if (partType === "bracket") {
+  if (partType === "bracket" || partType === "pipe-clamp") {
     const L = d1;
     const W = d2;
     const H = h;

@@ -42,6 +42,8 @@ interface CalculatorContextValue {
   setRenderMode: (mode: ViewportRenderMode) => void;
   isOrderModalOpen: boolean;
   setOrderModalOpen: (open: boolean) => void;
+  isCatalogModalOpen: boolean;
+  setCatalogModalOpen: (open: boolean) => void;
   /** Прокрутить к калькулятору, при необходимости сменив таб, шаблон и пресет размеров. */
   open: (
     tab?: CalculatorTab,
@@ -68,6 +70,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
   const [quantity, setQuantity] = useState(1);
   const [renderMode, setRenderMode] = useState<ViewportRenderMode>("solid");
   const [isOrderModalOpen, setOrderModalOpen] = useState(false);
+  const [isCatalogModalOpen, setCatalogModalOpen] = useState(false);
 
   function setPartType(nextPartType: PartTypeId, preset?: Dimensions) {
     setPartTypeState(nextPartType);
@@ -129,6 +132,8 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
         setRenderMode,
         isOrderModalOpen,
         setOrderModalOpen,
+        isCatalogModalOpen,
+        setCatalogModalOpen,
         open,
       }}
     >
