@@ -12,6 +12,7 @@
 :root,
 .dark,
 .light {
+  color-scheme: dark;
   --brand: #ff5c1a;
   --brand-foreground: #0e1014;
   --lab-bg: #0e1014;
@@ -213,5 +214,33 @@
   }
   body {
     letter-spacing: var(--tracking-normal);
+  }
+}
+
+/* Тонкие инженерные скроллбары без громоздких системных полос Windows */
+@utility lab-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #262b36 transparent;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #262b36;
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #3b4457;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

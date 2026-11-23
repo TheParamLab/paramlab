@@ -265,14 +265,14 @@ export function Hero() {
                 {/* Фильтр по инженерным рубрикам */}
                 <fieldset
                   aria-label="Категории готовых моделей"
-                  className="flex items-center gap-1.5 overflow-x-auto pb-0.5"
+                  className="flex flex-wrap items-center gap-1.5"
                 >
                   <button
                     type="button"
                     aria-pressed={activeCategory === "all"}
                     onClick={() => setActiveCategory("all")}
                     className={cn(
-                      "shrink-0 rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                      "rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
                       activeCategory === "all"
                         ? "border-[#00D1FF]/60 bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
                         : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
@@ -289,7 +289,7 @@ export function Hero() {
                         aria-pressed={active}
                         onClick={() => setActiveCategory(cat.id)}
                         className={cn(
-                          "shrink-0 rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                          "rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
                           active
                             ? "border-[#00D1FF]/60 bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
                             : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
@@ -301,12 +301,12 @@ export function Hero() {
                   })}
                 </fieldset>
 
-                {/* Список моделей выбранной категории (компактная прокручиваемая сетка) */}
+                {/* Список моделей выбранной категории (сетка без вложенного скролла) */}
                 <div
                   role="tablist"
                   aria-label="Выбор базового шаблона детали"
                   onKeyDown={handleTemplateKeyDown}
-                  className="grid max-h-44 grid-cols-2 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-3"
+                  className="grid grid-cols-2 gap-1.5 sm:grid-cols-3"
                 >
                   {visibleTemplates.map((item, idx) => {
                     const Icon = TEMPLATE_ICONS[item.id];
