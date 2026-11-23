@@ -32,6 +32,8 @@ interface CalculatorContextValue {
   dimensions: Dimensions;
   setDimension: (key: DimensionKey, value: number) => void;
   setDimensions: (dimensions: Dimensions) => void;
+  labelText: string;
+  setLabelText: (labelText: string) => void;
   activeDimension: DimensionKey | null;
   setActiveDimension: (key: DimensionKey | null) => void;
   quantity: number;
@@ -46,6 +48,7 @@ interface CalculatorContextValue {
     partType?: PartTypeId,
     presetDimensions?: Dimensions,
     materialCode?: string,
+    presetLabelText?: string,
   ) => void;
 }
 
@@ -58,6 +61,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
   const [dimensions, setDimensions] = useState<Dimensions>(() =>
     getInitialDimensions("bushing"),
   );
+  const [labelText, setLabelText] = useState<string>("ТОМАТ");
   const [activeDimension, setActiveDimension] = useState<DimensionKey | null>(
     null,
   );
@@ -79,12 +83,16 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     nextPartType?: PartTypeId,
     presetDimensions?: Dimensions,
     materialCode?: string,
+    presetLabelText?: string,
   ) {
     if (nextTab) setTab(nextTab);
     if (nextPartType) {
       setPartType(nextPartType, presetDimensions);
     } else if (presetDimensions) {
       setDimensions(presetDimensions);
+    }
+    if (presetLabelText) {
+      setLabelText(presetLabelText);
     }
     if (materialCode) {
       const matched = MATERIALS.find(
@@ -111,6 +119,8 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
         dimensions,
         setDimension,
         setDimensions,
+        labelText,
+        setLabelText,
         activeDimension,
         setActiveDimension,
         quantity,
@@ -141,6 +151,7 @@ export function CalculatorTrigger({
   partType,
   presetDimensions,
   materialCode,
+  presetLabelText,
   className,
   children,
   onOpen,
@@ -149,6 +160,7 @@ export function CalculatorTrigger({
   partType?: PartTypeId;
   presetDimensions?: Dimensions;
   materialCode?: string;
+  presetLabelText?: string;
   className?: string;
   children: ReactNode;
   onOpen?: () => void;
@@ -159,7 +171,7 @@ export function CalculatorTrigger({
       type="button"
       className={className}
       onClick={() => {
-        open(tab, partType, presetDimensions, materialCode);
+        open(tab, partType, presetDimensions, materialCode, presetLabelText);
         onOpen?.();
       }}
     >

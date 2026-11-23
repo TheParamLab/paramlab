@@ -21,6 +21,8 @@ import {
 } from "~/components/landing/pricing";
 import { buildDraftPart, saveDraftPart } from "~/lib/draft-part";
 
+import { normalizePlantTagLabel } from "~/lib/plant-tag-label";
+
 const OZON_DELIVERY = {
   name: "Ozon Посылка (ПВЗ)",
   tag: "18 000+ пунктов по РФ",
@@ -50,6 +52,7 @@ export function OrderSpecModal() {
     partType,
     materialId,
     dimensions,
+    labelText,
     quantity,
   } = useCalculator();
 
@@ -101,6 +104,8 @@ export function OrderSpecModal() {
   const part = PART_TYPES.find((p) => p.id === partType) ?? PART_TYPES[0];
   const material = MATERIALS.find((m) => m.id === materialId) ?? MATERIALS[0];
 
+  const cleanLabelText =
+    partType === "plant-tag" ? normalizePlantTagLabel(labelText) : undefined;
   const massGrams = estimateMass(partType, dimensions, material.density);
   const price = calcPrice({
     massGrams,
@@ -216,6 +221,14 @@ export function OrderSpecModal() {
                 </dl>
 
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs text-[#8A93A2] tabular-nums">
+                  {cleanLabelText && (
+                    <span className="w-full rounded-md border border-[#FF5C1A]/40 bg-[#FF5C1A]/10 px-2.5 py-1 text-[#F2F4F7]">
+                      Надпись рельефа (Z = 2.4..3.0 мм):{" "}
+                      <strong className="text-[#FF5C1A]">
+                        «{cleanLabelText}»
+                      </strong>
+                    </span>
+                  )}
                   <span>
                     Партия:{" "}
                     <strong className="text-[#F2F4F7]">{quantity} шт.</strong>
@@ -289,7 +302,7 @@ export function OrderSpecModal() {
                 </div>
 
                 <a
-                  href={`${APP_LINKS.signup}?draft=1&partType=${encodeURIComponent(partType)}&material=${encodeURIComponent(material.id)}&d1=${dimensions.d1}&d2=${effectiveD2}&h=${dimensions.h}&qty=${quantity}&price=${price.total}`}
+                  href={`${APP_LINKS.signup}?draft=1&partType=${encodeURIComponent(partType)}&material=${encodeURIComponent(material.id)}&d1=${dimensions.d1}&d2=${effectiveD2}&h=${dimensions.h}&qty=${quantity}&price=${price.total}${cleanLabelText ? `&text=${encodeURIComponent(cleanLabelText)}` : ""}`}
                   onClick={() => {
                     const draft = buildDraftPart({
                       partType,
@@ -299,6 +312,7 @@ export function OrderSpecModal() {
                         d2: effectiveD2,
                         h: dimensions.h,
                       },
+                      labelText: cleanLabelText,
                       quantity,
                       totalPriceRub: price.total,
                       city,

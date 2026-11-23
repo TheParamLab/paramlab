@@ -68,6 +68,24 @@ describe("draft-part", () => {
     expect(parsedFromQuery?.quantity).toBe(4);
   });
 
+  test("keeps the same plant tag inscription through URL and saved-formula imports", () => {
+    const query = new URLSearchParams({ partType: "plant-tag", text: "   " });
+    const draft = readDraftPartFromSearchParams(query);
+    expect(draft?.labelText).toBe("ТОМАТ");
+    expect(draft?.dimensionFormula).toBe("L124 × W26 × H3 · «ТОМАТ»");
+
+    const imported = buildDraftPart({
+      partType: "plant-tag",
+      labelText: "  баклажан 123456  ",
+      dimensionFormula: "  L124 × W26 × H3  ",
+    });
+    expect(imported?.labelText).toBe("БАКЛАЖАН 123");
+    expect(imported?.dimensionFormula).toBe("L124 × W26 × H3 · «БАКЛАЖАН 123»");
+    expect(buildDraftPart({ ...imported })?.dimensionFormula).toBe(
+      imported?.dimensionFormula,
+    );
+  });
+
   test("returns null when searchParams contain no draft fields", () => {
     const emptyParams = new URLSearchParams({ callbackUrl: "/orders" });
     expect(readDraftPartFromSearchParams(emptyParams)).toBeNull();

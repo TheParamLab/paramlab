@@ -883,6 +883,9 @@ export function calculateMinWallMm(
   if (partType === "adapter") {
     return 2.8;
   }
+  if (partType === "plant-tag") {
+    return 2.4;
+  }
   const wall = Math.max(2.4, Math.min(6, Math.min(dims.d1, dims.d2) * 0.06));
   return Number(wall.toFixed(1));
 }
