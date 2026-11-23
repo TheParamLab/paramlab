@@ -1,4 +1,14 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Script from "next/script";
+import { Suspense, useEffect, useRef } from "react";
+
+declare global {
+  interface Window {
+    ym?: (counterId: number, method: "hit", url: string) => void;
+  }
+}
 
 /** Номер счётчика Яндекс.Метрики для сайта paramlab.ru. */
 const COUNTER_ID = 114398615;
@@ -18,12 +28,33 @@ const initScript = `
 ym(${COUNTER_ID}, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
 `;
 
+function MetrikaScript() {
+  const pathname = usePathname();
+  const previousPathname = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (previousPathname.current === pathname) return;
+
+    // init уже отправляет просмотр первой страницы.
+    if (previousPathname.current !== null) {
+      window.ym?.(COUNTER_ID, "hit", window.location.href);
+    }
+    previousPathname.current = pathname;
+  }, [pathname]);
+
+  return (
+    <Script id="yandex-metrika" strategy="afterInteractive">
+      {initScript}
+    </Script>
+  );
+}
+
 export function YandexMetrika() {
   return (
     <>
-      <Script id="yandex-metrika" strategy="afterInteractive">
-        {initScript}
-      </Script>
+      <Suspense fallback={null}>
+        <MetrikaScript />
+      </Suspense>
       <noscript>
         <div>
           {/* biome-ignore lint/performance/noImgElement: пиксель Метрики для <noscript>, next/image здесь не нужен */}
