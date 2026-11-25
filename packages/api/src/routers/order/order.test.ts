@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { call } from "@orpc/server";
 import type { Session } from "@paramlab/auth";
-import { eq, OrderEvent, OrderItem } from "@paramlab/db";
+import { DeliveryPoint, eq, OrderEvent, OrderItem } from "@paramlab/db";
 
 import { createSession, setupTestApi } from "../../../test/helpers";
 import { adminOrdersRouter } from "../admin/orders";
@@ -12,8 +12,29 @@ let api: Awaited<ReturnType<typeof setupTestApi>>;
 
 beforeAll(async () => {
   api = await setupTestApi();
+  // Локальный справочник ПВЗ Ozon: в тестах методы доставки пусты, поэтому
+  // расчет идет по плоскому тарифу 199 ₽ без вызова Ozon API.
+  await api.db.insert(DeliveryPoint).values({
+    id: "test-point",
+    name: "ПВЗ Тестовый",
+    type: "pvz",
+    city: "Москва",
+    address: "г. Москва, ул. Тестовая, д. 1",
+    active: true,
+    shipmentMethodIds: [],
+  });
 });
 afterAll(() => api.close());
+
+/** Полный ввод оформления заказа: реквизиты получателя и ПВЗ для checkout. */
+function checkout<T extends object>(input: T) {
+  return {
+    ...input,
+    recipientName: "Иван Иванов",
+    recipientPhone: "+79991234567",
+    deliveryPointId: "test-point",
+  };
+}
 
 /** Загружает «файл» и сохраняет деталь массой 50 г. */
 async function createPart(session: Session, fileName = "bushing.stl") {
@@ -116,7 +137,7 @@ describe("order", () => {
 
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 10 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 10 }),
       { context: api.context(session) },
     );
     // 400 + 50 г × 10 шт. × 18 ₽ × 0,8 (серия) = 7 600 ₽
@@ -148,7 +169,7 @@ describe("order", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     expect(order.totalRub).toBe(1400);
@@ -162,14 +183,14 @@ describe("order", () => {
     await expect(
       call(
         orderRouter.create,
-        { partId: part.id, materialId: "petg", quantity: 1 },
+        checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
         { context: api.context(other) },
       ),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(owner) },
     );
     await expect(
@@ -191,7 +212,7 @@ describe("order", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "tpu", quantity: 2 },
+      checkout({ partId: part.id, materialId: "tpu", quantity: 2 }),
       { context: api.context(session) },
     );
     await call(
@@ -227,7 +248,7 @@ describe("admin.orders.setStatus", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "pa6cf", quantity: 1 },
+      checkout({ partId: part.id, materialId: "pa6cf", quantity: 1 }),
       { context: api.context(session) },
     );
 
@@ -318,7 +339,7 @@ describe("review fixes", () => {
 
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "asa", quantity: 2 },
+      checkout({ partId: part.id, materialId: "asa", quantity: 2 }),
       { context: api.context(session) },
     );
     // 400 + 54 г × 2 шт. × 24 ₽ = 2 992 → 2 990 ₽
@@ -360,7 +381,7 @@ describe("review fixes", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     await call(
@@ -409,7 +430,7 @@ describe("review fixes", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     const updated = await call(
@@ -517,7 +538,7 @@ describe("second review round", () => {
     for (const quantity of [1, 2, 3]) {
       await call(
         orderRouter.create,
-        { partId: part.id, materialId: "petg", quantity },
+        checkout({ partId: part.id, materialId: "petg", quantity }),
         { context: api.context(session) },
       );
     }
@@ -558,7 +579,7 @@ describe("event order", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     // Одинаковое и даже более раннее время не должно менять порядок.
@@ -595,7 +616,7 @@ describe("order summary", () => {
       orders.push(
         await call(
           orderRouter.create,
-          { partId: part.id, materialId: "petg", quantity },
+          checkout({ partId: part.id, materialId: "petg", quantity }),
           { context: api.context(session) },
         ),
       );

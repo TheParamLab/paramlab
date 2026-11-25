@@ -153,7 +153,12 @@ describe("catalog pricing", () => {
       materialId: "petg",
       quantity: 1,
     });
-    expect(price).toEqual({ total: 1400, series: false, totalMass: 10 });
+    expect(price).toEqual({
+      total: 1400,
+      series: false,
+      totalMass: 10,
+      smallPart: false,
+    });
   });
 
   test("gives the series discount from 10 pieces", () => {
@@ -165,6 +170,43 @@ describe("catalog pricing", () => {
     });
     expect(price.total).toBe(7600);
     expect(price.series).toBe(true);
+  });
+
+  test("prices a single small part at the entry tariff", () => {
+    // Компактная деталь 25 г и до 100 мм — 990 ₽ вместо минималки 1400 ₽.
+    const price = calcPartPrice({
+      massGrams: 25,
+      materialId: "petg",
+      quantity: 1,
+      size: [60, 40, 30],
+    });
+    expect(price.total).toBe(990);
+    expect(price.smallPart).toBe(true);
+  });
+
+  test("keeps the minimum order for large or batch small parts", () => {
+    // Крупная полая деталь может весить мало, но занимает стол принтера.
+    expect(
+      calcPartPrice({
+        massGrams: 25,
+        materialId: "petg",
+        quantity: 1,
+        size: [200, 40, 30],
+      }).smallPart,
+    ).toBe(false);
+    expect(
+      calcPartPrice({
+        massGrams: 25,
+        materialId: "petg",
+        quantity: 2,
+        size: [60, 40, 30],
+      }).smallPart,
+    ).toBe(false);
+    // Без габаритов тариф консервативно не применяется.
+    expect(
+      calcPartPrice({ massGrams: 25, materialId: "petg", quantity: 1 })
+        .smallPart,
+    ).toBe(false);
   });
 
   test("estimates mass from volume and clamps it", () => {

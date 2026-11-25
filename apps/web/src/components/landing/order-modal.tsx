@@ -113,6 +113,7 @@ export function OrderSpecModal() {
     rate: material.rate,
     quantity,
     extras: 0,
+    maxDimensionMm: Math.max(dimensions.d1, dimensions.h),
   });
 
   const effectiveD2 = isConcentricBorePart(partType)

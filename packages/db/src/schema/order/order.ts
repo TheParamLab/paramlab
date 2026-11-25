@@ -1,6 +1,6 @@
 import type { MaterialId, OrderStatus } from "@paramlab/validators";
 import { relations, sql } from "drizzle-orm";
-import { index, pgTable } from "drizzle-orm/pg-core";
+import { index, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { user } from "../auth";
 import { Part } from "./part";
@@ -21,6 +21,27 @@ export const Order = pgTable(
     status: t.text().$type<OrderStatus>().notNull().default("pending_payment"),
     /** Стоимость печати без доставки, ₽. */
     totalRub: t.integer().notNull(),
+    /** Стоимость доставки до ПВЗ Ozon, ₽. */
+    deliveryRub: t.integer().notNull().default(0),
+    /** Полная сумма к оплате: печать + доставка, ₽. */
+    payableRub: t.integer().notNull().default(0),
+    deliveryMethod: t.text().$type<"ozon_pvz">(),
+    /** ID пункта выдачи Ozon передается строкой: это int64, небезопасный для JS number. */
+    deliveryPointId: t.text(),
+    deliveryPointName: t.varchar({ length: 255 }),
+    deliveryPointAddress: t.text(),
+    deliveryCity: t.varchar({ length: 120 }),
+    /** Телефон строго +7XXXXXXXXXX — его проверяет Ozon перед доставкой. */
+    recipientPhone: t.varchar({ length: 16 }),
+    recipientName: t.varchar({ length: 120 }),
+    deliveryEtaDays: t.integer(),
+    paymentProvider: t.text().$type<"yookassa">(),
+    paymentId: t.text(),
+    paymentUrl: t.text(),
+    paidAt: t.timestamp({ withTimezone: true }),
+    /** ID заказа в Ozon Delivery API после создания отправления. */
+    ozonOrderId: t.text(),
+    ozonPostingNumber: t.text(),
     carrier: t.text(),
     trackingNumber: t.text(),
     trackingUrl: t.text(),
@@ -29,7 +50,64 @@ export const Order = pgTable(
       .timestamp({ mode: "date", withTimezone: true })
       .$onUpdateFn(() => sql`now()`),
   }),
-  (t) => [index("orders_user_id_idx").on(t.userId)],
+  (t) => [
+    index("orders_user_id_idx").on(t.userId),
+    index("orders_payment_id_idx").on(t.paymentId),
+  ],
+);
+
+/** Локальный справочник пунктов выдачи Ozon. Обновляется фоновой синхронизацией. */
+export const DeliveryPoint = pgTable(
+  "delivery_points",
+  (t) => ({
+    /** ID Ozon как строка: 16-значный int64 нельзя безопасно хранить в JS number. */
+    id: t.text().primaryKey(),
+    /** Методы доставки кабинета Ozon, которыми пункт доступен. */
+    shipmentMethodIds: t.jsonb().$type<string[]>().notNull().default([]),
+    name: t.varchar({ length: 255 }),
+    type: t.varchar({ length: 80 }),
+    city: t.varchar({ length: 120 }),
+    region: t.varchar({ length: 120 }),
+    address: t.text().notNull(),
+    postalCode: t.varchar({ length: 20 }),
+    latitude: t.real(),
+    longitude: t.real(),
+    maxWeightGrams: t.integer(),
+    maxLengthMm: t.integer(),
+    maxWidthMm: t.integer(),
+    maxHeightMm: t.integer(),
+    active: t.boolean().notNull().default(true),
+    raw: t.jsonb().$type<Record<string, unknown>>(),
+    syncedAt: t.timestamp({ withTimezone: true }),
+    createdAt: t.timestamp({ withTimezone: true }).defaultNow().notNull(),
+    updatedAt: t
+      .timestamp({ mode: "date", withTimezone: true })
+      .$onUpdateFn(() => sql`now()`),
+  }),
+  (t) => [
+    index("delivery_points_city_idx").on(t.city),
+    index("delivery_points_active_idx").on(t.active),
+  ],
+);
+
+/** Журнал webhook-событий платежного провайдера для аудита и идемпотентности. */
+export const PaymentEvent = pgTable(
+  "payment_events",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    provider: t.text().$type<"yookassa">().notNull(),
+    paymentId: t.text().notNull(),
+    event: t.text().notNull(),
+    payload: t.jsonb().$type<Record<string, unknown>>().notNull(),
+    createdAt: t.timestamp({ withTimezone: true }).defaultNow().notNull(),
+  }),
+  (t) => [
+    uniqueIndex("payment_events_provider_payment_event_idx").on(
+      t.provider,
+      t.paymentId,
+      t.event,
+    ),
+  ],
 );
 
 /**

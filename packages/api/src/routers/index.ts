@@ -20,6 +20,7 @@
  */
 
 import { adminRouter } from "./admin";
+import { deliveryPointRouter } from "./delivery-point";
 import { orderRouter } from "./order";
 import { partRouter } from "./part";
 import { postRouter } from "./post";
@@ -30,6 +31,7 @@ export const appRouter = {
   post: postRouter,
   part: partRouter,
   order: orderRouter,
+  deliveryPoint: deliveryPointRouter,
   admin: adminRouter,
 };
 

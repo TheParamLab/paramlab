@@ -1,8 +1,21 @@
-import { eq, Order, OrderEvent, sql } from "@paramlab/db";
+import {
+  DeliveryPoint,
+  eq,
+  Order,
+  OrderEvent,
+  OrderItem,
+  sql,
+} from "@paramlab/db";
 import { ORDER_STATUSES } from "@paramlab/validators";
 import { z } from "zod";
 
+import {
+  ozonApprovePosting,
+  ozonConfigured,
+  ozonCreateOrder,
+} from "../../../integrations/ozon-delivery";
 import { adminProcedure } from "../../../orpc";
+import { packageDimensions } from "../../order/resolve-quote";
 
 /**
  * Перевести заказ на другой этап и записать событие в историю трекера.
@@ -30,14 +43,84 @@ export const setStatus = adminProcedure
     }),
   )
   .handler(async ({ context, input, errors }) => {
+    // При передаче заказа с доставкой Ozon в работу логистики отправление
+    // создается в Ozon Delivery API: сначала заказ, затем подтверждение
+    // сборки. Трек-номером становится номер отправления Ozon.
+    let carrier = input.carrier;
+    let trackingNumber = input.trackingNumber;
+    let trackingUrl = input.trackingUrl;
+    let ozonOrderId: string | undefined;
+    let ozonPostingNumber: string | undefined;
+
+    if (input.status === "shipped") {
+      const [existing] = await context.db
+        .select()
+        .from(Order)
+        .where(eq(Order.id, input.id));
+      if (
+        existing?.deliveryMethod === "ozon_pvz" &&
+        !existing.ozonPostingNumber &&
+        ozonConfigured() &&
+        existing.deliveryPointId &&
+        existing.recipientPhone &&
+        existing.recipientName
+      ) {
+        const items = await context.db
+          .select()
+          .from(OrderItem)
+          .where(eq(OrderItem.orderId, existing.id));
+        const totalMass = items.reduce(
+          (sum, item) => sum + item.massGrams * item.quantity,
+          0,
+        );
+        const [point] = await context.db
+          .select()
+          .from(DeliveryPoint)
+          .where(eq(DeliveryPoint.id, existing.deliveryPointId));
+        const shipmentMethodId = point?.shipmentMethodIds[0];
+        if (!shipmentMethodId) {
+          throw new Error(
+            "У пункта выдачи нет метода доставки — синхронизируйте справочник ПВЗ",
+          );
+        }
+        const created = await ozonCreateOrder({
+          idempotencyKey: existing.id,
+          orderExternalId: `paramlab-${existing.number}`,
+          recipientPhone: existing.recipientPhone,
+          recipientName: existing.recipientName,
+          deliveryPointId: Number(existing.deliveryPointId),
+          shipmentMethodId: Number(shipmentMethodId),
+          postingExternalId: `paramlab-${existing.number}-1`,
+          description: items
+            .map((item) => `${item.partName} × ${item.quantity}`)
+            .join(", ")
+            .slice(0, 200),
+          declaredValueRub: existing.totalRub,
+          dimensions: packageDimensions(totalMass, 1),
+        });
+        const posting = created.postings[0];
+        if (!posting) throw new Error("Ozon не вернул отправление");
+        await ozonApprovePosting(posting.posting_number);
+        ozonOrderId = created.order_number;
+        ozonPostingNumber = posting.posting_number;
+        carrier = carrier ?? "Ozon";
+        trackingNumber = trackingNumber ?? posting.posting_number;
+        trackingUrl =
+          trackingUrl ??
+          `https://ozon.ru/my/orderdetails?order=${posting.posting_number}`;
+      }
+    }
+
     const updated = context.db.$with("updated").as(
       context.db
         .update(Order)
         .set({
           status: input.status,
-          carrier: input.carrier,
-          trackingNumber: input.trackingNumber,
-          trackingUrl: input.trackingUrl,
+          carrier,
+          trackingNumber,
+          trackingUrl,
+          ...(ozonOrderId ? { ozonOrderId } : {}),
+          ...(ozonPostingNumber ? { ozonPostingNumber } : {}),
         })
         .where(eq(Order.id, input.id))
         .returning(),

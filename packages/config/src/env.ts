@@ -38,6 +38,14 @@ export const env = createEnv({
     // Hatchet (background jobs). Unset: @paramlab/jobs runs work inline.
     HATCHET_CLIENT_TOKEN: z.string().optional(),
 
+    // Payments: YooKassa shop credentials (server-only).
+    YOOKASSA_SHOP_ID: z.string().optional(),
+    YOOKASSA_SECRET_KEY: z.string().optional(),
+
+    // Ozon Delivery API for business (server-only OAuth client).
+    OZON_DELIVERY_CLIENT_ID: z.string().optional(),
+    OZON_DELIVERY_CLIENT_SECRET: z.string().optional(),
+
     // Storage: Yandex Object Storage (S3-compatible, static key auth)
     YANDEX_STORAGE_ACCESS_KEY_ID: z.string().optional(),
     YANDEX_STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
@@ -72,6 +80,10 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     ADMIN_EMAILS: process.env.ADMIN_EMAILS,
     HATCHET_CLIENT_TOKEN: process.env.HATCHET_CLIENT_TOKEN,
+    YOOKASSA_SHOP_ID: process.env.YOOKASSA_SHOP_ID,
+    YOOKASSA_SECRET_KEY: process.env.YOOKASSA_SECRET_KEY,
+    OZON_DELIVERY_CLIENT_ID: process.env.OZON_DELIVERY_CLIENT_ID,
+    OZON_DELIVERY_CLIENT_SECRET: process.env.OZON_DELIVERY_CLIENT_SECRET,
     YANDEX_STORAGE_ACCESS_KEY_ID: process.env.YANDEX_STORAGE_ACCESS_KEY_ID,
     YANDEX_STORAGE_SECRET_ACCESS_KEY:
       process.env.YANDEX_STORAGE_SECRET_ACCESS_KEY,

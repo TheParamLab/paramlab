@@ -22,4 +22,5 @@ type RouterOutputs = InferRouterOutputs<AppRouter>;
 
 export { createORPCContext } from "./orpc";
 export { type AppRouter, appRouter } from "./routers";
+export { handleYooKassaNotification } from "./webhooks/yookassa";
 export type { RouterInputs, RouterOutputs };

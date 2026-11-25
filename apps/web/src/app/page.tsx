@@ -8,6 +8,7 @@ import { LandingHeader, Logo } from "~/components/landing/landing-header";
 import { ProductionCycle } from "~/components/landing/production-cycle";
 import { structuredData } from "~/components/landing/structured-data";
 import { TemplateShowcase } from "~/components/landing/template-showcase";
+import { UploadHero } from "~/components/landing/upload-hero";
 
 // `<` экранируем, чтобы текст данных не мог закрыть тег <script>.
 const jsonLd = JSON.stringify(structuredData).replace(/</g, "\\u003c");
@@ -28,6 +29,7 @@ export default function HomePage() {
         />
         <LandingHeader />
         <main>
+          <UploadHero />
           <Hero />
           <BentoAdvantages />
           <TemplateShowcase />

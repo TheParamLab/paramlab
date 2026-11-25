@@ -1,3 +1,9 @@
+import {
+  SMALL_PART_MAX_DIMENSION_MM,
+  SMALL_PART_MAX_MASS_GRAMS,
+  SMALL_PART_PRICE,
+} from "@paramlab/validators";
+
 import type { Dimensions, PartTypeId } from "~/components/landing/data";
 
 export const MIN_ORDER = 1400;
@@ -15,18 +21,34 @@ interface PriceInput {
   quantity: number;
   /** Сумма доп. опций, ₽. */
   extras: number;
+  /** Наибольший габарит детали, мм — для тарифа мелких деталей. */
+  maxDimensionMm?: number;
 }
 
-export function calcPrice({ massGrams, rate, quantity, extras }: PriceInput) {
+export function calcPrice({
+  massGrams,
+  rate,
+  quantity,
+  extras,
+  maxDimensionMm,
+}: PriceInput) {
   const series = quantity >= SERIES_QUANTITY;
   const totalMass = massGrams * quantity;
   const raw =
     MACHINE_START + totalMass * rate * (series ? SERIES_FACTOR : 1) + extras;
-  const total = Math.max(MIN_ORDER, Math.round(raw / 10) * 10);
+  const smallPart =
+    quantity === 1 &&
+    massGrams <= SMALL_PART_MAX_MASS_GRAMS &&
+    maxDimensionMm != null &&
+    maxDimensionMm <= SMALL_PART_MAX_DIMENSION_MM;
+  const total = smallPart
+    ? SMALL_PART_PRICE
+    : Math.max(MIN_ORDER, Math.round(raw / 10) * 10);
 
   return {
     total,
     series,
+    smallPart,
     totalMass,
     perPiece: Math.round(total / quantity),
     printHours: Math.max(0.5, Math.round((totalMass / GRAMS_PER_HOUR) * 2) / 2),

@@ -42,10 +42,29 @@ export const createPartSchema = z.object({
 
 export type CreatePartInput = z.input<typeof createPartSchema>;
 
+/** Ozon требует телефон получателя строго в формате +7XXXXXXXXXX. */
+export const recipientPhoneSchema = z
+  .string()
+  .trim()
+  .regex(/^\+7\d{10}$/, "Укажите телефон в формате +7XXXXXXXXXX");
+
+export function normalizeRecipientPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 10 && digits.startsWith("9")) return `+7${digits}`;
+  if (digits.length === 11 && digits.startsWith("8")) {
+    return `+7${digits.slice(1)}`;
+  }
+  if (digits.length === 11 && digits.startsWith("7")) return `+${digits}`;
+  return value.trim();
+}
+
 export const createOrderSchema = z.object({
   partId: z.uuid(),
   materialId: z.enum(MATERIAL_IDS),
   quantity: z.number().int().min(ORDER_QUANTITY.min).max(ORDER_QUANTITY.max),
+  recipientName: z.string().trim().min(2).max(120),
+  recipientPhone: recipientPhoneSchema,
+  deliveryPointId: z.string().min(1).max(32),
 });
 
 /**
