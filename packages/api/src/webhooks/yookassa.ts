@@ -53,8 +53,41 @@ export async function handleYooKassaNotification(
     return false;
   }
 
-  // Идемпотентность: гонка двух webhook разрешается уникальным индексом.
-  const inserted = await db
+  const [order] = await db
+    .select()
+    .from(Order)
+    .where(and(eq(Order.id, orderId), eq(Order.paymentId, paymentId)));
+
+  // Сначала применяем эффект к заказу. Если это повторный webhook или заказ
+  // уже обработан — статус не pending_payment и обновление пропускается;
+  // идемпотентность держится на состоянии заказа, а не на журнале событий,
+  // иначе сбой после записи события навсегда блокировал бы обработку.
+  if (order?.status === "pending_payment") {
+    if (notification.event === "payment.succeeded" && payment.paid) {
+      await db
+        .update(Order)
+        .set({ status: "paid", paidAt: new Date() })
+        .where(eq(Order.id, order.id));
+      await db.insert(OrderEvent).values({
+        orderId: order.id,
+        status: "paid",
+        note: "Оплата подтверждена YooKassa",
+      });
+    } else if (notification.event === "payment.canceled") {
+      await db
+        .update(Order)
+        .set({ status: "cancelled" })
+        .where(eq(Order.id, order.id));
+      await db.insert(OrderEvent).values({
+        orderId: order.id,
+        status: "cancelled",
+        note: "Платеж отменен или истек",
+      });
+    }
+  }
+
+  // Журнал webhook-событий — аудит. Уникальный индекс гасит дубликаты.
+  await db
     .insert(PaymentEvent)
     .values({
       provider: "yookassa",
@@ -62,40 +95,6 @@ export async function handleYooKassaNotification(
       event: notification.event,
       payload: notification as unknown as Record<string, unknown>,
     })
-    .onConflictDoNothing()
-    .returning({ id: PaymentEvent.id });
-  if (inserted.length === 0) return true;
-
-  const [order] = await db
-    .select()
-    .from(Order)
-    .where(and(eq(Order.id, orderId), eq(Order.paymentId, paymentId)));
-  if (order?.status !== "pending_payment") return true;
-
-  if (notification.event === "payment.succeeded" && payment.paid) {
-    await db
-      .update(Order)
-      .set({ status: "paid", paidAt: new Date() })
-      .where(eq(Order.id, order.id));
-    await db.insert(OrderEvent).values({
-      orderId: order.id,
-      status: "paid",
-      note: "Оплата подтверждена YooKassa",
-    });
-    return true;
-  }
-
-  if (notification.event === "payment.canceled") {
-    await db
-      .update(Order)
-      .set({ status: "cancelled" })
-      .where(eq(Order.id, order.id));
-    await db.insert(OrderEvent).values({
-      orderId: order.id,
-      status: "cancelled",
-      note: "Платеж отменен или истек",
-    });
-    return true;
-  }
+    .onConflictDoNothing();
   return true;
 }

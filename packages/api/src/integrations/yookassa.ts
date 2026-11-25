@@ -37,7 +37,7 @@ async function parsePayment(response: Response): Promise<YooKassaPayment> {
 
 export async function createYooKassaPayment(input: {
   orderId: string;
-  orderNumber: number;
+  description: string;
   amountRub: number;
   returnUrl: string;
   idempotenceKey: string;
@@ -59,10 +59,9 @@ export async function createYooKassaPayment(input: {
         type: "redirect",
         return_url: input.returnUrl,
       },
-      description: `Заказ ParamLab № ${input.orderNumber}`,
+      description: input.description,
       metadata: {
         order_id: input.orderId,
-        order_number: String(input.orderNumber),
       },
     }),
     signal: AbortSignal.timeout(10_000),

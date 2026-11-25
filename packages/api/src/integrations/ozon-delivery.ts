@@ -15,8 +15,13 @@ export interface OzonDimensions {
   height_mm: number;
 }
 
+/**
+ * ID точек выдачи, методов доставки и отправлений Ozon — int64. JS Number
+ * хранит точно только до 2^53, поэтому внутри все ID передаются строками,
+ * а при парсинге ответов большие целые превращаются в строки до JSON.parse.
+ */
 export interface OzonDeliveryPoint {
-  delivery_point_id: number;
+  delivery_point_id: string;
   name: string;
   delivery_point_number?: string | null;
   type: "unknown" | "pvz" | "postamat" | string;
@@ -51,7 +56,7 @@ export interface OzonCheckoutResult {
 export interface OzonOrderCreateResult {
   order_number: string;
   order_external_id?: string | null;
-  postings: Array<{
+  postings?: Array<{
     request_id: number;
     posting_number: string;
     posting_external_id?: string;
@@ -66,6 +71,16 @@ export function ozonConfigured() {
   return Boolean(
     env.OZON_DELIVERY_CLIENT_ID && env.OZON_DELIVERY_CLIENT_SECRET,
   );
+}
+
+/**
+ * JSON.parse округляет int64 до ближайшего double. Перед парсингом целые
+ * литералы длиной от 15 знаков заворачиваем в строки: ID остаются точными,
+ * а координаты/веса/деньги и так либо дробные, либо маленькие.
+ */
+function parseOzonJson<T>(text: string): T {
+  const safe = text.replace(/([:[,]\s*)(-?\d{15,})(?=\s*[,}\]])/g, '$1"$2"');
+  return JSON.parse(safe) as T;
 }
 
 async function getAccessToken(): Promise<string> {
@@ -124,16 +139,23 @@ async function ozonFetch<T>(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(15_000),
   });
-  const data = (await response.json().catch(() => null)) as T & {
-    error?: { code?: string; message?: string };
-  };
+  const text = await response.text().catch(() => "");
+  const data = (
+    text
+      ? parseOzonJson<T & { error?: { code?: string; message?: string } }>(text)
+      : null
+  ) as (T & { error?: { code?: string; message?: string } }) | null;
   if (!response.ok) {
     throw new Error(
       data?.error?.message ||
         `Ozon Delivery ${path} failed with ${response.status}`,
     );
   }
-  return data;
+  // Ozon может вернуть 200 с error в теле — считаем это ошибкой вызова.
+  if (data?.error?.message) {
+    throw new Error(`Ozon Delivery ${path}: ${data.error.message}`);
+  }
+  return data as T;
 }
 
 export async function ozonCheckClient(phone: string): Promise<boolean> {
@@ -149,8 +171,8 @@ export async function ozonListDeliveryPoints(input: {
   limit?: number;
 }): Promise<{
   delivery_points: Array<{
-    delivery_point_id: number;
-    shipment_method_ids: number[] | number;
+    delivery_point_id: string;
+    shipment_method_ids: string[] | string;
   }>;
   next_cursor?: string | null;
 }> {
@@ -160,7 +182,7 @@ export async function ozonListDeliveryPoints(input: {
 }
 
 export async function ozonDeliveryPointInfo(
-  ids: number[],
+  ids: string[],
 ): Promise<{ delivery_points: OzonDeliveryPoint[] }> {
   return ozonFetch("/v1/delivery-point/info", {
     delivery_point_ids: ids,
@@ -169,8 +191,8 @@ export async function ozonDeliveryPointInfo(
 
 export async function ozonCheckout(input: {
   recipientPhone: string;
-  deliveryPointId: number;
-  shipmentMethodId: number;
+  deliveryPointId: string;
+  shipmentMethodId: string;
   declaredValueRub: number;
   dimensions: OzonDimensions;
 }): Promise<OzonCheckoutResult[]> {
@@ -202,8 +224,8 @@ export async function ozonCreateOrder(input: {
   orderExternalId: string;
   recipientPhone: string;
   recipientName: string;
-  deliveryPointId: number;
-  shipmentMethodId: number;
+  deliveryPointId: string;
+  shipmentMethodId: string;
   postingExternalId: string;
   description: string;
   declaredValueRub: number;

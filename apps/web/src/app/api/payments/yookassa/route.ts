@@ -3,18 +3,43 @@ import { logger } from "@paramlab/config";
 import { db } from "@paramlab/db";
 
 /**
- * Webhook YooKassa: уведомления о статусах платежей. Всегда отвечаем 200 —
- * иначе YooKassa будет повторять доставку; подлинность проверяется
- * перезапросом платежа в API внутри handleYooKassaNotification.
+ * Webhook YooKassa: уведомления о статусах платежей. Подлинность
+ * проверяется перезапросом платежа в API внутри
+ * handleYooKassaNotification — телу webhook не доверяем.
+ * Битые payload отвечаем 200 (повторять их бессмысленно), а сбой обработки —
+ * 500, чтобы YooKassa повторила доставку.
  */
 export async function POST(request: Request) {
+  let body: unknown;
   try {
-    const body = (await request.json()) as Parameters<
-      typeof handleYooKassaNotification
-    >[1];
-    await handleYooKassaNotification(db, body);
+    body = await request.json();
+  } catch {
+    return Response.json({ ok: true });
+  }
+
+  // Структурная валидация до любой работы: отсекает мусор и часть флуда.
+  const notification = body as {
+    type?: unknown;
+    event?: unknown;
+    object?: { id?: unknown };
+  } | null;
+  if (
+    notification?.type !== "notification" ||
+    typeof notification.event !== "string" ||
+    !notification.event.startsWith("payment.") ||
+    typeof notification.object?.id !== "string"
+  ) {
+    return Response.json({ ok: true });
+  }
+
+  try {
+    await handleYooKassaNotification(
+      db,
+      notification as Parameters<typeof handleYooKassaNotification>[1],
+    );
   } catch (error) {
     logger.error("yookassa.webhook_error", error);
+    return Response.json({ ok: false }, { status: 500 });
   }
   return Response.json({ ok: true });
 }

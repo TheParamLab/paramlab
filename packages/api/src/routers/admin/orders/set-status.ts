@@ -1,3 +1,4 @@
+import { logger } from "@paramlab/config";
 import {
   DeliveryPoint,
   eq,
@@ -27,7 +28,13 @@ import { packageDimensions } from "../../order/resolve-quote";
  * @example client.admin.orders.setStatus({ id, status: "printing" })
  */
 export const setStatus = adminProcedure
-  .errors({ NOT_FOUND: { message: "Заказ не найден" } })
+  .errors({
+    NOT_FOUND: { message: "Заказ не найден" },
+    OZON_FAILED: {
+      message:
+        "Не удалось создать отправление в Ozon — проверьте интеграцию и повторите",
+    },
+  })
   .input(
     z.object({
       id: z.uuid(),
@@ -83,31 +90,39 @@ export const setStatus = adminProcedure
             "У пункта выдачи нет метода доставки — синхронизируйте справочник ПВЗ",
           );
         }
-        const created = await ozonCreateOrder({
-          idempotencyKey: existing.id,
-          orderExternalId: `paramlab-${existing.number}`,
-          recipientPhone: existing.recipientPhone,
-          recipientName: existing.recipientName,
-          deliveryPointId: Number(existing.deliveryPointId),
-          shipmentMethodId: Number(shipmentMethodId),
-          postingExternalId: `paramlab-${existing.number}-1`,
-          description: items
-            .map((item) => `${item.partName} × ${item.quantity}`)
-            .join(", ")
-            .slice(0, 200),
-          declaredValueRub: existing.totalRub,
-          dimensions: packageDimensions(totalMass, 1),
-        });
-        const posting = created.postings[0];
-        if (!posting) throw new Error("Ozon не вернул отправление");
-        await ozonApprovePosting(posting.posting_number);
-        ozonOrderId = created.order_number;
-        ozonPostingNumber = posting.posting_number;
+        // ID точек и методов Ozon — int64 и хранятся строками: передаем как есть.
+        try {
+          const created = await ozonCreateOrder({
+            idempotencyKey: existing.id,
+            orderExternalId: `paramlab-${existing.number}`,
+            recipientPhone: existing.recipientPhone,
+            recipientName: existing.recipientName,
+            deliveryPointId: existing.deliveryPointId,
+            shipmentMethodId,
+            postingExternalId: `paramlab-${existing.number}-1`,
+            description: items
+              .map((item) => `${item.partName} × ${item.quantity}`)
+              .join(", ")
+              .slice(0, 200),
+            declaredValueRub: existing.totalRub,
+            dimensions: packageDimensions(totalMass, 1),
+          });
+          const posting = created.postings?.[0];
+          if (!posting) throw new Error("Ozon не вернул отправление");
+          await ozonApprovePosting(posting.posting_number);
+          ozonOrderId = created.order_number;
+          ozonPostingNumber = posting.posting_number;
+        } catch (error) {
+          logger.error("ozon.order_create_failed", error, {
+            orderId: existing.id,
+          });
+          throw errors.OZON_FAILED();
+        }
         carrier = carrier ?? "Ozon";
-        trackingNumber = trackingNumber ?? posting.posting_number;
+        trackingNumber = trackingNumber ?? ozonPostingNumber;
         trackingUrl =
           trackingUrl ??
-          `https://ozon.ru/my/orderdetails?order=${posting.posting_number}`;
+          `https://ozon.ru/my/orderdetails?order=${ozonPostingNumber}`;
       }
     }
 

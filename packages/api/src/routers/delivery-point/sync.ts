@@ -1,4 +1,4 @@
-import { DeliveryPoint, sql } from "@paramlab/db";
+import { DeliveryPoint, isNull, lt, or, sql } from "@paramlab/db";
 
 import {
   ozonConfigured,
@@ -23,16 +23,18 @@ export const sync = adminProcedure
   .handler(async ({ context, errors }) => {
     if (!ozonConfigured()) throw errors.UNAVAILABLE();
 
+    // Все точки, не обновленные в этом прогоне, в конце деактивируем.
+    const syncStartedAt = new Date();
     let cursor: string | undefined;
     let synced = 0;
     for (let page = 0; page < MAX_PAGES; page++) {
       const list = await ozonListDeliveryPoints({ cursor, limit: BATCH });
-      const ids = list.delivery_points.map((p) => p.delivery_point_id);
+      const ids = list.delivery_points.map((p) => String(p.delivery_point_id));
       if (ids.length === 0) break;
 
       const methodById = new Map(
         list.delivery_points.map((p) => [
-          p.delivery_point_id,
+          String(p.delivery_point_id),
           (Array.isArray(p.shipment_method_ids)
             ? p.shipment_method_ids
             : [p.shipment_method_ids]
@@ -50,7 +52,8 @@ export const sync = adminProcedure
             .insert(DeliveryPoint)
             .values({
               id,
-              shipmentMethodIds: methodById.get(point.delivery_point_id) ?? [],
+              shipmentMethodIds:
+                methodById.get(String(point.delivery_point_id)) ?? [],
               name: point.name,
               type: point.type,
               city: addressParts[1]?.trim().replace(/^г\.\s*/, "") ?? null,
@@ -91,5 +94,19 @@ export const sync = adminProcedure
       if (!list.next_cursor) break;
       cursor = list.next_cursor;
     }
-    return { synced };
+
+    // Точки, которых Ozon больше не отдает (или закрыл), деактивируем,
+    // чтобы их нельзя было выбрать при оформлении заказа.
+    const deactivated = await context.db
+      .update(DeliveryPoint)
+      .set({ active: false })
+      .where(
+        or(
+          lt(DeliveryPoint.syncedAt, syncStartedAt),
+          isNull(DeliveryPoint.syncedAt),
+        ),
+      )
+      .returning({ id: DeliveryPoint.id });
+
+    return { synced, deactivated: deactivated.length };
   });

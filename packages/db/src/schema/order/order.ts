@@ -52,7 +52,8 @@ export const Order = pgTable(
   }),
   (t) => [
     index("orders_user_id_idx").on(t.userId),
-    index("orders_payment_id_idx").on(t.paymentId),
+    // Один платеж — один заказ: webhook ищет заказ по paymentId.
+    uniqueIndex("orders_payment_id_idx").on(t.paymentId),
   ],
 );
 

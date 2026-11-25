@@ -42,11 +42,11 @@ export const createPartSchema = z.object({
 
 export type CreatePartInput = z.input<typeof createPartSchema>;
 
-/** Ozon требует телефон получателя строго в формате +7XXXXXXXXXX. */
+/** Ozon доставляет только на российский мобильный номер +79XXXXXXXXX. */
 export const recipientPhoneSchema = z
   .string()
   .trim()
-  .regex(/^\+7\d{10}$/, "Укажите телефон в формате +7XXXXXXXXXX");
+  .regex(/^\+79\d{9}$/, "Укажите мобильный телефон в формате +79XXXXXXXXX");
 
 export function normalizeRecipientPhone(value: string) {
   const digits = value.replace(/\D/g, "");

@@ -1,4 +1,5 @@
-import { and, eq, Order, OrderEvent, OrderItem, sql } from "@paramlab/db";
+import { env } from "@paramlab/config";
+import { Order, OrderEvent, OrderItem, sql } from "@paramlab/db";
 import {
   createOrderSchema,
   normalizeRecipientPhone,
@@ -44,11 +45,33 @@ export const create = protectedProcedure
     const { part, point, massGrams, printRub, deliveryRub, payableRub } =
       resolved;
 
+    // Платеж создается ДО вставки заказа: id заказа генерируем заранее, ключ
+    // идемпотентности YooKassa ему равен. Если создание платежа упадет —
+    // заказа в базе не будет и клиент просто повторит оформление; если упадет
+    // вставка — повторная попытка получит тот же платеж по ключу.
+    const orderId = crypto.randomUUID();
+    let paymentProvider: "yookassa" | null = null;
+    let paymentId: string | null = null;
+    let paymentUrl: string | null = null;
+    if (yookassaConfigured()) {
+      const payment = await createYooKassaPayment({
+        orderId,
+        description: `Печать «${part.name}»`.slice(0, 128),
+        amountRub: payableRub,
+        returnUrl: `${env.APP_URL}/cabinet/orders/${orderId}`,
+        idempotenceKey: orderId,
+      });
+      paymentProvider = "yookassa";
+      paymentId = payment.id;
+      paymentUrl = payment.confirmation?.confirmation_url ?? null;
+    }
+
     const { db } = context;
     const created = db.$with("created").as(
       db
         .insert(Order)
         .values({
+          id: orderId,
           userId,
           totalRub: printRub,
           deliveryRub,
@@ -61,6 +84,9 @@ export const create = protectedProcedure
           recipientPhone,
           recipientName: input.recipientName,
           deliveryEtaDays: resolved.deliveryEtaDays,
+          paymentProvider,
+          paymentId,
+          paymentUrl,
         })
         .returning(),
     );
@@ -108,29 +134,6 @@ export const create = protectedProcedure
 
     const [order] = await db.with(created, item, event).select().from(created);
     if (!order) throw new Error("Failed to insert order");
-
-    // Платеж создается после вставки заказа: у YooKassa идемпотентность по
-    // ключу заказа, поэтому повторная попытка вернет тот же платеж.
-    let paymentUrl: string | null = null;
-    if (yookassaConfigured()) {
-      const origin = context.headers.get("origin") ?? "https://paramlab.ru";
-      const payment = await createYooKassaPayment({
-        orderId: order.id,
-        orderNumber: order.number,
-        amountRub: payableRub,
-        returnUrl: `${origin}/cabinet/orders/${order.id}`,
-        idempotenceKey: order.id,
-      });
-      paymentUrl = payment.confirmation?.confirmation_url ?? null;
-      await db
-        .update(Order)
-        .set({
-          paymentProvider: "yookassa",
-          paymentId: payment.id,
-          paymentUrl,
-        })
-        .where(and(eq(Order.id, order.id), eq(Order.userId, userId)));
-    }
 
     return { ...order, paymentUrl };
   });

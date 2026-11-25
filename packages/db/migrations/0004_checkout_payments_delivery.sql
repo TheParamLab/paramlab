@@ -50,4 +50,4 @@ UPDATE "orders" SET "payable_rub" = "total_rub" WHERE "payable_rub" = 0;--> stat
 CREATE INDEX IF NOT EXISTS "delivery_points_city_idx" ON "delivery_points" USING btree ("city");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "delivery_points_active_idx" ON "delivery_points" USING btree ("active");--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS "payment_events_provider_payment_event_idx" ON "payment_events" USING btree ("provider","payment_id","event");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "orders_payment_id_idx" ON "orders" USING btree ("payment_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "orders_payment_id_idx" ON "orders" USING btree ("payment_id");

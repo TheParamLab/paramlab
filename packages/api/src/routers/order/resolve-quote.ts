@@ -1,3 +1,4 @@
+import { logger } from "@paramlab/config";
 import type { db } from "@paramlab/db";
 import { and, DeliveryPoint, eq, Part } from "@paramlab/db";
 import {
@@ -15,8 +16,32 @@ import {
 /** Фиксированный тариф доставки до ПВЗ, когда Ozon API не настроен или недоступен. */
 const FLAT_DELIVERY_RUB = 199;
 
-/** Объемно-весовые характеристики типовой посылки ParamLab, мм/г. */
-export function packageDimensions(massGrams: number, quantity: number) {
+/** Запас картонной упаковки по каждому измерению, мм. */
+const PACKAGE_PADDING_MM = 60;
+
+/**
+ * Объемно-весовые характеристики посылки, мм/г. Если известны габариты
+ * детали, коробка подбирается под них с запасом на упаковку — иначе
+ * фиксированный размер по умолчанию. Один и тот же набор используется и
+ * в расчете цены доставки, и при создании отправления.
+ */
+export function packageDimensions(
+  massGrams: number,
+  quantity: number,
+  size?: readonly [number, number, number] | null,
+) {
+  if (size) {
+    const sorted = [...size].sort((a, b) => b - a);
+    return {
+      weight_g: Math.max(100, massGrams * quantity + 150),
+      length_mm: Math.ceil(sorted[0] ?? 0) + PACKAGE_PADDING_MM,
+      width_mm: Math.ceil(sorted[1] ?? 0) + PACKAGE_PADDING_MM,
+      // Детали партии складываем стопкой по наименьшему измерению.
+      height_mm:
+        Math.ceil((sorted[2] ?? 0) * Math.min(quantity, 5)) +
+        PACKAGE_PADDING_MM,
+    };
+  }
   return {
     weight_g: Math.max(100, massGrams * quantity + 150),
     length_mm: 300,
@@ -81,10 +106,10 @@ export async function resolveQuote(
       if (!canDeliver) return { error: "DELIVERY_UNAVAILABLE" as const };
       const results = await ozonCheckout({
         recipientPhone: input.recipientPhone,
-        deliveryPointId: Number(point.id),
-        shipmentMethodId: Number(point.shipmentMethodIds[0]),
+        deliveryPointId: point.id,
+        shipmentMethodId: point.shipmentMethodIds[0] ?? "",
         declaredValueRub: price.total,
-        dimensions: packageDimensions(massGrams, input.quantity),
+        dimensions: packageDimensions(massGrams, input.quantity, size),
       });
       const posting = results[0]?.posting;
       const cost = posting?.estimated_delivery_cost;
@@ -94,8 +119,13 @@ export async function resolveQuote(
         etaDays = posting?.estimated_delivery_days ?? null;
         estimated = false;
       }
-    } catch {
-      // Ozon недоступен — оформляем по плоскому тарифу, заказ не должен падать.
+    } catch (error) {
+      // Ozon недоступен — оформляем по плоскому тарифу, заказ не должен падать,
+      // но сбой интеграции фиксируем, иначе его никогда не заметят.
+      logger.warn("ozon.quote_failed", {
+        error: error instanceof Error ? error.message : String(error),
+        deliveryPointId: input.deliveryPointId,
+      });
     }
   }
 

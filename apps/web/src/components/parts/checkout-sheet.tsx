@@ -152,7 +152,7 @@ export function CheckoutSheet({
             </p>
             {phoneInput.length > 3 && !phoneValid && (
               <p className="text-xs text-destructive">
-                Укажите телефон в формате +7XXXXXXXXXX
+                Укажите мобильный телефон в формате +79XXXXXXXXX
               </p>
             )}
           </div>
