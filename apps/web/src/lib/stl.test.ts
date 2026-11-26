@@ -46,7 +46,7 @@ function asciiTetrahedron() {
     )
     .join("\r\n");
   return new TextEncoder().encode(
-    `solid tetrahedron\r\n${body}\r\nendsolid tetrahedron\r\n`,
+    `solid tetrahedron\r\n${body}\r\nendsolid tetrahedron\r\n \t\r\n\r\n`,
   ).buffer;
 }
 
@@ -78,6 +78,15 @@ describe("parseStl", () => {
       ].join("\n"),
     );
     expect(parseStl(broken.buffer)).toBeNull();
+  });
+
+  test("rejects non-empty data after the first ASCII STL solid", () => {
+    const solid = new TextDecoder().decode(asciiTetrahedron());
+    for (const trailing of [solid, "extra data"]) {
+      expect(
+        parseStl(new TextEncoder().encode(solid + trailing).buffer),
+      ).toBeNull();
+    }
   });
 
   test("rejects plain text", () => {

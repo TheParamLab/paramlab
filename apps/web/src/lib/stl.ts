@@ -59,6 +59,7 @@ function parseAsciiStl(buffer: ArrayBuffer): StlMesh | null {
   for (let i = firstIndex + 1; i < lines.length; i++) {
     const line = lines[i]?.trim() ?? "";
     if (!line) continue;
+    if (ended) return null;
     const keyword = line.toLowerCase();
 
     if (state === "body") {
@@ -68,7 +69,7 @@ function parseAsciiStl(buffer: ArrayBuffer): StlMesh | null {
       }
       if (/^endsolid(?:\s|$)/.test(keyword)) {
         ended = true;
-        break;
+        continue;
       }
       return null;
     }

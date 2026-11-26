@@ -83,7 +83,7 @@ export function PartUpload() {
     const volumeCm3 = mesh && mesh.volumeCm3 > 0 ? mesh.volumeCm3 : null;
     setDraft({
       file,
-      size: mesh?.size ?? null,
+      size: mesh?.size.every((dimension) => dimension > 0) ? mesh.size : null,
       // У модели без толщины объём нулевой — вес тогда вводится вручную.
       volumeCm3: volumeCm3,
       preview,
