@@ -14,11 +14,7 @@ import { FileBox, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { formatFileSize } from "~/lib/format";
-import {
-  parseBinaryStl,
-  renderStlPreview,
-  STL_PARSE_MAX_BYTES,
-} from "~/lib/stl";
+import { parseStl, renderStlPreview, STL_PARSE_MAX_BYTES } from "~/lib/stl";
 import { client, orpc } from "~/orpc/react";
 import { MaterialSelect } from "./material-select";
 
@@ -77,7 +73,7 @@ export function PartUpload() {
     const current = selection.current;
     const mesh =
       format === "stl" && file.size <= STL_PARSE_MAX_BYTES
-        ? parseBinaryStl(await file.arrayBuffer())
+        ? parseStl(await file.arrayBuffer())
         : null;
     const preview = mesh ? await renderStlPreview(mesh) : null;
     // Пока шёл разбор, пользователь выбрал другой файл или убрал этот.

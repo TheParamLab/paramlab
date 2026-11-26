@@ -7,7 +7,7 @@ import { ArrowDown, FileUp, PackageOpen, Truck } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { parseBinaryStl, STL_PARSE_MAX_BYTES } from "~/lib/stl";
+import { parseStl, STL_PARSE_MAX_BYTES } from "~/lib/stl";
 
 const DELIVERY_RUB = 199;
 
@@ -44,7 +44,7 @@ export function UploadHero() {
     setEstimate(null);
     if (!file.name.toLowerCase().endsWith(".stl")) {
       setError(
-        "Пока считаем цену только по бинарным STL — остальные форматы принимаем в кабинете.",
+        "Пока считаем цену только по STL — остальные форматы принимаем в кабинете.",
       );
       return;
     }
@@ -56,10 +56,10 @@ export function UploadHero() {
     }
     const buffer = await file.arrayBuffer().catch(() => null);
     if (attempt !== attemptRef.current) return;
-    const mesh = buffer && parseBinaryStl(buffer);
+    const mesh = buffer && parseStl(buffer);
     if (!mesh) {
       setError(
-        "Не удалось прочитать STL (возможно, он в ASCII-формате) — загрузите файл в кабинете.",
+        "Не удалось прочитать STL — файл повреждён или имеет нестандартный формат. Загрузите его в кабинете.",
       );
       return;
     }
