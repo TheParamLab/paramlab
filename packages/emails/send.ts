@@ -8,6 +8,10 @@ import { Resend } from "resend";
 import { env } from "./env";
 import { postboxConfigured, sendViaPostbox } from "./postbox";
 
+const DEFAULT_EMAIL_FROM = "Acme <onboarding@resend.dev>";
+const resolveFrom = (from?: string) =>
+  from ?? env.EMAIL_FROM ?? DEFAULT_EMAIL_FROM;
+
 // Fallback provider: Resend.
 export const resend = env.RESEND_API_KEY
   ? new Resend(env.RESEND_API_KEY)
@@ -33,7 +37,7 @@ const sendViaResend = async (email: EmailHtml) => {
   }
   await resend.emails.send({
     to: email.to,
-    from: email.from ?? env.EMAIL_FROM,
+    from: resolveFrom(email.from),
     subject: email.subject,
     html: email.html,
   });
@@ -74,7 +78,7 @@ const deliver = async (email: EmailHtml) => {
 export const sendEmail = async (email: Emails) => {
   if (env.EMAIL_SANDBOX_ENABLED) {
     const mailOptions: Mail.Options = {
-      from: email.from ?? env.EMAIL_FROM,
+      from: resolveFrom(email.from),
       to: email.to,
       html: await render(email.react),
       subject: email.subject,
@@ -97,7 +101,7 @@ export const sendEmail = async (email: Emails) => {
 export const sendEmailHtml = async (email: EmailHtml) => {
   if (env.EMAIL_SANDBOX_ENABLED) {
     const mailOptions: Mail.Options = {
-      from: email.from ?? env.EMAIL_FROM,
+      from: resolveFrom(email.from),
       to: email.to,
       html: email.html,
       subject: email.subject,

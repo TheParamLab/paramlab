@@ -183,7 +183,12 @@ describe("sendViaPostbox", () => {
     };
     await expect(
       sendViaPostbox(
-        { html: "<p>Hi</p>", subject: "Hello", to: ["to@example.com"] },
+        {
+          html: "<p>Hi</p>",
+          subject: "Hello",
+          to: ["to@example.com"],
+          from: "from@example.com",
+        },
         client,
       ),
     ).rejects.toThrow("Postbox API 400: Email address is not verified");
@@ -193,7 +198,12 @@ describe("sendViaPostbox", () => {
     respond = { status: 502, body: "Bad gateway" };
     await expect(
       sendViaPostbox(
-        { html: "<p>Hi</p>", subject: "Hello", to: ["to@example.com"] },
+        {
+          html: "<p>Hi</p>",
+          subject: "Hello",
+          to: ["to@example.com"],
+          from: "from@example.com",
+        },
         client,
       ),
     ).rejects.toThrow("Postbox API 502: Bad gateway");
