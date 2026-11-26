@@ -24,7 +24,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "~/auth/client";
-import { resetDashboardStore } from "~/lib/mock-dashboard";
 
 function getInitials(name: string): string {
   return name
@@ -57,9 +56,8 @@ export function NavUser({
       toast.error("Не удалось выйти из аккаунта. Попробуйте ещё раз.");
       return;
     }
-    // Кеш запросов и демо-хранилище живут до перезагрузки: без сброса
+    // Кеш запросов живёт до перезагрузки: без сброса
     // следующий пользователь этой вкладки увидел бы чужие данные.
-    resetDashboardStore();
     queryClient.clear();
     router.push(paths.auth.login);
   };

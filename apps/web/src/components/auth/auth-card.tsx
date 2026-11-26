@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { paths } from "@paramlab/config";
 import { cn, toast } from "@paramlab/ui";
 import { ArrowRight, Mail, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -120,10 +121,10 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
       readDraftPartFromSearchParams(searchParams) !== null;
 
     if (hasDraft) {
-      return "/orders/new" as Route;
+      return paths.parts.root;
     }
 
-    return "/orders" as Route;
+    return paths.dashboard.root;
   }
 
   async function handleSendOtp(values: EmailStepValues) {
