@@ -217,14 +217,14 @@ export function OtpInput({
             onKeyDown={(event) => handleKeyDown(slotIndex, event)}
             onPaste={(event) => handlePaste(slotIndex, event)}
             className={cn(
-              "h-[56px] min-w-0 max-w-[48px] flex-1 rounded-[12px] border bg-[#0E1014] text-center font-mono text-[24px] leading-none font-bold text-[#F2F4F7] tabular-nums transition-all duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-all disabled:cursor-not-allowed disabled:opacity-50",
+              "h-[56px] min-w-0 max-w-[48px] flex-1 rounded-[12px] border bg-lab-bg text-center font-mono text-[24px] leading-none font-bold text-lab-text tabular-nums transition-all duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-all disabled:cursor-not-allowed disabled:opacity-50",
               hasError
-                ? "border-[#EF4444] text-[#EF4444] shadow-[0_0_14px_rgba(239,68,68,0.18)]"
+                ? "border-destructive text-destructive shadow-[0_0_14px_rgba(239,68,68,0.18)]"
                 : isFocused
-                  ? "border-[#00D1FF] shadow-[0_0_0_1px_#00D1FF,0_0_16px_rgba(0,209,255,0.2)]"
+                  ? "border-lab-cyan shadow-[0_0_0_1px_var(--lab-cyan),0_0_16px_var(--cyan-glow)]"
                   : digit
-                    ? "border-[#262B36] bg-[#0E1014] text-[#F2F4F7]"
-                    : "border-[#262B36] text-[#8A93A2] hover:border-[#8A93A2]/50",
+                    ? "border-lab-border bg-lab-bg text-lab-text"
+                    : "border-lab-border text-lab-muted hover:border-lab-muted/50",
             )}
           />
         );

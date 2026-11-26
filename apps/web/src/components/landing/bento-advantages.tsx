@@ -10,10 +10,10 @@ import { LayerReveal } from "~/components/landing/layer-reveal";
 function VernierCaliperVisual() {
   const ticks = Array.from({ length: 25 }, (_, i) => i);
   return (
-    <div className="relative overflow-hidden rounded-[12px] border border-[#262B36] bg-[#0E1014] p-4">
+    <div className="relative overflow-hidden rounded-[12px] border border-lab-border bg-lab-bg p-4">
       <div className="mb-2.5 flex items-center justify-between font-mono text-[11px] tabular-nums">
-        <span className="text-[#8A93A2]">VERNIER SCALE · ISO 2768-mK</span>
-        <span className="rounded border border-[#00D1FF]/40 bg-[#00D1FF]/10 px-1.5 py-0.5 font-semibold text-[#00D1FF]">
+        <span className="text-lab-muted">VERNIER SCALE · ISO 2768-mK</span>
+        <span className="rounded border border-lab-cyan/40 bg-lab-cyan/10 px-1.5 py-0.5 font-semibold text-lab-cyan">
           Δ = ±0.10 мм
         </span>
       </div>
@@ -30,8 +30,8 @@ function VernierCaliperVisual() {
           width="312"
           height="32"
           rx="4"
-          fill="#161920"
-          stroke="#262B36"
+          fill="var(--lab-surface)"
+          stroke="var(--lab-border)"
         />
         {ticks.map((t) => {
           const x = 14 + t * 12;
@@ -43,7 +43,7 @@ function VernierCaliperVisual() {
                 y1={38}
                 x2={x}
                 y2={isMajor ? 18 : 26}
-                stroke={t === 15 ? "#00D1FF" : "#8A93A2"}
+                stroke={t === 15 ? "var(--lab-cyan)" : "var(--lab-muted)"}
                 strokeWidth={isMajor ? 1.5 : 1}
               />
               {isMajor && (
@@ -51,7 +51,7 @@ function VernierCaliperVisual() {
                   x={x}
                   y={15}
                   textAnchor="middle"
-                  className="fill-[#F2F4F7] font-mono text-[8px]"
+                  className="fill-lab-text font-mono text-[8px]"
                 >
                   {t * 2}
                 </text>
@@ -67,8 +67,8 @@ function VernierCaliperVisual() {
           width="112"
           height="28"
           rx="4"
-          fill="#0E1014"
-          stroke="#FF5C1A"
+          fill="var(--lab-bg)"
+          stroke="var(--brand)"
           strokeWidth="1.2"
         />
         {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => {
@@ -81,7 +81,7 @@ function VernierCaliperVisual() {
                 y1={38}
                 x2={nx}
                 y2={active ? 54 : 49}
-                stroke={active ? "#FF5C1A" : "#8A93A2"}
+                stroke={active ? "var(--brand)" : "var(--lab-muted)"}
                 strokeWidth={active ? 1.8 : 1}
               />
             </g>
@@ -93,16 +93,16 @@ function VernierCaliperVisual() {
           y1="8"
           x2="190"
           y2="64"
-          stroke="#00D1FF"
+          stroke="var(--lab-cyan)"
           strokeWidth="1.2"
           strokeDasharray="2 2"
         />
-        <circle cx="190" cy="38" r="3" fill="#FF5C1A" />
+        <circle cx="190" cy="38" r="3" fill="var(--brand)" />
         <text
           x="222"
           y="59"
           textAnchor="middle"
-          className="fill-[#FF5C1A] font-mono text-[9px] font-bold"
+          className="fill-brand font-mono text-[9px] font-bold"
         >
           30.1 мм · H8
         </text>
@@ -116,8 +116,8 @@ function VernierCaliperVisual() {
  */
 function MaterialsBenchmarkVisual() {
   return (
-    <div className="flex flex-col gap-2.5 rounded-[12px] border border-[#262B36] bg-[#0E1014] p-4">
-      <div className="flex items-center justify-between font-mono text-[11px] text-[#8A93A2]">
+    <div className="flex flex-col gap-2.5 rounded-[12px] border border-lab-border bg-lab-bg p-4">
+      <div className="flex items-center justify-between font-mono text-[11px] text-lab-muted">
         <span>ПРОЧНОСТЬ (МПа)</span>
         <span>ТЕРМОСТОЙКОСТЬ (°C)</span>
       </div>
@@ -127,22 +127,22 @@ function MaterialsBenchmarkVisual() {
         return (
           <div key={mat.id} className="flex flex-col gap-1">
             <div className="flex items-center justify-between font-mono text-xs tabular-nums">
-              <span className="font-semibold text-[#F2F4F7]">{mat.code}</span>
-              <span className="text-[11px] text-[#8A93A2]">
+              <span className="font-semibold text-lab-text">{mat.code}</span>
+              <span className="text-[11px] text-lab-muted">
                 {mat.strengthMpa} МПа ·{" "}
-                <strong className="text-[#00D1FF]">{mat.maxTempC} °C</strong>
+                <strong className="text-lab-cyan">{mat.maxTempC} °C</strong>
               </span>
             </div>
             <div className="grid grid-cols-2 gap-1.5">
-              <div className="h-1.5 overflow-hidden rounded-full bg-[#161920]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-lab-surface">
                 <div
-                  className="h-full rounded-full bg-[#FF5C1A]"
+                  className="h-full rounded-full bg-brand"
                   style={{ width: `${strengthPct}%` }}
                 />
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[#161920]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-lab-surface">
                 <div
-                  className="h-full rounded-full bg-[#00D1FF]"
+                  className="h-full rounded-full bg-lab-cyan"
                   style={{ width: `${tempPct}%` }}
                 />
               </div>
@@ -159,31 +159,31 @@ function MaterialsBenchmarkVisual() {
  */
 function ManifoldCheckVisual() {
   return (
-    <div className="flex flex-col gap-3 rounded-[12px] border border-[#262B36] bg-[#0E1014] p-4">
+    <div className="flex flex-col gap-3 rounded-[12px] border border-lab-border bg-lab-bg p-4">
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-[#10B981]/40 bg-[#10B981]/10 px-2.5 py-1 font-mono text-xs font-semibold text-[#10B981]">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-lab-ready/40 bg-lab-ready/10 px-2.5 py-1 font-mono text-xs font-semibold text-lab-ready">
           <ShieldCheck className="size-3.5" />
           Manifold OK
         </span>
-        <span className="font-mono text-[11px] text-[#8A93A2] tabular-nums">
+        <span className="font-mono text-[11px] text-lab-muted tabular-nums">
           0 open edges
         </span>
       </div>
 
       <div className="grid grid-cols-3 gap-2 font-mono text-[11px] tabular-nums">
-        <div className="rounded-lg border border-[#262B36] bg-[#161920] p-2">
-          <p className="text-[#8A93A2]">Нормали</p>
-          <p className="mt-0.5 flex items-center gap-1 font-semibold text-[#10B981]">
+        <div className="rounded-lg border border-lab-border bg-lab-surface p-2">
+          <p className="text-lab-muted">Нормали</p>
+          <p className="mt-0.5 flex items-center gap-1 font-semibold text-lab-ready">
             <CheckCircle2 className="size-3" /> 100%
           </p>
         </div>
-        <div className="rounded-lg border border-[#262B36] bg-[#161920] p-2">
-          <p className="text-[#8A93A2]">Стенка min</p>
-          <p className="mt-0.5 font-semibold text-[#F2F4F7]">≥ 2.0 мм</p>
+        <div className="rounded-lg border border-lab-border bg-lab-surface p-2">
+          <p className="text-lab-muted">Стенка min</p>
+          <p className="mt-0.5 font-semibold text-lab-text">≥ 2.0 мм</p>
         </div>
-        <div className="rounded-lg border border-[#262B36] bg-[#161920] p-2">
-          <p className="text-[#8A93A2]">Нависания</p>
-          <p className="mt-0.5 font-semibold text-[#00D1FF]">&lt; 45° OK</p>
+        <div className="rounded-lg border border-lab-border bg-lab-surface p-2">
+          <p className="text-lab-muted">Нависания</p>
+          <p className="mt-0.5 font-semibold text-lab-cyan">&lt; 45° OK</p>
         </div>
       </div>
     </div>
@@ -195,23 +195,23 @@ function ManifoldCheckVisual() {
  */
 function LogisticsVisual() {
   return (
-    <div className="flex flex-col gap-3 rounded-[12px] border border-[#262B36] bg-[#0E1014] p-4">
+    <div className="flex flex-col gap-3 rounded-[12px] border border-lab-border bg-lab-bg p-4">
       <div className="flex items-center justify-between font-mono text-[11px]">
-        <span className="text-[#8A93A2]">DISPATCH HUB · RU</span>
-        <span className="text-[#10B981]">ОТГРУЗКА ЗА 24–48 Ч</span>
+        <span className="text-lab-muted">DISPATCH HUB · RU</span>
+        <span className="text-lab-ready">ОТГРУЗКА ЗА 24–48 Ч</span>
       </div>
 
       <div className="grid grid-cols-1 gap-2.5 font-mono text-xs tabular-nums">
-        <div className="flex flex-col gap-1 rounded-lg border border-[#00D1FF]/30 bg-[#00D1FF]/5 p-2.5">
+        <div className="flex flex-col gap-1 rounded-lg border border-lab-cyan/30 bg-lab-cyan/5 p-2.5">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-[#00D1FF]">OZON ПВЗ</span>
-            <Truck className="size-3.5 text-[#00D1FF]" />
+            <span className="font-bold text-lab-cyan">OZON ПВЗ</span>
+            <Truck className="size-3.5 text-lab-cyan" />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-[#8A93A2]">
+            <span className="text-[11px] text-lab-muted">
               18 000+ точек · 2–3 дня
             </span>
-            <span className="font-semibold text-[#F2F4F7]">от 199 ₽</span>
+            <span className="font-semibold text-lab-text">от 199 ₽</span>
           </div>
         </div>
       </div>
@@ -223,17 +223,17 @@ export function BentoAdvantages() {
   return (
     <section
       id="advantages"
-      className="scroll-mt-14 border-b border-[#262B36] bg-[#0E1014] py-16 text-[#F2F4F7] lg:py-24"
+      className="scroll-mt-14 border-b border-lab-border bg-lab-bg py-16 text-lab-text lg:py-24"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3">
-          <p className="font-mono text-xs tracking-widest text-[#00D1FF] uppercase">
+          <p className="font-mono text-xs tracking-widest text-lab-cyan uppercase">
             01 · Инженерный стандарт лаборатории
           </p>
           <h2 className="max-w-3xl text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:text-4xl">
             Метрологическая точность и контроль каждого слоя
           </h2>
-          <p className="max-w-2xl text-base text-[#8A93A2]">
+          <p className="max-w-2xl text-base text-lab-muted">
             Никаких бытовых принтеров на открытом воздухе: печатаем в закрытых
             термокамерах 65 °C с прямой подачей филамента из сушильных станций.
           </p>
@@ -243,20 +243,20 @@ export function BentoAdvantages() {
         <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-12">
           {/* Карточка 1: Точность до 0.1 мм */}
           <LayerReveal delay={0} className="lg:col-span-7">
-            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-[#262B36] bg-[#161920] p-6 sm:p-7">
+            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-lab-border bg-lab-surface p-6 sm:p-7">
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-[#8A93A2]">
+                  <span className="font-mono text-xs text-lab-muted">
                     METROLOGY · 01
                   </span>
-                  <span className="rounded-md border border-[#262B36] bg-[#0E1014] px-2 py-0.5 font-mono text-xs text-[#00D1FF] tabular-nums">
+                  <span className="rounded-md border border-lab-border bg-lab-bg px-2 py-0.5 font-mono text-xs text-lab-cyan tabular-nums">
                     CoreXY · 1.5GT
                   </span>
                 </div>
-                <h3 className="text-xl font-bold tracking-tight text-[#F2F4F7]">
+                <h3 className="text-xl font-bold tracking-tight text-lab-text">
                   Точность посадок до <span className="font-mono">0.1 мм</span>
                 </h3>
-                <p className="text-sm leading-relaxed text-[#8A93A2]">
+                <p className="text-sm leading-relaxed text-lab-muted">
                   Индивидуальная компенсация тепловой усадки полимера позволяет
                   печатать посадочные гнезда под подшипники и валы без доработки
                   напильником.
@@ -268,20 +268,20 @@ export function BentoAdvantages() {
 
           {/* Карточка 2: Инженерные пластики */}
           <LayerReveal delay={0.08} className="lg:col-span-5">
-            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-[#262B36] bg-[#161920] p-6 sm:p-7">
+            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-lab-border bg-lab-surface p-6 sm:p-7">
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-[#8A93A2]">
+                  <span className="font-mono text-xs text-lab-muted">
                     POLYMERS · 02
                   </span>
-                  <span className="rounded-md border border-[#262B36] bg-[#0E1014] px-2 py-0.5 font-mono text-xs text-[#FF5C1A]">
+                  <span className="rounded-md border border-lab-border bg-lab-bg px-2 py-0.5 font-mono text-xs text-brand">
                     Сушка 80 °C
                   </span>
                 </div>
-                <h3 className="text-xl font-bold tracking-tight text-[#F2F4F7]">
+                <h3 className="text-xl font-bold tracking-tight text-lab-text">
                   Инженерные пластики: PETG, ABS, Nylon, CF
                 </h3>
-                <p className="text-sm leading-relaxed text-[#8A93A2]">
+                <p className="text-sm leading-relaxed text-lab-muted">
                   Конструкционные и угленаполненные композиты для замены
                   алюминиевых и капролоновых деталей в механизмах.
                 </p>
@@ -292,20 +292,20 @@ export function BentoAdvantages() {
 
           {/* Карточка 3: Автоматическая проверка геометрии (Manifold OK) */}
           <LayerReveal delay={0.14} className="lg:col-span-6">
-            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-[#262B36] bg-[#161920] p-6 sm:p-7">
+            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-lab-border bg-lab-surface p-6 sm:p-7">
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-[#8A93A2]">
+                  <span className="font-mono text-xs text-lab-muted">
                     MESH VALIDATION · 03
                   </span>
-                  <span className="font-mono text-xs text-[#10B981]">
+                  <span className="font-mono text-xs text-lab-ready">
                     Auto-Slice Check
                   </span>
                 </div>
-                <h3 className="text-xl font-bold tracking-tight text-[#F2F4F7]">
+                <h3 className="text-xl font-bold tracking-tight text-lab-text">
                   Автоматическая проверка геометрии перед печатью
                 </h3>
-                <p className="text-sm leading-relaxed text-[#8A93A2]">
+                <p className="text-sm leading-relaxed text-lab-muted">
                   Алгоритм проверяет замкнутость полигональной сетки,
                   минимальную толщину стенок и концентраторы напряжений еще на
                   этапе конфигурации.
@@ -317,20 +317,20 @@ export function BentoAdvantages() {
 
           {/* Карточка 4: Доставка по РФ через Ozon */}
           <LayerReveal delay={0.2} className="lg:col-span-6">
-            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-[#262B36] bg-[#161920] p-6 sm:p-7">
+            <article className="flex h-full flex-col justify-between gap-6 rounded-[24px] border border-lab-border bg-lab-surface p-6 sm:p-7">
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-[#8A93A2]">
+                  <span className="font-mono text-xs text-lab-muted">
                     LOGISTICS · 04
                   </span>
-                  <span className="font-mono text-xs text-[#00D1FF] tabular-nums">
+                  <span className="font-mono text-xs text-lab-cyan tabular-nums">
                     РФ · 11 часовых поясов
                   </span>
                 </div>
-                <h3 className="text-xl font-bold tracking-tight text-[#F2F4F7]">
+                <h3 className="text-xl font-bold tracking-tight text-lab-text">
                   Доставка по РФ через Ozon
                 </h3>
-                <p className="text-sm leading-relaxed text-[#8A93A2]">
+                <p className="text-sm leading-relaxed text-lab-muted">
                   Перед упаковкой присылаем реальное фото детали со
                   штангенциркулем, затем отправляем заказ в удобный пункт выдачи
                   рядом с вашим домом или цехом.

@@ -87,7 +87,7 @@ export function UploadHero() {
       className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-4 pt-16 pb-10 sm:px-6 lg:px-8"
     >
       <div className="flex max-w-3xl flex-col items-center gap-4 text-center">
-        <p className="font-mono text-sm tracking-widest text-[#00D1FF] uppercase">
+        <p className="font-mono text-sm tracking-widest text-lab-cyan uppercase">
           3D-печать на заказ · от 990 ₽
         </p>
         <h1
@@ -96,7 +96,7 @@ export function UploadHero() {
         >
           Загрузите STL — узнайте цену за 10 секунд
         </h1>
-        <p className="max-w-xl text-lg text-[#8A93A2]">
+        <p className="max-w-xl text-lg text-lab-muted">
           Напечатаем деталь на инженерных принтерах и отправим в ближайший пункт
           выдачи Ozon. Принтер покупать не нужно.
         </p>
@@ -119,15 +119,15 @@ export function UploadHero() {
         className={cn(
           "flex w-full max-w-2xl cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 transition-colors duration-240",
           dragOver
-            ? "border-[#FF5C1A] bg-[#FF5C1A]/10"
-            : "border-[#2A3038] bg-[#15181E] hover:border-[#FF5C1A]/60",
+            ? "border-brand bg-brand/10"
+            : "border-lab-border-strong bg-lab-inset hover:border-brand/60",
         )}
       >
-        <FileUp className="size-10 text-[#FF5C1A]" aria-hidden />
+        <FileUp className="size-10 text-brand" aria-hidden />
         <span className="text-lg font-medium">
           Перетащите STL сюда или выберите файл
         </span>
-        <span className="text-sm text-[#8A93A2]">
+        <span className="text-sm text-lab-muted">
           Файл не покидает браузер — цена считается локально по объему модели
         </span>
         <input
@@ -146,7 +146,7 @@ export function UploadHero() {
       {error && (
         <p
           role="alert"
-          className="max-w-2xl text-center text-sm text-[#FF8A5C]"
+          className="max-w-2xl text-center text-sm text-brand-soft"
         >
           {error}
         </p>
@@ -155,7 +155,7 @@ export function UploadHero() {
       {estimate && total != null && (
         <div
           aria-live="polite"
-          className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-[#2A3038] bg-[#15181E] p-6"
+          className="flex w-full max-w-2xl flex-col gap-4 rounded-2xl border border-lab-border-strong bg-lab-inset p-6"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p
@@ -164,14 +164,14 @@ export function UploadHero() {
             >
               {estimate.fileName}
             </p>
-            <p className="font-mono text-sm text-[#8A93A2]">
+            <p className="font-mono text-sm text-lab-muted">
               {estimate.size.map((v) => numFmt.format(v)).join(" × ")} мм ·{" "}
               {numFmt.format(estimate.massGrams)} г PETG
             </p>
           </div>
           <div className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-[#8A93A2]">
+              <span className="text-lab-muted">
                 Печать{estimate.smallPart ? " · тариф мелкой детали" : ""}
               </span>
               <span className="font-mono">
@@ -179,26 +179,26 @@ export function UploadHero() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="flex items-center gap-1.5 text-[#8A93A2]">
+              <span className="flex items-center gap-1.5 text-lab-muted">
                 <Truck className="size-4" aria-hidden /> Доставка до ПВЗ Ozon
               </span>
               <span className="font-mono">{rubFmt.format(DELIVERY_RUB)}</span>
             </div>
-            <div className="flex justify-between border-t border-[#2A3038] pt-2 text-base font-medium">
+            <div className="flex justify-between border-t border-lab-border-strong pt-2 text-base font-medium">
               <span>Итого под ключ</span>
-              <span className="font-mono text-xl text-[#00D1FF]">
+              <span className="font-mono text-xl text-lab-cyan">
                 {rubFmt.format(total)}
               </span>
             </div>
           </div>
           <Link
             href={paths.parts.root}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#FF5C1A] px-6 font-medium text-[#0E1014] transition-colors duration-240 hover:bg-[#FF7A3D]"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-brand px-6 font-medium text-brand-foreground transition-colors duration-240 hover:bg-brand-hover"
           >
             <PackageOpen className="size-5" aria-hidden />
             Заказать печать этой детали
           </Link>
-          <p className="text-center text-xs text-[#8A93A2]">
+          <p className="text-center text-xs text-lab-muted">
             Понадобится бесплатная регистрация — файл вы загрузите ещё раз в
             личном кабинете, оплата картой через YooKassa.
           </p>
@@ -207,7 +207,7 @@ export function UploadHero() {
 
       <a
         href="#calculator"
-        className="flex items-center gap-2 text-sm text-[#8A93A2] transition-colors duration-240 hover:text-[#F2F4F7]"
+        className="flex items-center gap-2 text-sm text-lab-muted transition-colors duration-240 hover:text-lab-text"
       >
         Нет готовой модели? Соберите деталь в конструкторе ниже
         <ArrowDown className="size-4" aria-hidden />

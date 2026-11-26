@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0E1014" },
+    { media: "(prefers-color-scheme: light)", color: "#F4F1EA" },
     { media: "(prefers-color-scheme: dark)", color: "#0E1014" },
   ],
 };
@@ -46,10 +46,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru" className="dark" suppressHydrationWarning>
+    <html lang="ru" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-[#0E1014] font-sans text-[#F2F4F7] antialiased selection:bg-[#FF5C1A] selection:text-[#0E1014]",
+          "min-h-screen bg-lab-bg font-sans text-lab-text antialiased selection:bg-brand selection:text-brand-foreground",
           onestSans.variable,
           jetbrainsMono.variable,
         )}

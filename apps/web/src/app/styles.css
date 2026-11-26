@@ -8,24 +8,91 @@
 @custom-variant light (&:where(.light, .light *));
 @custom-variant auto (&:where(.auto, .auto *));
 
-/* Dark Engineering Theme — палитра лаборатории paramlab.ru */
+/* Lab Light — тёплая «инженерная бумага» с глубоким оранжевым акцентом */
 :root,
-.dark,
 .light {
+  color-scheme: light;
+  --brand: #e94f0d;
+  --brand-hover: #df5110;
+  --brand-soft: #c2410c;
+  --brand-foreground: #1b120a;
+  --brand-chip-foreground: #a53508;
+  --lab-bg: #f4f1ea;
+  --lab-surface: #fffdf8;
+  --lab-elevated: #e9e4da;
+  --lab-inset: #eee9df;
+  --lab-border: #d9d2c3;
+  --lab-border-strong: #bfb5a2;
+  --lab-text: #171b24;
+  --lab-muted: #566171;
+  --lab-accent: #e94f0d;
+  --lab-cyan: #007b96;
+  --lab-ready: #087f5b;
+  --ease-mechanical: cubic-bezier(0.22, 1, 0.36, 1);
+  --brand-glow: color-mix(in srgb, var(--brand) 14%, transparent);
+  --brand-glow-strong: color-mix(in srgb, var(--brand) 30%, transparent);
+  --cyan-glow: color-mix(in srgb, var(--lab-cyan) 20%, transparent);
+  --cyan-glow-soft: color-mix(in srgb, var(--lab-cyan) 10%, transparent);
+  --blueprint-major: color-mix(in srgb, var(--lab-text) 13%, transparent);
+  --blueprint-minor: color-mix(in srgb, var(--lab-text) 6%, transparent);
+  --blueprint-fine: color-mix(in srgb, var(--lab-border-strong) 48%, transparent);
+
+  /* Семантические токены shadcn/ui */
+  --background: #f4f1ea;
+  --foreground: #171b24;
+  --card: #fffdf8;
+  --card-foreground: #171b24;
+  --popover: #fffdf8;
+  --popover-foreground: #171b24;
+  --primary: #e94f0d;
+  --primary-foreground: #1b120a;
+  --secondary: #e9e4da;
+  --secondary-foreground: #242a35;
+  --muted: #ede8de;
+  --muted-foreground: #566171;
+  --accent: #e9e4da;
+  --accent-foreground: #171b24;
+  --destructive: #dc2626;
+  --border: #d9d2c3;
+  --input: #cfc7b7;
+  --ring: #007b96;
+  --sidebar: #f8f5ef;
+  --sidebar-foreground: #171b24;
+  --sidebar-primary: #e94f0d;
+  --sidebar-primary-foreground: #1b120a;
+  --sidebar-accent: #e9e4da;
+  --sidebar-accent-foreground: #171b24;
+  --sidebar-border: #d9d2c3;
+  --sidebar-ring: #007b96;
+}
+
+/* Dark Engineering — исходная ночная палитра лаборатории paramlab.ru */
+.dark {
   color-scheme: dark;
   --brand: #ff5c1a;
+  --brand-hover: #ff7a3d;
+  --brand-soft: #ff8a5c;
   --brand-foreground: #0e1014;
+  --brand-chip-foreground: var(--brand);
   --lab-bg: #0e1014;
   --lab-surface: #161920;
+  --lab-elevated: #1e232d;
+  --lab-inset: #12151b;
   --lab-border: #262b36;
+  --lab-border-strong: #2a3038;
   --lab-text: #f2f4f7;
   --lab-muted: #8a93a2;
   --lab-accent: #ff5c1a;
   --lab-cyan: #00d1ff;
   --lab-ready: #10b981;
-  --ease-mechanical: cubic-bezier(0.22, 1, 0.36, 1);
+  --brand-glow: color-mix(in srgb, var(--brand) 14%, transparent);
+  --brand-glow-strong: color-mix(in srgb, var(--brand) 30%, transparent);
+  --cyan-glow: color-mix(in srgb, var(--lab-cyan) 20%, transparent);
+  --cyan-glow-soft: color-mix(in srgb, var(--lab-cyan) 10%, transparent);
+  --blueprint-major: color-mix(in srgb, var(--lab-text) 34%, transparent);
+  --blueprint-minor: color-mix(in srgb, var(--lab-text) 13%, transparent);
+  --blueprint-fine: color-mix(in srgb, var(--lab-border) 75%, transparent);
 
-  /* Семантические токены shadcn/ui переведены на Dark Engineering палитру */
   --background: #0e1014;
   --foreground: #f2f4f7;
   --card: #161920;
@@ -40,6 +107,7 @@
   --muted-foreground: #8a93a2;
   --accent: #1e232d;
   --accent-foreground: #f2f4f7;
+  --destructive: #ef4444;
   --border: #262b36;
   --input: #262b36;
   --ring: #00d1ff;
@@ -55,10 +123,16 @@
 
 @theme inline {
   --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-chip-foreground: var(--brand-chip-foreground);
   --color-lab-bg: var(--lab-bg);
   --color-lab-surface: var(--lab-surface);
+  --color-lab-elevated: var(--lab-elevated);
+  --color-lab-inset: var(--lab-inset);
   --color-lab-border: var(--lab-border);
+  --color-lab-border-strong: var(--lab-border-strong);
   --color-lab-text: var(--lab-text);
   --color-lab-muted: var(--lab-muted);
   --color-lab-accent: var(--lab-accent);
@@ -69,10 +143,10 @@
 /* Чертежная миллиметровка (световой стол). */
 @utility bg-blueprint {
   background-image:
-    linear-gradient(to right, rgba(242, 244, 247, 0.45) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(242, 244, 247, 0.45) 1px, transparent 1px),
-    linear-gradient(to right, rgba(242, 244, 247, 0.16) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(242, 244, 247, 0.16) 1px, transparent 1px);
+    linear-gradient(to right, var(--blueprint-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--blueprint-major) 1px, transparent 1px),
+    linear-gradient(to right, var(--blueprint-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--blueprint-minor) 1px, transparent 1px);
   background-size:
     64px 64px,
     64px 64px,
@@ -82,10 +156,19 @@
 
 @utility bg-blueprint-fine {
   background-image:
-    linear-gradient(to right, rgba(38, 43, 54, 0.75) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(38, 43, 54, 0.75) 1px, transparent 1px);
+    linear-gradient(to right, var(--blueprint-fine) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--blueprint-fine) 1px, transparent 1px);
   background-size: 16px 16px;
   background-position: center;
+}
+
+@utility bg-lab-glow {
+  background: radial-gradient(
+    520px circle at 50% 42%,
+    color-mix(in srgb, var(--lab-cyan) 9%, transparent),
+    color-mix(in srgb, var(--brand) 3%, transparent) 48%,
+    transparent 80%
+  );
 }
 
 @utility container {
@@ -124,7 +207,7 @@
     transparent 0deg,
     transparent 265deg,
     rgba(255, 255, 255, 0.95) 315deg,
-    #00d1ff 345deg,
+    var(--lab-cyan) 345deg,
     transparent 360deg
   );
   opacity: 0;
@@ -139,7 +222,7 @@
   position: absolute;
   inset: 1.5px;
   border-radius: calc(0.75rem - 1.5px);
-  background: #ff5c1a;
+  background: var(--brand);
   transition: background-color 240ms var(--ease-mechanical);
   pointer-events: none;
   z-index: -1;
@@ -151,7 +234,7 @@
 }
 
 .cta-border-beam:hover::after {
-  background: #ff6a2e;
+  background: var(--brand-hover);
 }
 
 /* Тактильный инженерный слайдер */
@@ -174,9 +257,9 @@
   width: 14px;
   margin-top: -6px;
   border-radius: 4px;
-  background: #ff5c1a;
-  border: 1.5px solid #f2f4f7;
-  box-shadow: 0 0 12px rgba(255, 92, 26, 0.55);
+  background: var(--brand);
+  border: 1.5px solid var(--lab-text);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--brand) 55%, transparent);
   transition:
     transform 240ms var(--ease-mechanical),
     background-color 240ms var(--ease-mechanical),
@@ -186,17 +269,17 @@
 .lab-slider:hover::-webkit-slider-thumb,
 .lab-slider:focus-visible::-webkit-slider-thumb {
   transform: scale(1.1);
-  background: #ff7138;
-  box-shadow: 0 0 16px rgba(255, 92, 26, 0.85);
+  background: var(--brand-hover);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--brand) 85%, transparent);
 }
 
 .lab-slider::-moz-range-thumb {
   height: 18px;
   width: 14px;
   border-radius: 4px;
-  background: #ff5c1a;
-  border: 1.5px solid #f2f4f7;
-  box-shadow: 0 0 12px rgba(255, 92, 26, 0.55);
+  background: var(--brand);
+  border: 1.5px solid var(--lab-text);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--brand) 55%, transparent);
   transition:
     transform 240ms var(--ease-mechanical),
     background-color 240ms var(--ease-mechanical);
@@ -220,7 +303,7 @@
 /* Тонкие инженерные скроллбары без громоздких системных полос Windows */
 @utility lab-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #262b36 transparent;
+  scrollbar-color: var(--lab-border) transparent;
   &::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -229,11 +312,11 @@
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background-color: #262b36;
+    background-color: var(--lab-border);
     border-radius: 9999px;
   }
   &::-webkit-scrollbar-thumb:hover {
-    background-color: #3b4457;
+    background-color: var(--lab-border-strong);
   }
 }
 

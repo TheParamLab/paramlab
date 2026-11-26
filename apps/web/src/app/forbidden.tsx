@@ -33,7 +33,7 @@ export default function Forbidden() {
             Открыть кабинет
           </Link>
           <Link href="/" className={secondaryErrorActionClass}>
-            <Home className="size-4 text-[#00D1FF]" />
+            <Home className="size-4 text-lab-cyan" />
             На главную
           </Link>
         </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@paramlab/ui";
+import { cn, useTheme } from "@paramlab/ui";
 import { Box, Grid3X3, Layers, Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -1135,6 +1135,43 @@ const RENDER_MODES: readonly {
   { id: "layers", label: "Слои", icon: Layers },
 ];
 
+const CANVAS_PALETTES = {
+  light: {
+    bg: "#F4F1EA",
+    bgRgb: "244, 241, 234",
+    brand: "#E94F0D",
+    brandRgb: "233, 79, 13",
+    brandForeground: "#1B120A",
+    cyan: "#007B96",
+    cyanRgb: "0, 123, 150",
+    ink: "#171B24",
+    inkRgb: "23, 27, 36",
+    ready: "#087F5B",
+    surfaceRgb: "255, 253, 248",
+    borderRgb: "191, 181, 162",
+    wireframeFill: "rgba(255, 253, 248, 0.48)",
+    accentFace: "rgb(233, 228, 218)",
+  },
+  dark: {
+    bg: "#0E1014",
+    bgRgb: "14, 16, 20",
+    brand: "#FF5C1A",
+    brandRgb: "255, 92, 26",
+    brandForeground: "#0E1014",
+    cyan: "#00D1FF",
+    cyanRgb: "0, 209, 255",
+    ink: "#F2F4F7",
+    inkRgb: "242, 244, 247",
+    ready: "#10B981",
+    surfaceRgb: "22, 25, 32",
+    borderRgb: "38, 43, 54",
+    wireframeFill: "rgba(14, 16, 20, 0.32)",
+    accentFace: "rgb(22, 25, 32)",
+  },
+} as const;
+
+const rgba = (rgb: string, alpha: number) => `rgba(${rgb}, ${alpha})`;
+
 export function CadViewport3D() {
   const {
     partType,
@@ -1145,6 +1182,8 @@ export function CadViewport3D() {
     renderMode,
     setRenderMode,
   } = useCalculator();
+  const { resolvedTheme } = useTheme();
+  const canvasPalette = CANVAS_PALETTES[resolvedTheme];
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rotationRef = useRef({ yaw: -0.62, pitch: 0.44 });
@@ -1269,9 +1308,12 @@ export function CadViewport3D() {
         height * 0.52,
         width * 0.62,
       );
-      bgGrad.addColorStop(0, "rgba(0, 209, 255, 0.07)");
-      bgGrad.addColorStop(0.55, "rgba(22, 25, 32, 0.25)");
-      bgGrad.addColorStop(1, "rgba(14, 16, 20, 0)");
+      bgGrad.addColorStop(0, rgba(canvasPalette.cyanRgb, 0.07));
+      bgGrad.addColorStop(
+        0.55,
+        rgba(canvasPalette.borderRgb, resolvedTheme === "light" ? 0.16 : 0.25),
+      );
+      bgGrad.addColorStop(1, rgba(canvasPalette.bgRgb, 0));
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
@@ -1307,7 +1349,12 @@ export function CadViewport3D() {
         const p4 = project({ x: offset, y: bedY, z: gridHalf });
 
         ctx.strokeStyle =
-          i === 0 ? "rgba(0, 209, 255, 0.28)" : "rgba(38, 43, 54, 0.65)";
+          i === 0
+            ? rgba(canvasPalette.cyanRgb, 0.28)
+            : rgba(
+                canvasPalette.borderRgb,
+                resolvedTheme === "light" ? 0.38 : 0.65,
+              );
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
         ctx.lineTo(p2.x, p2.y);
@@ -1418,16 +1465,16 @@ export function CadViewport3D() {
         ctx.closePath();
 
         if (renderMode === "wireframe") {
-          ctx.fillStyle = "rgba(14, 16, 20, 0.32)";
+          ctx.fillStyle = canvasPalette.wireframeFill;
           ctx.fill();
           ctx.strokeStyle = item.face.isAccent
-            ? "rgba(255, 92, 26, 0.85)"
-            : "rgba(0, 209, 255, 0.65)";
+            ? rgba(canvasPalette.brandRgb, 0.85)
+            : rgba(canvasPalette.cyanRgb, 0.65);
           ctx.lineWidth = 1;
           ctx.stroke();
         } else if (renderMode === "layers") {
           ctx.fillStyle = item.face.isAccent
-            ? "rgb(20, 23, 29)"
+            ? canvasPalette.accentFace
             : shadeColor(
                 material,
                 item.intensity * 0.85,
@@ -1435,13 +1482,13 @@ export function CadViewport3D() {
                 item.face.isInner,
               );
           ctx.fill();
-          ctx.strokeStyle = "rgba(255, 92, 26, 0.42)";
+          ctx.strokeStyle = rgba(canvasPalette.brandRgb, 0.42);
           ctx.lineWidth = 0.9;
           ctx.stroke();
         } else {
           // Solid режим
           ctx.fillStyle = item.face.isAccent
-            ? "rgb(22, 25, 32)"
+            ? canvasPalette.accentFace
             : shadeColor(
                 material,
                 item.intensity,
@@ -1450,10 +1497,10 @@ export function CadViewport3D() {
               );
           ctx.fill();
           ctx.strokeStyle = item.face.isAccent
-            ? "rgba(0, 209, 255, 0.32)"
+            ? rgba(canvasPalette.cyanRgb, 0.32)
             : "carbon" in material && material.carbon
-              ? "rgba(0, 209, 255, 0.16)"
-              : "rgba(242, 244, 247, 0.14)";
+              ? rgba(canvasPalette.cyanRgb, 0.16)
+              : rgba(canvasPalette.inkRgb, 0.14);
           ctx.lineWidth = 0.75;
           ctx.stroke();
         }
@@ -1475,8 +1522,8 @@ export function CadViewport3D() {
           y: topY,
           z: 0,
         });
-        ctx.fillStyle = "#0E1014";
-        ctx.strokeStyle = "#00D1FF";
+        ctx.fillStyle = canvasPalette.bg;
+        ctx.strokeStyle = canvasPalette.cyan;
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.arc(
@@ -1514,9 +1561,12 @@ export function CadViewport3D() {
 
             ctx.translate((pLeft.x + pRight.x) / 2, (pLeft.y + pRight.y) / 2);
             ctx.rotate(angle);
-            ctx.strokeStyle = "#0E1014";
+            ctx.strokeStyle = canvasPalette.bg;
             ctx.strokeText(cleanLabel, 0, 0);
-            ctx.fillStyle = renderMode === "wireframe" ? "#00D1FF" : "#F2F4F7";
+            ctx.fillStyle =
+              renderMode === "wireframe"
+                ? canvasPalette.cyan
+                : canvasPalette.ink;
             ctx.fillText(cleanLabel, 0, 0);
             break;
           }
@@ -1529,8 +1579,8 @@ export function CadViewport3D() {
         const sliceCount = 16;
         const sliceColor =
           renderMode === "layers"
-            ? "rgba(255, 92, 26, 0.5)"
-            : "rgba(255, 92, 26, 0.28)";
+            ? rgba(canvasPalette.brandRgb, 0.5)
+            : rgba(canvasPalette.brandRgb, 0.28);
 
         for (let s = 1; s <= sliceCount; s++) {
           const ly =
@@ -1557,10 +1607,10 @@ export function CadViewport3D() {
         });
 
         // Контур активного слоя по реальному сечению
-        drawLayerContour(activeCutY, "#FF5C1A", 2);
+        drawLayerContour(activeCutY, canvasPalette.brand, 2);
 
         // Корпус хотэнда/сопла
-        ctx.strokeStyle = "#F2F4F7";
+        ctx.strokeStyle = canvasPalette.ink;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(nozzleTopPt.x, nozzleTopPt.y);
@@ -1577,8 +1627,8 @@ export function CadViewport3D() {
           20,
         );
         glow.addColorStop(0, "rgba(255, 255, 255, 1)");
-        glow.addColorStop(0.3, "rgba(255, 92, 26, 0.95)");
-        glow.addColorStop(1, "rgba(255, 92, 26, 0)");
+        glow.addColorStop(0.3, rgba(canvasPalette.brandRgb, 0.95));
+        glow.addColorStop(1, rgba(canvasPalette.brandRgb, 0));
         ctx.fillStyle = glow;
         ctx.beginPath();
         ctx.arc(nozzlePt.x, nozzlePt.y, 20, 0, Math.PI * 2);
@@ -1595,7 +1645,7 @@ export function CadViewport3D() {
         const pStart = project(callout.start);
         const pEnd = project(callout.end);
         const pLabel = project(callout.labelPos);
-        const color = isHighlighted ? "#FF5C1A" : "#00D1FF";
+        const color = isHighlighted ? canvasPalette.brand : canvasPalette.cyan;
 
         ctx.strokeStyle = color;
         ctx.lineWidth = isHighlighted ? 1.8 : 1.15;
@@ -1620,8 +1670,8 @@ export function CadViewport3D() {
         const badgeH = 22;
 
         ctx.fillStyle = isHighlighted
-          ? "rgba(255, 92, 26, 0.95)"
-          : "rgba(14, 16, 20, 0.88)";
+          ? rgba(canvasPalette.brandRgb, 0.95)
+          : rgba(canvasPalette.bgRgb, 0.88);
         ctx.strokeStyle = color;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -1635,7 +1685,9 @@ export function CadViewport3D() {
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = isHighlighted ? "#0E1014" : "#F2F4F7";
+        ctx.fillStyle = isHighlighted
+          ? canvasPalette.brandForeground
+          : canvasPalette.ink;
         ctx.fillText(text, pLabel.x, pLabel.y);
       }
 
@@ -1643,9 +1695,9 @@ export function CadViewport3D() {
       const gizmoOrigin = { x: 46, y: height - 44 };
       const axisLen = 24;
       const axes: readonly { label: string; vec: Vec3; color: string }[] = [
-        { label: "X", vec: { x: 1, y: 0, z: 0 }, color: "#FF5C1A" },
-        { label: "Y", vec: { x: 0, y: 0, z: 1 }, color: "#00D1FF" },
-        { label: "Z", vec: { x: 0, y: 1, z: 0 }, color: "#10B981" },
+        { label: "X", vec: { x: 1, y: 0, z: 0 }, color: canvasPalette.brand },
+        { label: "Y", vec: { x: 0, y: 0, z: 1 }, color: canvasPalette.cyan },
+        { label: "Z", vec: { x: 0, y: 1, z: 0 }, color: canvasPalette.ready },
       ];
 
       ctx.font = '700 10px "JetBrains Mono", monospace';
@@ -1697,20 +1749,22 @@ export function CadViewport3D() {
     isPrinting,
     printProgress,
     viewportVersion,
+    canvasPalette,
+    resolvedTheme,
   ]);
 
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-[24px] border border-[#262B36] bg-[#161920] shadow-2xl">
+    <div className="relative flex flex-col overflow-hidden rounded-[24px] border border-lab-border bg-lab-surface shadow-2xl">
       {/* Верхняя панель CAD-вьюпорта */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#262B36] bg-[#0E1014]/75 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lab-border bg-lab-bg/75 px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center rounded-md border border-[#00D1FF]/30 bg-[#00D1FF]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#00D1FF]">
+          <span className="inline-flex items-center rounded-md border border-lab-cyan/30 bg-lab-cyan/10 px-2 py-0.5 font-mono text-[11px] font-medium text-lab-cyan">
             CAD PREVIEW
           </span>
-          <span className="font-mono text-xs text-[#8A93A2] tabular-nums">
+          <span className="font-mono text-xs text-lab-muted tabular-nums">
             {part.code}
           </span>
-          <span className="hidden font-mono text-xs text-[#8A93A2] sm:inline">
+          <span className="hidden font-mono text-xs text-lab-muted sm:inline">
             · {part.tolerance}
           </span>
         </div>
@@ -1718,7 +1772,7 @@ export function CadViewport3D() {
         {/* Переключатель режимов Solid / Wireframe / Слои */}
         <fieldset
           aria-label="Режим отображения 3D-модели"
-          className="flex items-center rounded-lg border border-[#262B36] bg-[#0E1014] p-0.5"
+          className="flex items-center rounded-lg border border-lab-border bg-lab-bg p-0.5"
         >
           {RENDER_MODES.map((mode) => {
             const Icon = mode.icon;
@@ -1730,10 +1784,10 @@ export function CadViewport3D() {
                 aria-pressed={active}
                 onClick={() => setRenderMode(mode.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-xs transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                  "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-xs transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                   active
-                    ? "bg-[#161920] text-[#00D1FF] shadow-sm"
-                    : "text-[#8A93A2] hover:text-[#F2F4F7]",
+                    ? "bg-lab-surface text-lab-cyan shadow-sm"
+                    : "text-lab-muted hover:text-lab-text",
                 )}
               >
                 <Icon className="size-3.5" />
@@ -1812,48 +1866,48 @@ export function CadViewport3D() {
         />
 
         {/* HUD телеметрии слоя и прогресса печати */}
-        <div className="pointer-events-none absolute top-3.5 right-3.5 flex flex-col items-end gap-1.5 rounded-xl border border-[#262B36] bg-[#0E1014]/90 px-3 py-2 backdrop-blur-md">
-          <div className="flex items-center gap-2 font-mono text-[11px] text-[#8A93A2]">
+        <div className="pointer-events-none absolute top-3.5 right-3.5 flex flex-col items-end gap-1.5 rounded-xl border border-lab-border bg-lab-bg/90 px-3 py-2 backdrop-blur-md">
+          <div className="flex items-center gap-2 font-mono text-[11px] text-lab-muted">
             <span
               className={cn(
                 "size-2 rounded-full",
                 isPrinting
-                  ? "animate-pulse bg-[#FF5C1A] shadow-[0_0_8px_#FF5C1A]"
-                  : "bg-[#10B981]",
+                  ? "animate-pulse bg-brand shadow-[0_0_8px_var(--brand)]"
+                  : "bg-lab-ready",
               )}
             />
             <span>{isPrinting ? "G-CODE T0: 255 °C" : "ГОТОВО К ПЕЧАТИ"}</span>
           </div>
-          <div className="font-mono text-xs font-semibold text-[#F2F4F7] tabular-nums">
+          <div className="font-mono text-xs font-semibold text-lab-text tabular-nums">
             Слой {currentLayer} / {totalLayers}{" "}
-            <span className="text-[#00D1FF]">
+            <span className="text-lab-cyan">
               ({Math.round(printProgress * 100)}%)
             </span>
           </div>
-          <div className="h-1 w-32 overflow-hidden rounded-full bg-[#262B36]">
+          <div className="h-1 w-32 overflow-hidden rounded-full bg-lab-border">
             <div
-              className="h-full bg-[#FF5C1A] transition-[width] duration-150"
+              className="h-full bg-brand transition-[width] duration-150"
               style={{ width: `${Math.round(printProgress * 100)}%` }}
             />
           </div>
         </div>
 
         {/* Подсказка вращения */}
-        <div className="pointer-events-none absolute top-3.5 left-3.5 hidden rounded-lg border border-[#262B36]/80 bg-[#0E1014]/80 px-2.5 py-1 font-mono text-[11px] text-[#8A93A2] sm:block">
+        <div className="pointer-events-none absolute top-3.5 left-3.5 hidden rounded-lg border border-lab-border/80 bg-lab-bg/80 px-2.5 py-1 font-mono text-[11px] text-lab-muted sm:block">
           ЛКМ / Тач — вращение 360° · Материал:{" "}
-          <span className="text-[#F2F4F7]">{material.code}</span>
+          <span className="text-lab-text">{material.code}</span>
         </div>
       </div>
 
       {/* Нижняя панель управления симуляцией послойной печати */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#262B36] bg-[#0E1014]/75 px-4 py-3">
-        <div className="flex items-center gap-3 font-mono text-xs text-[#8A93A2] tabular-nums">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-lab-border bg-lab-bg/75 px-4 py-3">
+        <div className="flex items-center gap-3 font-mono text-xs text-lab-muted tabular-nums">
           <span>
-            Шаг слоя: <strong className="text-[#F2F4F7]">0.20 мм</strong>
+            Шаг слоя: <strong className="text-lab-text">0.20 мм</strong>
           </span>
-          <span className="text-[#262B36]">|</span>
+          <span className="text-lab-border">|</span>
           <span>
-            Сопло: <strong className="text-[#FF5C1A]">0.4 мм</strong>
+            Сопло: <strong className="text-brand">0.4 мм</strong>
           </span>
         </div>
 
@@ -1862,7 +1916,7 @@ export function CadViewport3D() {
             type="button"
             onClick={resetCamera}
             aria-label="Сбросить ракурс 3D-модели"
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#262B36] bg-[#161920] px-2.5 font-mono text-xs text-[#8A93A2] transition-colors hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-lab-border bg-lab-surface px-2.5 font-mono text-xs text-lab-muted transition-colors hover:border-lab-muted/50 hover:text-lab-text"
           >
             <RotateCcw className="size-3.5" />
             Сброс
@@ -1871,20 +1925,20 @@ export function CadViewport3D() {
             type="button"
             onClick={togglePrintSimulation}
             className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 font-mono text-xs font-medium transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C1A]",
+              "inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 font-mono text-xs font-medium transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-brand",
               isPrinting
-                ? "border-[#FF5C1A] bg-[#FF5C1A]/15 text-[#FF5C1A]"
-                : "border-[#FF5C1A]/60 bg-[#FF5C1A]/10 text-[#F2F4F7] hover:border-[#FF5C1A] hover:bg-[#FF5C1A]/20",
+                ? "border-brand bg-brand/15 text-brand"
+                : "border-brand/60 bg-brand/10 text-lab-text hover:border-brand hover:bg-brand/20",
             )}
           >
             {isPrinting ? (
               <>
-                <Pause className="size-3.5 text-[#FF5C1A]" />
+                <Pause className="size-3.5 text-brand" />
                 Остановить печать
               </>
             ) : (
               <>
-                <Play className="size-3.5 text-[#FF5C1A]" />
+                <Play className="size-3.5 text-brand" />
                 Послойная печать
               </>
             )}

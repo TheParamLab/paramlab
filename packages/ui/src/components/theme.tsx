@@ -1,6 +1,6 @@
 "use client";
 
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { CheckIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import * as React from "react";
 import * as z from "zod";
 
@@ -56,13 +56,6 @@ const updateThemeClass = (themeMode: ThemeMode) => {
   }
 };
 
-const setupPreferredListener = () => {
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  const handler = () => updateThemeClass("auto");
-  mediaQuery.addEventListener("change", handler);
-  return () => mediaQuery.removeEventListener("change", handler);
-};
-
 const getNextTheme = (current: ThemeMode): ThemeMode => {
   const themes: ThemeMode[] =
     getSystemTheme() === "dark"
@@ -79,7 +72,12 @@ export const themeDetectorScript = (() => {
       return validThemes.includes(theme as ThemeMode);
     };
 
-    const storedTheme = localStorage.getItem("theme-mode") ?? "auto";
+    let storedTheme = "auto";
+    try {
+      storedTheme = localStorage.getItem("theme-mode") ?? "auto";
+    } catch {
+      storedTheme = "auto";
+    }
     const validTheme = isValidTheme(storedTheme) ? storedTheme : "auto";
 
     if (validTheme === "auto") {
@@ -106,14 +104,27 @@ const ThemeContext = React.createContext<ThemeContextProps | undefined>(
 );
 
 export function ThemeProvider({ children }: React.PropsWithChildren) {
-  const [themeMode, setThemeMode] = React.useState(getStoredThemeMode);
+  const [themeMode, setThemeMode] = React.useState<ThemeMode>("auto");
+  const [systemTheme, setSystemTheme] = React.useState<ResolvedTheme>("light");
+
+  React.useEffect(() => {
+    setThemeMode(getStoredThemeMode());
+    setSystemTheme(getSystemTheme());
+  }, []);
 
   React.useEffect(() => {
     if (themeMode !== "auto") return;
-    return setupPreferredListener();
+    setSystemTheme(getSystemTheme());
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => {
+      setSystemTheme(getSystemTheme());
+      updateThemeClass("auto");
+    };
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, [themeMode]);
 
-  const resolvedTheme = themeMode === "auto" ? getSystemTheme() : themeMode;
+  const resolvedTheme = themeMode === "auto" ? systemTheme : themeMode;
 
   const setTheme = (newTheme: ThemeMode) => {
     setThemeMode(newTheme);
@@ -152,7 +163,16 @@ export function useTheme() {
 }
 
 export function ThemeToggle() {
-  const { setTheme } = useTheme();
+  const { themeMode, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => setMounted(true), []);
+
+  const Icon = !mounted || themeMode === "auto"
+    ? MonitorIcon
+    : themeMode === "dark"
+      ? MoonIcon
+      : SunIcon;
 
   return (
     <DropdownMenu>
@@ -161,24 +181,36 @@ export function ThemeToggle() {
           <Button
             variant="outline"
             size="icon"
-            className="[&>svg]:absolute [&>svg]:size-5 [&>svg]:scale-0"
+            aria-label="Сменить тему"
+            title="Сменить тему"
+            className="shadow-sm transition-colors duration-240 hover:border-primary/45 hover:text-primary"
           />
         }
       >
-        <SunIcon className="light:scale-100! auto:scale-0!" />
-        <MoonIcon className="auto:scale-0! dark:scale-100!" />
-        <MonitorIcon className="auto:scale-100!" />
+        <Icon className="size-4.5" />
         <span className="sr-only">Сменить тему</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuItem onClick={() => setTheme("light")}>
+          <SunIcon />
           Светлая
+          {mounted && themeMode === "light" && (
+            <CheckIcon className="ml-auto size-3.5 text-primary" />
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
+          <MoonIcon />
           Тёмная
+          {mounted && themeMode === "dark" && (
+            <CheckIcon className="ml-auto size-3.5 text-primary" />
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("auto")}>
+          <MonitorIcon />
           Системная
+          {(!mounted || themeMode === "auto") && (
+            <CheckIcon className="ml-auto size-3.5 text-primary" />
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

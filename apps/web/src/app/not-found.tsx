@@ -33,7 +33,7 @@ export default function NotFound() {
             Открыть конфигуратор
           </Link>
           <Link href="/cabinet" className={secondaryErrorActionClass}>
-            <User className="size-4 text-[#00D1FF]" />
+            <User className="size-4 text-lab-cyan" />
             Личный кабинет
           </Link>
         </>
