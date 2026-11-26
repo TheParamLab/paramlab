@@ -6,10 +6,18 @@ import {
   SidebarProvider,
   Skeleton,
 } from "@paramlab/ui";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
 import { getSession } from "~/auth/server";
 import { AppSidebar } from "~/components/sidebar";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 /**
  * Оболочка личного кабинета: каркас статичен и пререндерится, а зависимый
