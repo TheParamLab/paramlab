@@ -139,8 +139,16 @@ export const sendViaPostbox = async (
     throw new Error("Yandex Cloud Postbox is not configured");
   }
 
+  const from = email.from ?? env.EMAIL_FROM;
+  if (!from) {
+    throw new Error(
+      "Yandex Cloud Postbox requires EMAIL_FROM to be a sender on the " +
+        "verified Postbox domain",
+    );
+  }
+
   const payload = JSON.stringify({
-    FromEmailAddress: email.from ?? env.EMAIL_FROM,
+    FromEmailAddress: from,
     Destination: { ToAddresses: email.to },
     Content: {
       Simple: {
@@ -177,7 +185,18 @@ export const sendViaPostbox = async (
 
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(`Postbox API ${response.status}: ${errorDetail(text)}`);
+    const detail = errorDetail(text);
+    if (
+      response.status === 404 &&
+      detail.toLowerCase().includes("identity not found")
+    ) {
+      throw new Error(
+        `Postbox API 404: ${detail}. Check EMAIL_FROM: it must use the ` +
+          "verified Postbox domain exactly, and the service account must " +
+          "be in the same folder",
+      );
+    }
+    throw new Error(`Postbox API ${response.status}: ${detail}`);
   }
 
   const result =

@@ -28,7 +28,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().optional(),
     EMAIL_SANDBOX_ENABLED: z.coerce.boolean().optional().default(false),
     EMAIL_SANDBOX_HOST: z.string().default("localhost"),
-    EMAIL_FROM: z.string().default("Acme <onboarding@resend.dev>"),
+    EMAIL_FROM: z.string().min(1).optional(),
 
     // Auth
     AUTH_SECRET: z.string().optional(),
