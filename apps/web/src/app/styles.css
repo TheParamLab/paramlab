@@ -13,9 +13,10 @@
 .light {
   color-scheme: light;
   --brand: #e94f0d;
-  --brand-hover: #c94308;
+  --brand-hover: #df5110;
   --brand-soft: #c2410c;
   --brand-foreground: #1b120a;
+  --brand-chip-foreground: #a53508;
   --lab-bg: #f4f1ea;
   --lab-surface: #fffdf8;
   --lab-elevated: #e9e4da;
@@ -23,7 +24,7 @@
   --lab-border: #d9d2c3;
   --lab-border-strong: #bfb5a2;
   --lab-text: #171b24;
-  --lab-muted: #687384;
+  --lab-muted: #566171;
   --lab-accent: #e94f0d;
   --lab-cyan: #007b96;
   --lab-ready: #087f5b;
@@ -48,7 +49,7 @@
   --secondary: #e9e4da;
   --secondary-foreground: #242a35;
   --muted: #ede8de;
-  --muted-foreground: #687384;
+  --muted-foreground: #566171;
   --accent: #e9e4da;
   --accent-foreground: #171b24;
   --destructive: #dc2626;
@@ -72,6 +73,7 @@
   --brand-hover: #ff7a3d;
   --brand-soft: #ff8a5c;
   --brand-foreground: #0e1014;
+  --brand-chip-foreground: var(--brand);
   --lab-bg: #0e1014;
   --lab-surface: #161920;
   --lab-elevated: #1e232d;
@@ -124,6 +126,7 @@
   --color-brand-hover: var(--brand-hover);
   --color-brand-soft: var(--brand-soft);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-chip-foreground: var(--brand-chip-foreground);
   --color-lab-bg: var(--lab-bg);
   --color-lab-surface: var(--lab-surface);
   --color-lab-elevated: var(--lab-elevated);

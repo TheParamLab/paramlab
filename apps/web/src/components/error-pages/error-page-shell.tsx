@@ -20,7 +20,7 @@ const toneClasses: Record<
     signal: "bg-lab-cyan",
   },
   orange: {
-    chip: "border-brand/35 bg-brand/10 text-brand",
+    chip: "border-brand/35 bg-brand/10 text-brand-chip-foreground",
     glow: "bg-brand/12",
     signal: "bg-brand",
   },
