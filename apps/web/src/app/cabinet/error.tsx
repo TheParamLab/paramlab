@@ -1,38 +1,23 @@
 "use client";
 
-import { Button } from "@paramlab/ui";
-import { useEffect } from "react";
+import { ErrorRecoveryPanel } from "~/components/error-pages/error-recovery";
 
 export default function DashboardError({
   error,
-  reset,
+  retry,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: unknown;
+  retry: () => void;
 }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
-
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-10">
-      <div className="text-center space-y-2">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Что-то пошло не так
-        </h2>
-        <p className="text-muted-foreground text-sm max-w-sm">
-          {error.message ||
-            "Произошла непредвиденная ошибка. Попробуйте ещё раз."}
-        </p>
-        {error.digest && (
-          <p className="text-muted-foreground/60 font-mono text-xs">
-            ID ошибки:&nbsp;{error.digest}
-          </p>
-        )}
-      </div>
-      <Button onClick={reset} variant="outline" size="sm">
-        Повторить
-      </Button>
-    </div>
+    <ErrorRecoveryPanel
+      error={error}
+      retry={retry}
+      title="Пульт временно недоступен"
+      description="Не удалось загрузить рабочую область кабинета. Повторите запрос — данные аккаунта и заказы не затронуты."
+      secondaryHref="/cabinet"
+      secondaryLabel="Обзор кабинета"
+      className="m-4 lg:m-6"
+    />
   );
 }

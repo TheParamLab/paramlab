@@ -1,20 +1,15 @@
 "use client";
 
-import { Button } from "@paramlab/ui";
-import { useEffect } from "react";
+import { ErrorRecoveryPanel } from "~/components/error-pages/error-recovery";
 import { SiteHeader } from "~/components/layout";
 
 export default function SettingsError({
   error,
-  reset,
+  retry,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: unknown;
+  retry: () => void;
 }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
-
   return (
     <>
       <SiteHeader title="Настройки" />
@@ -26,25 +21,14 @@ export default function SettingsError({
           </p>
         </div>
 
-        <div className="flex items-center justify-center rounded-lg border p-16">
-          <div className="space-y-3 text-center">
-            <h2 className="text-lg font-semibold">
-              Не удалось загрузить настройки
-            </h2>
-            <p className="text-muted-foreground max-w-sm text-sm">
-              {error.message ||
-                "Произошла непредвиденная ошибка. Попробуйте ещё раз."}
-            </p>
-            {error.digest && (
-              <p className="text-muted-foreground/60 font-mono text-xs">
-                ID ошибки:&nbsp;{error.digest}
-              </p>
-            )}
-            <Button onClick={reset} variant="outline" size="sm">
-              Повторить
-            </Button>
-          </div>
-        </div>
+        <ErrorRecoveryPanel
+          error={error}
+          retry={retry}
+          title="Не удалось загрузить настройки"
+          description="Раздел настроек временно недоступен. Повторите загрузку — введённые данные аккаунта не потеряются."
+          secondaryHref="/cabinet"
+          secondaryLabel="Обзор кабинета"
+        />
       </div>
     </>
   );
