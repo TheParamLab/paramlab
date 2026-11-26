@@ -70,6 +70,9 @@ export default async function createNextConfig(): Promise<NextConfig> {
      */
     cacheComponents: true,
     partialPrefetching: true,
+    experimental: {
+      authInterrupts: true,
+    },
 
     async headers() {
       return [{ source: "/:path*", headers: securityHeaders }];
