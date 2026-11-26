@@ -1,8 +1,11 @@
+import { logger } from "@paramlab/config";
 import { Part } from "@paramlab/db";
 import {
   createPartSchema,
   estimateMassFromVolume,
+  parseStl,
   partFormatFromFileName,
+  STL_SERVER_PARSE_MAX_BYTES,
 } from "@paramlab/validators";
 
 import { protectedProcedure } from "../../orpc";
@@ -38,6 +41,7 @@ export const create = protectedProcedure
       throw errors.BAD_REQUEST();
     }
 
+    let fileKey = input.fileKey;
     const [fileSize, previewSize] = await Promise.all([
       context.storage.objectSize(input.fileKey),
       input.previewKey ? context.storage.objectSize(input.previewKey) : null,
@@ -48,12 +52,44 @@ export const create = protectedProcedure
 
     // Объем храним, только если масса совпадает с расчетом по нему: массу,
     // исправленную вручную, под другой материал не пересчитываем.
-    const volumeCm3 =
+    // Для STL ниже перезаписывается расчетом из самого файла.
+    let size = input.size;
+    let volumeCm3 =
       input.volumeCm3 != null &&
       estimateMassFromVolume(input.volumeCm3, input.materialId) ===
         input.massGrams
         ? input.volumeCm3
         : null;
+    let massGrams = input.massGrams;
+
+    // Цена STL зависит только от измерений, полученных из самого файла.
+    if (format === "stl") {
+      if (fileSize > STL_SERVER_PARSE_MAX_BYTES) throw errors.BAD_REQUEST();
+
+      let bytes: Uint8Array | null;
+      try {
+        bytes = await context.storage.downloadObject(fileKey, fileSize);
+      } catch (error) {
+        logger.warn("part.analyze_failed", {
+          error: error instanceof Error ? error.message : String(error),
+          fileKey,
+          fileSize,
+          userId: context.session.user.id,
+        });
+        throw errors.BAD_REQUEST();
+      }
+      if (!bytes || bytes.byteLength !== fileSize) throw errors.BAD_REQUEST();
+      const mesh = parseStl(toArrayBuffer(bytes));
+      if (!mesh) throw errors.BAD_REQUEST();
+
+      // Ссылку для загрузки можно использовать повторно. Заказ ссылается
+      // на проверенные байты под ключом, для которого PUT-ссылок нет.
+      fileKey = `verified-parts/${crypto.randomUUID()}.stl`;
+      await context.storage.storeObject(fileKey, bytes);
+      size = mesh.size;
+      volumeCm3 = mesh.volumeCm3;
+      massGrams = estimateMassFromVolume(mesh.volumeCm3, input.materialId);
+    }
 
     const [part] = await context.db
       .insert(Part)
@@ -61,17 +97,17 @@ export const create = protectedProcedure
         userId: context.session.user.id,
         name: input.name,
         source: "upload",
-        fileKey: input.fileKey,
+        fileKey,
         fileName: input.fileName,
         fileSize,
         format,
         // Превью необязательно: если оно не загрузилось, деталь без картинки.
         previewKey: previewSize == null ? null : input.previewKey,
-        sizeX: input.size?.[0],
-        sizeY: input.size?.[1],
-        sizeZ: input.size?.[2],
+        sizeX: size?.[0],
+        sizeY: size?.[1],
+        sizeZ: size?.[2],
         volumeCm3,
-        massGrams: input.massGrams,
+        massGrams,
         materialId: input.materialId,
       })
       .returning();
@@ -79,3 +115,11 @@ export const create = protectedProcedure
     if (!part) throw new Error("Failed to insert part");
     return part;
   });
+
+/** `transformToByteArray` может вернуть вид на больший пул — отрезаем точно. */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+}

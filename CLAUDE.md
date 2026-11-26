@@ -37,6 +37,7 @@ bun db:migrate           # apply pending migrations (local, CI e2e, production);
 bun db:check             # offline consistency check of migrations (CI runs it)
 bun db:baseline          # one-off: adopt a DB created by db:push, then db:migrate
 bun db:push              # throwaway prototyping only — never on shared DBs
+bun storage:cors         # one-off: apply bucket CORS rules (browser presigned uploads)
 bun auth:generate        # regenerate Better Auth schema from config
 ```
 

@@ -16,6 +16,10 @@ export interface Storage {
   objectSize(key: string): Promise<number | null>;
   /** Presigned GET, действует час. */
   downloadUrl(key: string): Promise<string>;
+  /** Тело объекта; `null`, если его нет или он больше указанного размера. */
+  downloadObject(key: string, maxBytes: number): Promise<Uint8Array | null>;
+  /** Запись серверного объекта без выдачи ссылки на загрузку. */
+  storeObject(key: string, bytes: Uint8Array): Promise<void>;
 }
 
 export const storage: Storage = {
@@ -30,5 +34,13 @@ export const storage: Storage = {
   async downloadUrl(key) {
     const { getDownloadUrl } = await import("@paramlab/storage");
     return getDownloadUrl(key);
+  },
+  async downloadObject(key, maxBytes) {
+    const { downloadObject } = await import("@paramlab/storage");
+    return downloadObject(key, maxBytes);
+  },
+  async storeObject(key, bytes) {
+    const { uploadBufferToS3 } = await import("@paramlab/storage");
+    await uploadBufferToS3(key, bytes);
   },
 };
