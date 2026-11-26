@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { PartSchematicPreview } from "~/components/dashboard/part-schematic-preview";
 import { useCalculator } from "~/components/landing/calculator-context";
 import {
   MATERIALS,
@@ -20,6 +19,7 @@ import {
   type PartCategoryId,
   type PartModelPreset,
 } from "~/components/landing/data";
+import { PartSchematicPreview } from "~/components/landing/part-schematic-preview";
 
 function focusableSelector(root: HTMLElement): HTMLElement[] {
   const selectors = [
