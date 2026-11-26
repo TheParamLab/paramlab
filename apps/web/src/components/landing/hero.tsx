@@ -179,7 +179,7 @@ export function Hero() {
           y: event.clientY - rect.top,
         });
       }}
-      className="relative overflow-hidden border-b border-[#262B36] bg-[#0E1014] text-[#F2F4F7]"
+      className="relative overflow-hidden border-b border-lab-border bg-lab-bg text-lab-text"
     >
       {/* Базовая чертежная миллиметровка (opacity: 0.06) */}
       <div
@@ -199,7 +199,7 @@ export function Hero() {
       <div
         aria-hidden="true"
         style={{
-          background: `radial-gradient(560px circle at ${cursorPos.x}px ${cursorPos.y}px, rgba(0, 209, 255, 0.08), rgba(255, 92, 26, 0.03) 45%, transparent 80%)`,
+          background: `radial-gradient(560px circle at ${cursorPos.x}px ${cursorPos.y}px, color-mix(in srgb, var(--lab-cyan) 8%, transparent), color-mix(in srgb, var(--brand) 3%, transparent) 45%, transparent 80%)`,
         }}
         className="pointer-events-none absolute inset-0"
       />
@@ -208,19 +208,19 @@ export function Hero() {
         id="calculator"
         tabIndex={-1}
         aria-label="Параметрический 3D-конфигуратор"
-        className="relative mx-auto max-w-7xl scroll-mt-16 px-4 pt-8 pb-16 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] sm:px-6 lg:px-8 lg:pt-12 lg:pb-20"
+        className="relative mx-auto max-w-7xl scroll-mt-16 px-4 pt-8 pb-16 outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan sm:px-6 lg:px-8 lg:pt-12 lg:pb-20"
       >
         {/* Верхняя техническая строка состояния лаборатории */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#262B36] bg-[#161920] px-3 py-1 font-mono text-xs text-[#8A93A2]">
-            <span className="size-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-lab-border bg-lab-surface px-3 py-1 font-mono text-xs text-lab-muted">
+            <span className="size-2 rounded-full bg-lab-ready shadow-[0_0_8px_var(--lab-ready)]" />
             <span>PARAMETRIC CAD ENGINE v4.2</span>
-            <span className="text-[#262B36]">·</span>
-            <span className="text-[#00D1FF]">ДОПУСК ±0.1 ММ</span>
+            <span className="text-lab-border">·</span>
+            <span className="text-lab-cyan">ДОПУСК ±0.1 ММ</span>
           </div>
-          <div className="hidden items-center gap-4 font-mono text-xs text-[#8A93A2] sm:flex">
+          <div className="hidden items-center gap-4 font-mono text-xs text-lab-muted sm:flex">
             <span>КАМЕРА: 320×320×300 ММ</span>
-            <span className="text-[#262B36]">/</span>
+            <span className="text-lab-border">/</span>
             <span>ОТГРУЗКА: OZON</span>
           </div>
         </div>
@@ -230,28 +230,28 @@ export function Hero() {
           {/* ЛЕВАЯ КОЛОНКА (6 колонок) */}
           <div className="flex flex-col gap-6 lg:col-span-6">
             <div className="flex flex-col gap-3">
-              <h1 className="text-3xl leading-[1.08] font-bold tracking-tight text-balance text-[#F2F4F7] sm:text-4xl xl:text-[44px]">
+              <h1 className="text-3xl leading-[1.08] font-bold tracking-tight text-balance text-lab-text sm:text-4xl xl:text-[44px]">
                 Детали по вашим размерам.{" "}
-                <span className="text-[#8A93A2]">Без 3D-моделирования</span>
+                <span className="text-lab-muted">Без 3D-моделирования</span>
               </h1>
-              <p className="max-w-xl text-base leading-relaxed text-[#8A93A2]">
+              <p className="max-w-xl text-base leading-relaxed text-lab-muted">
                 Задайте габариты в параметрическом конфигураторе — CAD-ядро
                 перестроит геометрию в реальном времени, проверит стенки на
                 прочность и зафиксирует цену печати с точностью до{" "}
-                <span className="font-mono text-[#00D1FF]">0.1 мм</span>.
+                <span className="font-mono text-lab-cyan">0.1 мм</span>.
               </p>
             </div>
 
             {/* Панель управления параметрами */}
-            <div className="flex flex-col gap-5 rounded-[24px] border border-[#262B36] bg-[#161920] p-5 sm:p-6">
+            <div className="flex flex-col gap-5 rounded-[24px] border border-lab-border bg-lab-surface p-5 sm:p-6">
               {/* 1. Навигация по большому каталогу CAD-шаблонов + категории + быстрые типоразмеры */}
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] font-medium tracking-wider text-[#8A93A2] uppercase">
+                    <span className="font-mono text-[11px] font-medium tracking-wider text-lab-muted uppercase">
                       01 · Модель для редактирования
                     </span>
-                    <span className="rounded border border-[#262B36] bg-[#0E1014] px-1.5 py-0.5 font-mono text-[10px] text-[#00D1FF] tabular-nums">
+                    <span className="rounded border border-lab-border bg-lab-bg px-1.5 py-0.5 font-mono text-[10px] text-lab-cyan tabular-nums">
                       {part.code}
                     </span>
                   </div>
@@ -259,7 +259,7 @@ export function Hero() {
                   <button
                     type="button"
                     onClick={() => setCatalogModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#00D1FF]/45 bg-[#00D1FF]/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#00D1FF] transition-colors hover:border-[#00D1FF] hover:bg-[#00D1FF]/20 focus-visible:ring-2 focus-visible:ring-[#00D1FF] focus-visible:outline-none"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-lab-cyan/45 bg-lab-cyan/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-lab-cyan transition-colors hover:border-lab-cyan hover:bg-lab-cyan/20 focus-visible:ring-2 focus-visible:ring-lab-cyan focus-visible:outline-none"
                   >
                     <Grid3X3 className="size-3.5" />
                     <span>Каталог моделей ({PART_TYPES.length})</span>
@@ -276,10 +276,10 @@ export function Hero() {
                     aria-pressed={activeCategory === "all"}
                     onClick={() => setActiveCategory("all")}
                     className={cn(
-                      "rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                      "rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                       activeCategory === "all"
-                        ? "border-[#00D1FF]/60 bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                        : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
+                        ? "border-lab-cyan/60 bg-lab-cyan/15 font-semibold text-lab-cyan"
+                        : "border-lab-border bg-lab-bg/70 text-lab-muted hover:border-lab-muted/40 hover:text-lab-text",
                     )}
                   >
                     Все ({PART_TYPES.length})
@@ -293,10 +293,10 @@ export function Hero() {
                         aria-pressed={active}
                         onClick={() => setActiveCategory(cat.id)}
                         className={cn(
-                          "rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                          "rounded-md border px-2.5 py-1 font-mono text-[11px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                           active
-                            ? "border-[#00D1FF]/60 bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                            : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
+                            ? "border-lab-cyan/60 bg-lab-cyan/15 font-semibold text-lab-cyan"
+                            : "border-lab-border bg-lab-bg/70 text-lab-muted hover:border-lab-muted/40 hover:text-lab-text",
                         )}
                       >
                         {cat.shortLabel}
@@ -326,16 +326,16 @@ export function Hero() {
                         aria-selected={selected}
                         onClick={() => setPartType(item.id)}
                         className={cn(
-                          "flex items-center gap-2 rounded-[10px] border px-2.5 py-2 text-left text-xs font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                          "flex items-center gap-2 rounded-[10px] border px-2.5 py-2 text-left text-xs font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                           selected
-                            ? "border-[#FF5C1A] bg-[#FF5C1A]/15 text-[#F2F4F7] shadow-[0_0_16px_rgba(255,92,26,0.14)]"
-                            : "border-[#262B36] bg-[#0E1014]/70 text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+                            ? "border-brand bg-brand/15 text-lab-text shadow-[0_0_16px_var(--brand-glow)]"
+                            : "border-lab-border bg-lab-bg/70 text-lab-muted hover:border-lab-muted/50 hover:text-lab-text",
                         )}
                       >
                         <Icon
                           className={cn(
                             "size-3.5 shrink-0",
-                            selected ? "text-[#FF5C1A]" : "text-[#8A93A2]",
+                            selected ? "text-brand" : "text-lab-muted",
                           )}
                         />
                         <span className="truncate">{item.shortLabel}</span>
@@ -345,22 +345,22 @@ export function Hero() {
                 </div>
 
                 {/* Паспорт активной модели + быстрые типоразмеры */}
-                <div className="flex flex-col gap-2 rounded-[12px] border border-[#262B36] bg-[#0E1014]/80 px-3.5 py-2.5">
+                <div className="flex flex-col gap-2 rounded-[12px] border border-lab-border bg-lab-bg/80 px-3.5 py-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-xs font-semibold text-[#F2F4F7]">
+                      <p className="text-xs font-semibold text-lab-text">
                         {part.label}
                       </p>
-                      <p className="font-mono text-[11px] text-[#8A93A2]">
+                      <p className="font-mono text-[11px] text-lab-muted">
                         {part.category} · {part.tolerance}
                       </p>
                     </div>
                   </div>
 
                   {part.presets.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 border-t border-[#262B36]/80 pt-2">
-                      <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#8A93A2] uppercase">
-                        <Sparkles className="size-3 text-[#00D1FF]" />
+                    <div className="flex flex-wrap items-center gap-1.5 border-t border-lab-border/80 pt-2">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] text-lab-muted uppercase">
+                        <Sparkles className="size-3 text-lab-cyan" />
                         Типоразмеры:
                       </span>
                       {part.presets.map((preset) => {
@@ -386,8 +386,8 @@ export function Hero() {
                             className={cn(
                               "rounded-md border px-2 py-0.5 font-mono text-[11px] transition-colors",
                               isCurrentPreset
-                                ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                                : "border-[#262B36] bg-[#161920] text-[#8A93A2] hover:border-[#00D1FF]/45 hover:text-[#F2F4F7]",
+                                ? "border-lab-cyan bg-lab-cyan/15 font-semibold text-lab-cyan"
+                                : "border-lab-border bg-lab-surface text-lab-muted hover:border-lab-cyan/45 hover:text-lab-text",
                             )}
                           >
                             {preset.title}
@@ -402,10 +402,10 @@ export function Hero() {
               {/* 2. Выбор материала: PETG, ABS, PA12 Nylon, PETG-CF */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] font-medium tracking-wider text-[#8A93A2] uppercase">
+                  <span className="font-mono text-[11px] font-medium tracking-wider text-lab-muted uppercase">
                     02 · Инженерный полимер
                   </span>
-                  <span className="font-mono text-[11px] text-[#8A93A2] tabular-nums">
+                  <span className="font-mono text-[11px] text-lab-muted tabular-nums">
                     ρ = {material.density} г/см³ · {material.temp}
                   </span>
                 </div>
@@ -422,23 +422,23 @@ export function Hero() {
                         aria-pressed={selected}
                         onClick={() => setMaterialId(item.id)}
                         className={cn(
-                          "flex flex-col items-start gap-1 rounded-[12px] border p-2.5 text-left transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                          "flex flex-col items-start gap-1 rounded-[12px] border p-2.5 text-left transition-all duration-240 outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                           selected
-                            ? "border-[#00D1FF] bg-[#00D1FF]/10 text-[#F2F4F7]"
-                            : "border-[#262B36] bg-[#0E1014]/60 text-[#8A93A2] hover:border-[#8A93A2]/40 hover:text-[#F2F4F7]",
+                            ? "border-lab-cyan bg-lab-cyan/10 text-lab-text"
+                            : "border-lab-border bg-lab-bg/60 text-lab-muted hover:border-lab-muted/40 hover:text-lab-text",
                         )}
                       >
                         <div className="flex w-full items-center justify-between gap-1">
-                          <span className="font-mono text-xs font-semibold text-[#F2F4F7]">
+                          <span className="font-mono text-xs font-semibold text-lab-text">
                             {item.code}
                           </span>
                           <span
                             aria-hidden="true"
-                            className="size-2.5 rounded-full border border-[#F2F4F7]/30"
+                            className="size-2.5 rounded-full border border-lab-text/30"
                             style={{ backgroundColor: item.color }}
                           />
                         </div>
-                        <span className="font-mono text-[11px] text-[#8A93A2] tabular-nums">
+                        <span className="font-mono text-[11px] text-lab-muted tabular-nums">
                           {item.rate} ₽/г · {item.temp}
                         </span>
                       </button>
@@ -450,27 +450,27 @@ export function Hero() {
               {/* 3. Три тактильных слайдера параметров (D, T, H) + опциональная надпись */}
               <div className="flex flex-col gap-3.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] font-medium tracking-wider text-[#8A93A2] uppercase">
+                  <span className="font-mono text-[11px] font-medium tracking-wider text-lab-muted uppercase">
                     03 · Геометрия детали (шаг 1.0 мм)
                   </span>
-                  <span className="font-mono text-[11px] text-[#10B981]">
+                  <span className="font-mono text-[11px] text-lab-ready">
                     Сетка замкнута
                   </span>
                 </div>
 
                 {"textParam" in part && part.textParam && (
-                  <div className="flex flex-col gap-2 rounded-[12px] border border-[#00D1FF]/40 bg-[#0E1014]/85 px-3.5 py-3">
+                  <div className="flex flex-col gap-2 rounded-[12px] border border-lab-cyan/40 bg-lab-bg/85 px-3.5 py-3">
                     <div className="flex items-center justify-between gap-2">
                       <label
                         htmlFor="param-text-input"
-                        className="flex items-center gap-2 text-xs font-medium text-[#F2F4F7] sm:text-sm"
+                        className="flex items-center gap-2 text-xs font-medium text-lab-text sm:text-sm"
                       >
-                        <span className="inline-flex h-5 items-center justify-center rounded border border-[#FF5C1A]/50 bg-[#FF5C1A]/15 px-1.5 font-mono text-[10px] font-bold text-[#FF5C1A]">
+                        <span className="inline-flex h-5 items-center justify-center rounded border border-brand/50 bg-brand/15 px-1.5 font-mono text-[10px] font-bold text-brand">
                           {part.textParam.code}
                         </span>
                         <span>{part.textParam.label}</span>
                       </label>
-                      <span className="font-mono text-[11px] text-[#8A93A2] tabular-nums">
+                      <span className="font-mono text-[11px] text-lab-muted tabular-nums">
                         {labelText.trim().length} / {part.textParam.maxLength}{" "}
                         симв.
                       </span>
@@ -485,11 +485,11 @@ export function Hero() {
                         setLabelText(e.target.value.toUpperCase())
                       }
                       placeholder={part.textParam.placeholder}
-                      className="h-10 w-full rounded-lg border border-[#262B36] bg-[#161920] px-3 font-mono text-sm font-bold tracking-wider text-[#F2F4F7] uppercase placeholder:text-[#8A93A2]/50 focus:border-[#00D1FF] focus:outline-none"
+                      className="h-10 w-full rounded-lg border border-lab-border bg-lab-surface px-3 font-mono text-sm font-bold tracking-wider text-lab-text uppercase placeholder:text-lab-muted/50 focus:border-lab-cyan focus:outline-none"
                     />
 
                     <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                      <span className="font-mono text-[10px] text-[#8A93A2]">
+                      <span className="font-mono text-[10px] text-lab-muted">
                         Быстрый выбор:
                       </span>
                       {part.textParam.presets.map((presetWord) => {
@@ -503,8 +503,8 @@ export function Hero() {
                             className={cn(
                               "rounded-md border px-2 py-0.5 font-mono text-[11px] font-semibold transition-colors",
                               active
-                                ? "border-[#FF5C1A] bg-[#FF5C1A]/20 text-[#FF5C1A]"
-                                : "border-[#262B36] bg-[#161920] text-[#8A93A2] hover:border-[#00D1FF]/50 hover:text-[#F2F4F7]",
+                                ? "border-brand bg-brand/20 text-brand"
+                                : "border-lab-border bg-lab-surface text-lab-muted hover:border-lab-cyan/50 hover:text-lab-text",
                             )}
                           >
                             {presetWord}
@@ -525,19 +525,19 @@ export function Hero() {
                   return (
                     <div
                       key={key}
-                      className="flex flex-col gap-1.5 rounded-[12px] border border-[#262B36] bg-[#0E1014]/75 px-3.5 py-2.5"
+                      className="flex flex-col gap-1.5 rounded-[12px] border border-lab-border bg-lab-bg/75 px-3.5 py-2.5"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <label
                           htmlFor={`param-slider-${key}`}
-                          className="flex items-center gap-2 text-xs font-medium text-[#F2F4F7] sm:text-sm"
+                          className="flex items-center gap-2 text-xs font-medium text-lab-text sm:text-sm"
                         >
-                          <span className="inline-flex size-5 items-center justify-center rounded border border-[#00D1FF]/40 bg-[#00D1FF]/10 font-mono text-[11px] font-bold text-[#00D1FF]">
+                          <span className="inline-flex size-5 items-center justify-center rounded border border-lab-cyan/40 bg-lab-cyan/10 font-mono text-[11px] font-bold text-lab-cyan">
                             {meta.code}
                           </span>
                           <span>{meta.label}</span>
                         </label>
-                        <div className="flex items-center gap-1 rounded-md border border-[#262B36] bg-[#161920] px-2 py-0.5 font-mono text-xs font-semibold text-[#F2F4F7] tabular-nums focus-within:border-[#00D1FF]">
+                        <div className="flex items-center gap-1 rounded-md border border-lab-border bg-lab-surface px-2 py-0.5 font-mono text-xs font-semibold text-lab-text tabular-nums focus-within:border-lab-cyan">
                           <input
                             type="number"
                             aria-label={`${meta.label}, ${meta.unit}`}
@@ -588,9 +588,9 @@ export function Hero() {
                                 [key]: nextText,
                               }));
                             }}
-                            className="w-12 bg-transparent text-right font-mono text-xs font-semibold text-[#F2F4F7] focus:outline-none"
+                            className="w-12 bg-transparent text-right font-mono text-xs font-semibold text-lab-text focus:outline-none"
                           />
-                          <span className="text-[11px] text-[#8A93A2]">
+                          <span className="text-[11px] text-lab-muted">
                             {meta.unit}
                           </span>
                         </div>
@@ -611,12 +611,12 @@ export function Hero() {
                         onFocus={() => setActiveDimension(key)}
                         onBlur={() => setActiveDimension(null)}
                         style={{
-                          background: `linear-gradient(to right, #FF5C1A 0%, #FF5C1A ${percent}%, #262B36 ${percent}%, #262B36 100%)`,
+                          background: `linear-gradient(to right, var(--brand) 0%, var(--brand) ${percent}%, var(--lab-border) ${percent}%, var(--lab-border) 100%)`,
                         }}
                         className="lab-slider my-1 h-1.5 w-full rounded-full"
                       />
 
-                      <div className="flex justify-between font-mono text-[10px] text-[#8A93A2] tabular-nums">
+                      <div className="flex justify-between font-mono text-[10px] text-lab-muted tabular-nums">
                         <span>min {meta.min} мм</span>
                         <span>max {meta.max} мм</span>
                       </div>
@@ -632,19 +632,19 @@ export function Hero() {
                 className={cn(
                   "flex items-start gap-2.5 rounded-[12px] border px-3.5 py-2.5 text-xs transition-colors duration-240",
                   isThinWallWarning
-                    ? "border-[#FF5C1A]/50 bg-[#FF5C1A]/10 text-[#F2F4F7]"
-                    : "border-[#10B981]/30 bg-[#10B981]/10 text-[#F2F4F7]",
+                    ? "border-brand/50 bg-brand/10 text-lab-text"
+                    : "border-lab-ready/30 bg-lab-ready/10 text-lab-text",
                 )}
               >
                 {isThinWallWarning ? (
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-[#FF5C1A]" />
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-brand" />
                 ) : (
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[#10B981]" />
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-lab-ready" />
                 )}
                 <div className="font-mono text-xs leading-relaxed tabular-nums">
                   {isWallClamped ? (
                     <span>
-                      <strong className="text-[#FF5C1A]">
+                      <strong className="text-brand">
                         Контроль тонкой стенки:
                       </strong>{" "}
                       внутренний канал автоматически ограничен до{" "}
@@ -653,7 +653,7 @@ export function Hero() {
                     </span>
                   ) : isThinWallWarning ? (
                     <span>
-                      <strong className="text-[#FF5C1A]">
+                      <strong className="text-brand">
                         Предупреждение CAD:
                       </strong>{" "}
                       расчетная стенка {rawWall.toFixed(1)} мм тоньше
@@ -662,7 +662,7 @@ export function Hero() {
                     </span>
                   ) : (
                     <span>
-                      <strong className="text-[#10B981]">
+                      <strong className="text-lab-ready">
                         Геометрия валидна:
                       </strong>{" "}
                       толщина стенки {rawWall.toFixed(1)} мм гарантирует
@@ -673,10 +673,10 @@ export function Hero() {
               </div>
 
               {/* 5. Блок расчета в реальном времени + CTA */}
-              <div className="flex flex-col gap-4 rounded-[16px] border border-[#262B36] bg-[#0E1014] p-4">
+              <div className="flex flex-col gap-4 rounded-[16px] border border-lab-border bg-lab-bg p-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <span className="font-mono text-[11px] tracking-wider text-[#8A93A2] uppercase">
+                    <span className="font-mono text-[11px] tracking-wider text-lab-muted uppercase">
                       Финальная стоимость
                     </span>
                     <div
@@ -686,10 +686,10 @@ export function Hero() {
                       <SpringNumber
                         value={price.total}
                         suffix=" ₽"
-                        className="text-3xl font-bold tracking-tight text-[#F2F4F7] sm:text-4xl"
+                        className="text-3xl font-bold tracking-tight text-lab-text sm:text-4xl"
                       />
                       {price.series && (
-                        <span className="rounded border border-[#10B981]/40 bg-[#10B981]/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#10B981]">
+                        <span className="rounded border border-lab-ready/40 bg-lab-ready/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-lab-ready">
                           −20% серия
                         </span>
                       )}
@@ -698,27 +698,27 @@ export function Hero() {
 
                   {/* Счетчик тиража */}
                   <div className="flex flex-col items-end gap-1">
-                    <span className="font-mono text-[10px] text-[#8A93A2] uppercase">
+                    <span className="font-mono text-[10px] text-lab-muted uppercase">
                       Партия (от {SERIES_QUANTITY} шт. −20%)
                     </span>
-                    <div className="flex h-9 items-center rounded-lg border border-[#262B36] bg-[#161920]">
+                    <div className="flex h-9 items-center rounded-lg border border-lab-border bg-lab-surface">
                       <button
                         type="button"
                         aria-label="Уменьшить количество"
                         disabled={quantity <= 1}
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="flex size-9 items-center justify-center text-[#8A93A2] transition-colors hover:text-[#F2F4F7] disabled:opacity-40"
+                        className="flex size-9 items-center justify-center text-lab-muted transition-colors hover:text-lab-text disabled:opacity-40"
                       >
                         <Minus className="size-3.5" />
                       </button>
-                      <span className="w-10 text-center font-mono text-xs font-semibold text-[#F2F4F7] tabular-nums">
+                      <span className="w-10 text-center font-mono text-xs font-semibold text-lab-text tabular-nums">
                         {quantity} шт
                       </span>
                       <button
                         type="button"
                         aria-label="Увеличить количество"
                         onClick={() => setQuantity(Math.min(200, quantity + 1))}
-                        className="flex size-9 items-center justify-center text-[#8A93A2] transition-colors hover:text-[#F2F4F7]"
+                        className="flex size-9 items-center justify-center text-lab-muted transition-colors hover:text-lab-text"
                       >
                         <Plus className="size-3.5" />
                       </button>
@@ -727,23 +727,23 @@ export function Hero() {
                 </div>
 
                 {/* Метрики массы и времени печати */}
-                <div className="grid grid-cols-2 gap-2.5 border-t border-[#262B36] pt-3 font-mono text-xs tabular-nums">
-                  <div className="flex items-center gap-2 rounded-lg border border-[#262B36]/70 bg-[#161920]/60 px-3 py-2">
-                    <Scale className="size-4 shrink-0 text-[#00D1FF]" />
+                <div className="grid grid-cols-2 gap-2.5 border-t border-lab-border pt-3 font-mono text-xs tabular-nums">
+                  <div className="flex items-center gap-2 rounded-lg border border-lab-border/70 bg-lab-surface/60 px-3 py-2">
+                    <Scale className="size-4 shrink-0 text-lab-cyan" />
                     <div>
-                      <p className="text-[10px] text-[#8A93A2]">
+                      <p className="text-[10px] text-lab-muted">
                         Расчетная масса
                       </p>
-                      <p className="font-semibold text-[#F2F4F7]">
+                      <p className="font-semibold text-lab-text">
                         {numberFmt.format(price.totalMass)} г ({material.code})
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-lg border border-[#262B36]/70 bg-[#161920]/60 px-3 py-2">
-                    <Clock className="size-4 shrink-0 text-[#FF5C1A]" />
+                  <div className="flex items-center gap-2 rounded-lg border border-lab-border/70 bg-lab-surface/60 px-3 py-2">
+                    <Clock className="size-4 shrink-0 text-brand" />
                     <div>
-                      <p className="text-[10px] text-[#8A93A2]">Время печати</p>
-                      <p className="font-semibold text-[#F2F4F7]">
+                      <p className="text-[10px] text-lab-muted">Время печати</p>
+                      <p className="font-semibold text-lab-text">
                         ~{formatPrintTime(price.printHours)}
                       </p>
                     </div>
@@ -754,7 +754,7 @@ export function Hero() {
                 <button
                   type="button"
                   onClick={() => setOrderModalOpen(true)}
-                  className="cta-border-beam flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#FF5C1A] px-6 text-base font-bold text-[#0E1014] shadow-[0_0_25px_rgba(255,92,26,0.3)] transition-transform duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] active:scale-[0.99]"
+                  className="cta-border-beam flex h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-brand px-6 text-base font-bold text-brand-foreground shadow-[0_0_25px_var(--brand-glow-strong)] transition-transform duration-240 outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan active:scale-[0.99]"
                 >
                   <span>Заказать печать</span>
                   <ArrowRight className="size-4" />

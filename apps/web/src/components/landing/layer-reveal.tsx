@@ -113,7 +113,7 @@ export function LayerReveal({
             delay,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className="pointer-events-none absolute inset-x-0 z-20 h-px bg-[#FF5C1A] shadow-[0_0_12px_#FF5C1A]"
+          className="pointer-events-none absolute inset-x-0 z-20 h-px bg-brand shadow-[0_0_12px_var(--brand)]"
         />
       )}
       {children}

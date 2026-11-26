@@ -257,7 +257,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
   return (
     <div
       className={cn(
-        "w-full max-w-[400px] overflow-hidden rounded-[16px] border border-[#262B36] bg-[#161920] p-6 text-[#F2F4F7] shadow-2xl sm:p-7",
+        "w-full max-w-[400px] overflow-hidden rounded-[16px] border border-lab-border bg-lab-surface p-6 text-lab-text shadow-2xl sm:p-7",
         className,
       )}
     >
@@ -278,14 +278,14 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
           >
             {/* Заголовок шлюза */}
             <div>
-              <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-[#00D1FF]/30 bg-[#00D1FF]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#00D1FF]">
+              <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border border-lab-cyan/30 bg-lab-cyan/10 px-2 py-0.5 font-mono text-[11px] font-medium text-lab-cyan">
                 <ShieldCheck className="size-3.5" />
                 <span>ШЛЮЗ БЕЗ ПАРОЛЕЙ · 10 СЕК</span>
               </div>
-              <h1 className="text-xl font-bold tracking-tight text-[#F2F4F7] sm:text-2xl">
+              <h1 className="text-xl font-bold tracking-tight text-lab-text sm:text-2xl">
                 Вход в ParamLab
               </h1>
-              <p className="mt-1 text-xs leading-relaxed text-[#8A93A2] sm:text-sm">
+              <p className="mt-1 text-xs leading-relaxed text-lab-muted sm:text-sm">
                 Единый вход и регистрация без паролей. Новые аккаунты создаются
                 автоматически.
               </p>
@@ -300,12 +300,12 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor="auth-email-input"
-                  className="font-mono text-xs font-medium text-[#8A93A2]"
+                  className="font-mono text-xs font-medium text-lab-muted"
                 >
                   Рабочая или личная почта
                 </label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A93A2]" />
+                  <Mail className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-lab-muted" />
                   <input
                     id="auth-email-input"
                     type="email"
@@ -316,15 +316,18 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
                     aria-invalid={Boolean(emailForm.formState.errors.email)}
                     {...emailForm.register("email")}
                     className={cn(
-                      "h-11 w-full rounded-[12px] border bg-[#0E1014] pr-3.5 pl-10 text-sm text-[#F2F4F7] placeholder:text-[#8A93A2]/70 transition-colors duration-240 outline-none",
+                      "h-11 w-full rounded-[12px] border bg-lab-bg pr-3.5 pl-10 text-sm text-lab-text placeholder:text-lab-muted/70 transition-colors duration-240 outline-none",
                       emailForm.formState.errors.email
-                        ? "border-[#EF4444] focus:border-[#EF4444]"
-                        : "border-[#262B36] focus:border-[#00D1FF]",
+                        ? "border-destructive focus:border-destructive"
+                        : "border-lab-border focus:border-lab-cyan",
                     )}
                   />
                 </div>
                 {emailForm.formState.errors.email && (
-                  <p role="alert" className="font-mono text-xs text-[#EF4444]">
+                  <p
+                    role="alert"
+                    className="font-mono text-xs text-destructive"
+                  >
                     {emailForm.formState.errors.email.message}
                   </p>
                 )}
@@ -333,7 +336,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
               <button
                 type="submit"
                 disabled={isSendingCode}
-                className="cta-border-beam relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[12px] bg-[#FF5C1A] px-5 text-sm font-bold text-[#0E1014] transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] active:scale-[0.99] disabled:cursor-wait disabled:opacity-90"
+                className="cta-border-beam relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[12px] bg-brand px-5 text-sm font-bold text-brand-foreground transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan active:scale-[0.99] disabled:cursor-wait disabled:opacity-90"
               >
                 <span>{isSendingCode ? "Проверка..." : "Получить код"}</span>
                 {!isSendingCode && <ArrowRight className="size-4" />}
@@ -341,9 +344,9 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
                 {isSendingCode && (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-[#0E1014]/35"
+                    className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-lab-bg/35"
                   >
-                    <span className="block h-full w-1/2 animate-pulse rounded-full bg-[#00D1FF]" />
+                    <span className="block h-full w-1/2 animate-pulse rounded-full bg-lab-cyan" />
                   </span>
                 )}
               </button>
@@ -351,18 +354,18 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
 
             {/* 2. Разделитель «или» */}
             <div className="relative flex items-center py-0.5">
-              <div className="flex-grow border-t border-[#262B36]" />
-              <span className="mx-3 shrink-0 font-mono text-xs text-[#8A93A2]">
+              <div className="flex-grow border-t border-lab-border" />
+              <span className="mx-3 shrink-0 font-mono text-xs text-lab-muted">
                 или
               </span>
-              <div className="flex-grow border-t border-[#262B36]" />
+              <div className="flex-grow border-t border-lab-border" />
             </div>
 
             {/* 3. Кнопка «Войти через Яндекс ID» */}
             <button
               type="button"
               onClick={handleYandexLogin}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-[12px] border border-[#262B36] bg-[#0E1014]/75 px-3.5 text-xs font-medium text-[#8A93A2] transition-colors duration-240 outline-none hover:border-[#8A93A2]/50 hover:text-[#F2F4F7] focus-visible:ring-2 focus-visible:ring-[#00D1FF]"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-[12px] border border-lab-border bg-lab-bg/75 px-3.5 text-xs font-medium text-lab-muted transition-colors duration-240 outline-none hover:border-lab-muted/50 hover:text-lab-text focus-visible:ring-2 focus-visible:ring-lab-cyan"
             >
               <YandexIdIcon className="size-4 shrink-0" />
               <span>Войти через Яндекс ID</span>
@@ -384,22 +387,22 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
           >
             {/* Заголовок Шага 2 + email и кнопка Изменить */}
             <div>
-              <span className="font-mono text-[11px] font-medium tracking-wider text-[#00D1FF] uppercase">
+              <span className="font-mono text-[11px] font-medium tracking-wider text-lab-cyan uppercase">
                 {"ШАГ 02 // ПОДТВЕРЖДЕНИЕ ДОСТУПА"}
               </span>
-              <h1 className="mt-1 text-xl font-bold tracking-tight text-[#F2F4F7] sm:text-2xl">
+              <h1 className="mt-1 text-xl font-bold tracking-tight text-lab-text sm:text-2xl">
                 Введите код из письма
               </h1>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#8A93A2]">
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-lab-muted">
                 <span>Отправили 6 цифр на</span>
-                <span className="font-mono font-semibold text-[#F2F4F7]">
+                <span className="font-mono font-semibold text-lab-text">
                   {targetEmail}
                 </span>
                 <button
                   type="button"
                   onClick={handleBackToEmailStep}
                   disabled={isVerifyingOtp}
-                  className="font-mono text-xs font-medium text-[#00D1FF] underline-offset-4 transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-[#00D1FF] focus-visible:outline-none disabled:opacity-50"
+                  className="font-mono text-xs font-medium text-lab-cyan underline-offset-4 transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-lab-cyan focus-visible:outline-none disabled:opacity-50"
                 >
                   Изменить
                 </button>
@@ -435,7 +438,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
                   <p
                     role="alert"
                     data-testid="otp-error-message"
-                    className="mt-1 font-mono text-xs leading-relaxed text-[#EF4444]"
+                    className="mt-1 font-mono text-xs leading-relaxed text-destructive"
                   >
                     {otpError}
                   </p>
@@ -446,7 +449,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
               <button
                 type="submit"
                 disabled={isVerifyingOtp || !/^[0-9]{6}$/.test(otpValue)}
-                className="cta-border-beam relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[12px] bg-[#FF5C1A] px-5 text-sm font-bold text-[#0E1014] transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-70"
+                className="cta-border-beam relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-[12px] bg-brand px-5 text-sm font-bold text-brand-foreground transition-transform duration-240 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <span>
                   {isVerifyingOtp ? "Проверка..." : "Подтвердить и войти"}
@@ -455,20 +458,20 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
                 {isVerifyingOtp && (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-[#0E1014]/35"
+                    className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-lab-bg/35"
                   >
-                    <span className="block h-full w-2/3 animate-pulse rounded-full bg-[#00D1FF]" />
+                    <span className="block h-full w-2/3 animate-pulse rounded-full bg-lab-cyan" />
                   </span>
                 )}
               </button>
             </form>
 
             {/* Таймер повторной отправки */}
-            <div className="border-t border-[#262B36] pt-3.5 text-center">
+            <div className="border-t border-lab-border pt-3.5 text-center">
               {countdown > 0 ? (
                 <p
                   data-testid="otp-resend-timer"
-                  className="font-mono text-xs text-[#8A93A2] tabular-nums"
+                  className="font-mono text-xs text-lab-muted tabular-nums"
                 >
                   Отправить повторно через {formatCountdownTimer(countdown)}
                 </p>
@@ -478,7 +481,7 @@ export function AuthCard({ initialStep = "method", className }: AuthCardProps) {
                   data-testid="otp-resend-button"
                   onClick={handleResendCode}
                   disabled={isResending}
-                  className="font-mono text-xs font-semibold text-[#00D1FF] underline-offset-4 transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-[#00D1FF] focus-visible:outline-none disabled:opacity-50"
+                  className="font-mono text-xs font-semibold text-lab-cyan underline-offset-4 transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-lab-cyan focus-visible:outline-none disabled:opacity-50"
                 >
                   {isResending ? "Отправка кода..." : "Отправить код повторно"}
                 </button>

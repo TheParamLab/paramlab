@@ -17,9 +17,19 @@ import {
   SidebarMenuItem,
   toast,
   useSidebar,
+  useTheme,
 } from "@paramlab/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { KeyRound, LogOut, MoreVertical, UserRound } from "lucide-react";
+import {
+  Check,
+  KeyRound,
+  LogOut,
+  Monitor,
+  Moon,
+  MoreVertical,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -44,6 +54,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const { themeMode, setTheme } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const initials = getInitials(user.name);
@@ -121,6 +132,25 @@ export function NavUser({
               >
                 <KeyRound />
                 Безопасность
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Тема интерфейса</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun />
+                Светлая
+                {themeMode === "light" && <Check className="ml-auto" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon />
+                Тёмная
+                {themeMode === "dark" && <Check className="ml-auto" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("auto")}>
+                <Monitor />
+                Системная
+                {themeMode === "auto" && <Check className="ml-auto" />}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

@@ -12,10 +12,10 @@ export default function ResetPasswordPage() {
     <AuthShell>
       <Suspense
         fallback={
-          <div className="font-mono text-xs text-[#8A93A2]">Загрузка…</div>
+          <div className="font-mono text-xs text-lab-muted">Загрузка…</div>
         }
       >
-        <ResetPasswordForm className="rounded-[16px] border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl" />
+        <ResetPasswordForm className="rounded-[16px] border-lab-border bg-lab-surface text-lab-text shadow-2xl" />
       </Suspense>
     </AuthShell>
   );

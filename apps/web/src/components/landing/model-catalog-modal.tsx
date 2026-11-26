@@ -148,7 +148,7 @@ export function ModelCatalogModal() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             onClick={() => setCatalogModalOpen(false)}
-            className="fixed inset-0 bg-[#0E1014]/85 backdrop-blur-md"
+            className="fixed inset-0 bg-lab-bg/85 backdrop-blur-md"
           />
 
           <motion.div
@@ -157,17 +157,17 @@ export function ModelCatalogModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl sm:max-h-[calc(100dvh-3rem)]"
+            className="relative z-10 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-lab-border bg-lab-surface text-lab-text shadow-2xl sm:max-h-[calc(100dvh-3rem)]"
           >
             {/* Верхняя шапка каталога */}
-            <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-[#262B36] bg-[#0E1014]/80 px-5 py-4 sm:px-6">
+            <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-lab-border bg-lab-bg/80 px-5 py-4 sm:px-6">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-md border border-[#00D1FF]/30 bg-[#00D1FF]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#00D1FF]">
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-lab-cyan/30 bg-lab-cyan/10 px-2 py-0.5 font-mono text-[11px] font-medium text-lab-cyan">
                     <Grid3X3 className="size-3.5" />
                     БИБЛИОТЕКА CAD · {PART_TYPES.length} МОДЕЛЕЙ
                   </span>
-                  <span className="font-mono text-xs text-[#8A93A2]">
+                  <span className="font-mono text-xs text-lab-muted">
                     {PART_TYPES.reduce(
                       (acc, item) => acc + item.presets.length,
                       0,
@@ -187,16 +187,16 @@ export function ModelCatalogModal() {
                 type="button"
                 aria-label="Закрыть каталог моделей"
                 onClick={() => setCatalogModalOpen(false)}
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#262B36] bg-[#161920] text-[#8A93A2] transition-colors hover:border-[#8A93A2] hover:text-[#F2F4F7]"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-lab-border bg-lab-surface text-lab-muted transition-colors hover:border-lab-muted hover:text-lab-text"
               >
                 <X className="size-4" />
               </button>
             </div>
 
             {/* Панель поиска и категорий */}
-            <div className="flex flex-shrink-0 flex-col gap-3 border-b border-[#262B36] bg-[#12151B] px-5 py-3.5 sm:px-6">
+            <div className="flex flex-shrink-0 flex-col gap-3 border-b border-lab-border bg-lab-inset px-5 py-3.5 sm:px-6">
               <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A93A2]" />
+                <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-lab-muted" />
                 <input
                   ref={searchInputRef}
                   type="search"
@@ -204,14 +204,14 @@ export function ModelCatalogModal() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Поиск по названию, коду CAD, размеру или назначению (например: шкив, NEMA17, втулка, IP65, бирка)..."
                   aria-label="Поиск модели в каталоге"
-                  className="h-10 w-full rounded-[12px] border border-[#262B36] bg-[#0E1014] pr-9 pl-10 font-mono text-xs text-[#F2F4F7] placeholder:text-[#8A93A2] focus:border-[#00D1FF] focus:outline-none"
+                  className="h-10 w-full rounded-[12px] border border-lab-border bg-lab-bg pr-9 pl-10 font-mono text-xs text-lab-text placeholder:text-lab-muted focus:border-lab-cyan focus:outline-none"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     aria-label="Очистить поиск"
                     onClick={() => setSearchQuery("")}
-                    className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-[#8A93A2] hover:text-[#F2F4F7]"
+                    className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-lab-muted hover:text-lab-text"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -229,10 +229,10 @@ export function ModelCatalogModal() {
                   aria-selected={selectedCategory === "all"}
                   onClick={() => setSelectedCategory("all")}
                   className={cn(
-                    "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                    "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                     selectedCategory === "all"
-                      ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                      : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+                      ? "border-lab-cyan bg-lab-cyan/15 font-semibold text-lab-cyan"
+                      : "border-lab-border bg-lab-bg text-lab-muted hover:border-lab-muted/50 hover:text-lab-text",
                   )}
                 >
                   Все модели ({PART_TYPES.length})
@@ -250,10 +250,10 @@ export function ModelCatalogModal() {
                       aria-selected={active}
                       onClick={() => setSelectedCategory(cat.id)}
                       className={cn(
-                        "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                        "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                         active
-                          ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                          : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+                          ? "border-lab-cyan bg-lab-cyan/15 font-semibold text-lab-cyan"
+                          : "border-lab-border bg-lab-bg text-lab-muted hover:border-lab-muted/50 hover:text-lab-text",
                       )}
                     >
                       {cat.shortLabel} ({count})
@@ -266,14 +266,14 @@ export function ModelCatalogModal() {
             {/* Сетка моделей */}
             <div className="lab-scrollbar flex-1 overflow-y-auto p-5 sm:p-6">
               {filteredModels.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-[#262B36] bg-[#0E1014]/60 px-6 py-12 text-center">
-                  <p className="font-mono text-xs text-[#00D1FF]">
+                <div className="flex flex-col items-center justify-center gap-3 rounded-[16px] border border-dashed border-lab-border bg-lab-bg/60 px-6 py-12 text-center">
+                  <p className="font-mono text-xs text-lab-cyan">
                     {"CATALOG_QUERY // NO_MATCH"}
                   </p>
-                  <p className="text-base font-semibold text-[#F2F4F7]">
+                  <p className="text-base font-semibold text-lab-text">
                     По запросу «{searchQuery}» шаблоны не найдены
                   </p>
-                  <p className="max-w-md text-xs text-[#8A93A2]">
+                  <p className="max-w-md text-xs text-lab-muted">
                     Сбросьте фильтр категории или выберите ближайший базовый
                     шаблон — все диаметры, длины и высоты настраиваются с шагом
                     1 мм.
@@ -284,7 +284,7 @@ export function ModelCatalogModal() {
                       setSelectedCategory("all");
                       setSearchQuery("");
                     }}
-                    className="mt-1 rounded-lg border border-[#00D1FF]/50 bg-[#00D1FF]/15 px-3.5 py-1.5 font-mono text-xs font-semibold text-[#00D1FF] hover:bg-[#00D1FF]/25"
+                    className="mt-1 rounded-lg border border-lab-cyan/50 bg-lab-cyan/15 px-3.5 py-1.5 font-mono text-xs font-semibold text-lab-cyan hover:bg-lab-cyan/25"
                   >
                     Показать все модели ({PART_TYPES.length})
                   </button>
@@ -307,25 +307,25 @@ export function ModelCatalogModal() {
                         onPointerEnter={() => setHoveredId(model.id)}
                         onPointerLeave={() => setHoveredId(null)}
                         className={cn(
-                          "flex flex-col justify-between gap-3.5 rounded-[18px] border bg-[#0E1014] p-4 transition-all duration-200",
+                          "flex flex-col justify-between gap-3.5 rounded-[18px] border bg-lab-bg p-4 transition-all duration-200",
                           isSelected
-                            ? "border-[#FF5C1A] ring-1 ring-[#FF5C1A]/40"
+                            ? "border-brand ring-1 ring-brand/40"
                             : isHovered
-                              ? "border-[#00D1FF]/65"
-                              : "border-[#262B36]",
+                              ? "border-lab-cyan/65"
+                              : "border-lab-border",
                         )}
                       >
                         <div className="flex flex-col gap-3">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-mono text-[11px] text-[#8A93A2]">
+                            <span className="font-mono text-[11px] text-lab-muted">
                               {model.code} · {model.category}
                             </span>
                             {isSelected ? (
-                              <span className="inline-flex items-center gap-1 rounded border border-[#FF5C1A]/50 bg-[#FF5C1A]/15 px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#FF5C1A]">
+                              <span className="inline-flex items-center gap-1 rounded border border-brand/50 bg-brand/15 px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand">
                                 <Check className="size-3" />В РЕДАКТОРЕ
                               </span>
                             ) : (
-                              <span className="rounded border border-[#262B36] bg-[#161920] px-1.5 py-0.5 font-mono text-[10px] text-[#00D1FF]">
+                              <span className="rounded border border-lab-border bg-lab-surface px-1.5 py-0.5 font-mono text-[10px] text-lab-cyan">
                                 {recMat.code}
                               </span>
                             )}
@@ -340,20 +340,20 @@ export function ModelCatalogModal() {
                           />
 
                           <div>
-                            <h3 className="text-sm font-bold text-[#F2F4F7] sm:text-base">
+                            <h3 className="text-sm font-bold text-lab-text sm:text-base">
                               {model.label}
                             </h3>
-                            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#8A93A2]">
+                            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-lab-muted">
                               {model.description}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-col gap-2.5 border-t border-[#262B36] pt-3">
+                        <div className="flex flex-col gap-2.5 border-t border-lab-border pt-3">
                           {/* Быстрые типоразмеры */}
                           <div className="flex flex-col gap-1.5">
-                            <span className="flex items-center gap-1 font-mono text-[10px] text-[#8A93A2] uppercase">
-                              <Sparkles className="size-3 text-[#00D1FF]" />
+                            <span className="flex items-center gap-1 font-mono text-[10px] text-lab-muted uppercase">
+                              <Sparkles className="size-3 text-lab-cyan" />
                               Быстрый выбор типоразмера:
                             </span>
                             <div className="flex flex-wrap gap-1.5">
@@ -362,7 +362,7 @@ export function ModelCatalogModal() {
                                   key={preset.id}
                                   type="button"
                                   onClick={() => selectModel(model, preset)}
-                                  className="rounded-md border border-[#262B36] bg-[#161920] px-2 py-1 font-mono text-[11px] text-[#F2F4F7] transition-colors hover:border-[#00D1FF] hover:bg-[#00D1FF]/15 hover:text-[#00D1FF]"
+                                  className="rounded-md border border-lab-border bg-lab-surface px-2 py-1 font-mono text-[11px] text-lab-text transition-colors hover:border-lab-cyan hover:bg-lab-cyan/15 hover:text-lab-cyan"
                                 >
                                   {preset.title}
                                 </button>
@@ -376,8 +376,8 @@ export function ModelCatalogModal() {
                             className={cn(
                               "flex h-9 w-full items-center justify-center gap-2 rounded-[10px] border font-mono text-xs font-semibold transition-colors",
                               isSelected
-                                ? "border-[#FF5C1A] bg-[#FF5C1A] text-[#0E1014]"
-                                : "border-[#262B36] bg-[#161920] text-[#F2F4F7] hover:border-[#FF5C1A] hover:bg-[#FF5C1A]/15",
+                                ? "border-brand bg-brand text-brand-foreground"
+                                : "border-lab-border bg-lab-surface text-lab-text hover:border-brand hover:bg-brand/15",
                             )}
                           >
                             <SlidersHorizontal className="size-3.5" />

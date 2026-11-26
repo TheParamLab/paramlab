@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function ForgotPasswordPage() {
   return (
     <AuthShell>
-      <ForgotPasswordForm className="rounded-[16px] border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl" />
+      <ForgotPasswordForm className="rounded-[16px] border-lab-border bg-lab-surface text-lab-text shadow-2xl" />
     </AuthShell>
   );
 }

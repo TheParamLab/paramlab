@@ -24,20 +24,22 @@ function TemplateCadPreview({
   hovered: boolean;
 }) {
   return (
-    <div className="relative h-44 w-full overflow-hidden rounded-[12px] border border-[#262B36] bg-[#0E1014]">
+    <div className="relative h-44 w-full overflow-hidden rounded-[12px] border border-lab-border bg-lab-bg">
       <div
         aria-hidden="true"
         className="bg-blueprint-fine absolute inset-0 opacity-70"
       />
       {/* Бейдж режима рендера в углу превью */}
-      <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-md border border-[#262B36] bg-[#161920]/90 px-2 py-0.5 font-mono text-[10px] tracking-wider uppercase">
+      <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 rounded-md border border-lab-border bg-lab-surface/90 px-2 py-0.5 font-mono text-[10px] tracking-wider uppercase">
         <span
           className={cn(
             "size-1.5 rounded-full transition-colors duration-360",
-            hovered ? "bg-[#00D1FF] shadow-[0_0_8px_#00D1FF]" : "bg-[#8A93A2]",
+            hovered
+              ? "bg-lab-cyan shadow-[0_0_8px_var(--lab-cyan)]"
+              : "bg-lab-muted",
           )}
         />
-        <span className={hovered ? "text-[#00D1FF]" : "text-[#8A93A2]"}>
+        <span className={hovered ? "text-lab-cyan" : "text-lab-muted"}>
           {hovered ? "WIREFRAME // CAD" : "SOLID // RENDER"}
         </span>
       </div>
@@ -83,7 +85,12 @@ function TemplateCadPreview({
               ),
             )}
             <circle r="28" fill="#1D222D" stroke="#475267" strokeWidth="1.5" />
-            <circle r="14" fill="#0E1014" stroke="#64748B" strokeWidth="1.5" />
+            <circle
+              r="14"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+              strokeWidth="1.5"
+            />
           </g>
         )}
 
@@ -104,10 +111,34 @@ function TemplateCadPreview({
               fill="#1C212C"
               stroke="#525E75"
             />
-            <circle cx="96" cy="48" r="3" fill="#0E1014" stroke="#64748B" />
-            <circle cx="144" cy="34" r="3" fill="#0E1014" stroke="#64748B" />
-            <circle cx="186" cy="49" r="3" fill="#0E1014" stroke="#64748B" />
-            <circle cx="140" cy="63" r="3" fill="#0E1014" stroke="#64748B" />
+            <circle
+              cx="96"
+              cy="48"
+              r="3"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
+            <circle
+              cx="144"
+              cy="34"
+              r="3"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
+            <circle
+              cx="186"
+              cy="49"
+              r="3"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
+            <circle
+              cx="140"
+              cy="63"
+              r="3"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
           </g>
         )}
 
@@ -143,7 +174,7 @@ function TemplateCadPreview({
               cy="44"
               rx="22"
               ry="7"
-              fill="#0E1014"
+              fill="var(--lab-bg)"
               stroke="#64748B"
             />
           </g>
@@ -162,7 +193,7 @@ function TemplateCadPreview({
               cy="36"
               rx="28"
               ry="8"
-              fill="#161920"
+              fill="var(--lab-surface)"
               stroke="#64748B"
             />
           </g>
@@ -180,9 +211,27 @@ function TemplateCadPreview({
               fill={`url(#solid-grad-${kind})`}
               stroke="#525E75"
             />
-            <circle cx="140" cy="72" r="15" fill="#0E1014" stroke="#64748B" />
-            <circle cx="94" cy="110" r="4" fill="#0E1014" stroke="#64748B" />
-            <circle cx="186" cy="110" r="4" fill="#0E1014" stroke="#64748B" />
+            <circle
+              cx="140"
+              cy="72"
+              r="15"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
+            <circle
+              cx="94"
+              cy="110"
+              r="4"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
+            <circle
+              cx="186"
+              cy="110"
+              r="4"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
           </g>
         )}
 
@@ -246,14 +295,20 @@ function TemplateCadPreview({
               x="183"
               y="84"
               textAnchor="middle"
-              fill="#F2F4F7"
+              fill="var(--lab-text)"
               fontFamily="JetBrains Mono, monospace"
               fontWeight="800"
               fontSize="12"
             >
               БАКЛАЖАН
             </text>
-            <circle cx="238" cy="80" r="3.5" fill="#0E1014" stroke="#64748B" />
+            <circle
+              cx="238"
+              cy="80"
+              r="3.5"
+              fill="var(--lab-bg)"
+              stroke="#64748B"
+            />
           </g>
         )}
       </svg>
@@ -269,10 +324,10 @@ function TemplateCadPreview({
       >
         {kind === "gear" && (
           <g transform="translate(140,82)" fill="none">
-            <circle r="54" stroke="#00D1FF" strokeDasharray="3 2" />
-            <circle r="46" stroke="#00D1FF" strokeWidth="1.3" />
-            <circle r="30" stroke="#00D1FF" strokeOpacity="0.6" />
-            <circle r="14" stroke="#FF5C1A" strokeWidth="1.5" />
+            <circle r="54" stroke="var(--lab-cyan)" strokeDasharray="3 2" />
+            <circle r="46" stroke="var(--lab-cyan)" strokeWidth="1.3" />
+            <circle r="30" stroke="var(--lab-cyan)" strokeOpacity="0.6" />
+            <circle r="14" stroke="var(--brand)" strokeWidth="1.5" />
             {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(
               (deg) => (
                 <line
@@ -282,7 +337,7 @@ function TemplateCadPreview({
                   x2="0"
                   y2="-54"
                   transform={`rotate(${deg})`}
-                  stroke="#00D1FF"
+                  stroke="var(--lab-cyan)"
                   strokeOpacity="0.45"
                 />
               ),
@@ -291,7 +346,7 @@ function TemplateCadPreview({
         )}
 
         {kind === "enclosure" && (
-          <g fill="none" stroke="#00D1FF">
+          <g fill="none" stroke="var(--lab-cyan)">
             <polygon points="75,46 145,24 210,48 140,72" strokeWidth="1.3" />
             <polygon
               points="75,100 145,78 210,102 140,126"
@@ -305,16 +360,16 @@ function TemplateCadPreview({
         )}
 
         {kind === "bushing" && (
-          <g fill="none" stroke="#00D1FF">
+          <g fill="none" stroke="var(--lab-cyan)">
             <ellipse cx="140" cy="116" rx="58" ry="18" strokeWidth="1.3" />
             <ellipse cx="140" cy="44" rx="42" ry="13" strokeWidth="1.3" />
-            <ellipse cx="140" cy="44" rx="22" ry="7" stroke="#FF5C1A" />
+            <ellipse cx="140" cy="44" rx="22" ry="7" stroke="var(--brand)" />
             <ellipse
               cx="140"
               cy="116"
               rx="22"
               ry="7"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeDasharray="3 3"
             />
             <line x1="98" y1="44" x2="98" y2="116" />
@@ -324,7 +379,7 @@ function TemplateCadPreview({
               y1="44"
               x2="118"
               y2="116"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeDasharray="3 2"
             />
             <line
@@ -332,14 +387,14 @@ function TemplateCadPreview({
               y1="44"
               x2="162"
               y2="116"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeDasharray="3 2"
             />
           </g>
         )}
 
         {kind === "adapter" && (
-          <g fill="none" stroke="#00D1FF">
+          <g fill="none" stroke="var(--lab-cyan)">
             {/* Нижняя ступень D1 */}
             <polygon points="76,98 140,122 204,98 140,74" strokeWidth="1.3" />
             <line x1="76" y1="98" x2="76" y2="70" />
@@ -360,7 +415,7 @@ function TemplateCadPreview({
               cy="86"
               rx="22"
               ry="7"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeWidth="1.4"
             />
             <ellipse
@@ -368,14 +423,14 @@ function TemplateCadPreview({
               cy="58"
               rx="16"
               ry="5"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeDasharray="3 2"
             />
           </g>
         )}
 
         {kind === "bracket" && (
-          <g fill="none" stroke="#00D1FF">
+          <g fill="none" stroke="var(--lab-cyan)">
             {/* Основание кронштейна */}
             <rect
               x="68"
@@ -387,8 +442,8 @@ function TemplateCadPreview({
             />
             <line x1="68" y1="105" x2="212" y2="105" strokeOpacity="0.5" />
             {/* Отверстия крепления на основании */}
-            <circle cx="86" cy="105" r="4" stroke="#FF5C1A" />
-            <circle cx="194" cy="105" r="4" stroke="#FF5C1A" />
+            <circle cx="86" cy="105" r="4" stroke="var(--brand)" />
+            <circle cx="194" cy="105" r="4" stroke="var(--brand)" />
             {/* Вертикальная опора */}
             <rect
               x="104"
@@ -402,12 +457,12 @@ function TemplateCadPreview({
             <polygon points="104,92 128,92 104,70" strokeOpacity="0.7" />
             <polygon points="176,92 152,92 176,70" strokeOpacity="0.7" />
             {/* Центральное отверстие опоры */}
-            <circle cx="140" cy="64" r="12" stroke="#FF5C1A" />
+            <circle cx="140" cy="64" r="12" stroke="var(--brand)" />
           </g>
         )}
 
         {kind === "organizer" && (
-          <g fill="none" stroke="#00D1FF">
+          <g fill="none" stroke="var(--lab-cyan)">
             {/* Внешний лоток */}
             <rect
               x="62"
@@ -432,24 +487,24 @@ function TemplateCadPreview({
             {/* Радиусное дно ячеек (дуги) */}
             <path
               d="M 80 95 Q 97 105 114 95"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeWidth="1.2"
             />
             <path
               d="M 124 95 Q 141 105 158 95"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeWidth="1.2"
             />
             <path
               d="M 168 95 Q 185 105 202 95"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeWidth="1.2"
             />
           </g>
         )}
 
         {kind === "plant-tag" && (
-          <g fill="none" stroke="#00D1FF">
+          <g fill="none" stroke="var(--lab-cyan)">
             <path
               d="M 34 80 L 122 66 L 132 52 L 238 52 Q 246 52 246 60 L 246 100 Q 246 108 238 108 L 132 108 L 122 94 Z"
               strokeWidth="1.3"
@@ -459,7 +514,7 @@ function TemplateCadPreview({
               y1="80"
               x2="136"
               y2="80"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeWidth="2.2"
               strokeDasharray="4 2"
             />
@@ -469,21 +524,21 @@ function TemplateCadPreview({
               width="94"
               height="44"
               rx="5"
-              stroke="#FF5C1A"
+              stroke="var(--brand)"
               strokeWidth="1.4"
             />
             <text
               x="183"
               y="84"
               textAnchor="middle"
-              fill="#00D1FF"
+              fill="var(--lab-cyan)"
               fontFamily="JetBrains Mono, monospace"
               fontWeight="700"
               fontSize="11"
             >
               TXT: 12 СИМВ
             </text>
-            <circle cx="238" cy="80" r="3.5" stroke="#FF5C1A" />
+            <circle cx="238" cy="80" r="3.5" stroke="var(--brand)" />
           </g>
         )}
 
@@ -494,11 +549,18 @@ function TemplateCadPreview({
             y1="142"
             x2="204"
             y2="142"
-            stroke="#FF5C1A"
+            stroke="var(--brand)"
             strokeWidth="1.3"
           />
-          <rect x="124" y="133" width="32" height="16" rx="4" fill="#FF5C1A" />
-          <text x="140" y="144" textAnchor="middle" fill="#0E1014">
+          <rect
+            x="124"
+            y="133"
+            width="32"
+            height="16"
+            rx="4"
+            fill="var(--brand)"
+          />
+          <text x="140" y="144" textAnchor="middle" fill="var(--lab-bg)">
             D
           </text>
 
@@ -507,16 +569,30 @@ function TemplateCadPreview({
             y1="36"
             x2="234"
             y2="124"
-            stroke="#00D1FF"
+            stroke="var(--lab-cyan)"
             strokeWidth="1.3"
           />
-          <rect x="222" y="72" width="24" height="16" rx="4" fill="#00D1FF" />
-          <text x="234" y="83" textAnchor="middle" fill="#0E1014">
+          <rect
+            x="222"
+            y="72"
+            width="24"
+            height="16"
+            rx="4"
+            fill="var(--lab-cyan)"
+          />
+          <text x="234" y="83" textAnchor="middle" fill="var(--lab-bg)">
             H
           </text>
 
-          <rect x="184" y="18" width="42" height="16" rx="4" fill="#10B981" />
-          <text x="205" y="29" textAnchor="middle" fill="#0E1014">
+          <rect
+            x="184"
+            y="18"
+            width="42"
+            height="16"
+            rx="4"
+            fill="var(--lab-ready)"
+          />
+          <text x="205" y="29" textAnchor="middle" fill="var(--lab-bg)">
             Z · OK
           </text>
         </g>
@@ -553,41 +629,41 @@ export function TemplateShowcase() {
   return (
     <section
       id="templates"
-      className="scroll-mt-14 border-b border-[#262B36] bg-[#0E1014] py-16 text-[#F2F4F7] lg:py-24"
+      className="scroll-mt-14 border-b border-lab-border bg-lab-bg py-16 text-lab-text lg:py-24"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div className="flex flex-col gap-3">
-            <p className="font-mono text-xs tracking-widest text-[#FF5C1A] uppercase">
+            <p className="font-mono text-xs tracking-widest text-brand uppercase">
               02 · Библиотека параметрических заготовок (
               {TEMPLATE_SHOWCASE.length})
             </p>
             <h2 className="max-w-3xl text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:text-4xl">
               Витрина параметрических шаблонов
             </h2>
-            <p className="max-w-2xl text-base text-[#8A93A2]">
+            <p className="max-w-2xl text-base text-lab-muted">
               Наведите курсор на карточку, чтобы увидеть внутреннюю
               wireframe-сетку и доступные для настройки размерные оси{" "}
-              <span className="font-mono text-[#00D1FF]">D, H, Z</span>.
+              <span className="font-mono text-lab-cyan">D, H, Z</span>.
             </p>
           </div>
-          <div className="font-mono text-xs text-[#8A93A2]">
+          <div className="font-mono text-xs text-lab-muted">
             Клик по шаблону загружает геометрию в 3D-вьюпорт
           </div>
         </div>
 
         {/* Панель фильтрации по рубрикам и быстрого поиска */}
-        <div className="mt-8 flex flex-col justify-between gap-3 rounded-[18px] border border-[#262B36] bg-[#161920] p-3.5 lg:flex-row lg:items-center">
+        <div className="mt-8 flex flex-col justify-between gap-3 rounded-[18px] border border-lab-border bg-lab-surface p-3.5 lg:flex-row lg:items-center">
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               aria-pressed={selectedCategory === "all"}
               onClick={() => setSelectedCategory("all")}
               className={cn(
-                "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                 selectedCategory === "all"
-                  ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                  : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+                  ? "border-lab-cyan bg-lab-cyan/15 font-semibold text-lab-cyan"
+                  : "border-lab-border bg-lab-bg text-lab-muted hover:border-lab-muted/50 hover:text-lab-text",
               )}
             >
               Все шаблоны ({TEMPLATE_SHOWCASE.length})
@@ -601,10 +677,10 @@ export function TemplateShowcase() {
                   aria-pressed={active}
                   onClick={() => setSelectedCategory(category)}
                   className={cn(
-                    "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]",
+                    "rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan",
                     active
-                      ? "border-[#00D1FF] bg-[#00D1FF]/15 font-semibold text-[#00D1FF]"
-                      : "border-[#262B36] bg-[#0E1014] text-[#8A93A2] hover:border-[#8A93A2]/50 hover:text-[#F2F4F7]",
+                      ? "border-lab-cyan bg-lab-cyan/15 font-semibold text-lab-cyan"
+                      : "border-lab-border bg-lab-bg text-lab-muted hover:border-lab-muted/50 hover:text-lab-text",
                   )}
                 >
                   {category}
@@ -614,21 +690,21 @@ export function TemplateShowcase() {
           </div>
 
           <div className="relative w-full lg:max-w-xs">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#8A93A2]" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-lab-muted" />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Поиск шаблона: шкив, втулка, РЭА..."
               aria-label="Поиск параметрических шаблонов"
-              className="h-9 w-full rounded-[10px] border border-[#262B36] bg-[#0E1014] pr-8 pl-9 font-mono text-xs text-[#F2F4F7] placeholder:text-[#8A93A2] focus:border-[#00D1FF] focus:outline-none"
+              className="h-9 w-full rounded-[10px] border border-lab-border bg-lab-bg pr-8 pl-9 font-mono text-xs text-lab-text placeholder:text-lab-muted focus:border-lab-cyan focus:outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 aria-label="Очистить поиск"
                 onClick={() => setSearchQuery("")}
-                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-[#8A93A2] hover:text-[#F2F4F7]"
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-lab-muted hover:text-lab-text"
               >
                 <X className="size-3.5" />
               </button>
@@ -647,19 +723,19 @@ export function TemplateShowcase() {
                   onFocus={() => setHoveredId(item.id)}
                   onBlur={() => setHoveredId(null)}
                   className={cn(
-                    "group flex h-full flex-col justify-between gap-4 rounded-[24px] border bg-[#161920] p-5 transition-all duration-360 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    "group flex h-full flex-col justify-between gap-4 rounded-[24px] border bg-lab-surface p-5 transition-all duration-360 ease-[cubic-bezier(0.22,1,0.36,1)]",
                     isHovered
-                      ? "border-[#00D1FF]/70 shadow-[0_0_30px_rgba(0,209,255,0.1)]"
-                      : "border-[#262B36]",
+                      ? "border-lab-cyan/70 shadow-[0_0_30px_var(--cyan-glow-soft)]"
+                      : "border-lab-border",
                   )}
                 >
                   <div className="flex flex-col gap-4">
                     {/* Верхняя мета-строка */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs text-[#8A93A2]">
+                      <span className="font-mono text-xs text-lab-muted">
                         {item.code} · {item.category}
                       </span>
-                      <span className="rounded-md border border-[#262B36] bg-[#0E1014] px-2 py-0.5 font-mono text-xs font-medium text-[#F2F4F7]">
+                      <span className="rounded-md border border-lab-border bg-lab-bg px-2 py-0.5 font-mono text-xs font-medium text-lab-text">
                         {item.materialCode}
                       </span>
                     </div>
@@ -671,17 +747,17 @@ export function TemplateShowcase() {
                     />
 
                     <div className="flex flex-col gap-1.5">
-                      <h3 className="text-lg font-bold tracking-tight text-[#F2F4F7]">
+                      <h3 className="text-lg font-bold tracking-tight text-lab-text">
                         {item.title}
                       </h3>
-                      <p className="text-sm leading-relaxed text-[#8A93A2]">
+                      <p className="text-sm leading-relaxed text-lab-muted">
                         {item.description}
                       </p>
                     </div>
                   </div>
 
                   {/* Доступные параметры D, H, Z (подсвечиваются при наведении) */}
-                  <div className="flex flex-col gap-3 border-t border-[#262B36] pt-4">
+                  <div className="flex flex-col gap-3 border-t border-lab-border pt-4">
                     <div className="grid grid-cols-3 gap-2 font-mono tabular-nums">
                       {item.params.map((param) => (
                         <div
@@ -689,24 +765,24 @@ export function TemplateShowcase() {
                           className={cn(
                             "rounded-[10px] border px-2.5 py-1.5 transition-colors duration-240",
                             isHovered
-                              ? "border-[#00D1FF]/60 bg-[#00D1FF]/10"
-                              : "border-[#262B36] bg-[#0E1014]",
+                              ? "border-lab-cyan/60 bg-lab-cyan/10"
+                              : "border-lab-border bg-lab-bg",
                           )}
                         >
                           <div className="flex items-center justify-between">
                             <span
                               className={cn(
                                 "text-xs font-bold",
-                                isHovered ? "text-[#FF5C1A]" : "text-[#00D1FF]",
+                                isHovered ? "text-brand" : "text-lab-cyan",
                               )}
                             >
                               {param.code}
                             </span>
-                            <span className="text-[10px] text-[#8A93A2]">
+                            <span className="text-[10px] text-lab-muted">
                               парам.
                             </span>
                           </div>
-                          <p className="mt-0.5 truncate text-[11px] font-medium text-[#F2F4F7]">
+                          <p className="mt-0.5 truncate text-[11px] font-medium text-lab-text">
                             {param.value}
                           </p>
                         </div>
@@ -719,13 +795,13 @@ export function TemplateShowcase() {
                       presetDimensions={item.presetDimensions}
                       materialCode={item.materialCode}
                       presetLabelText={item.presetLabelText}
-                      className="flex h-10 w-full items-center justify-between rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3.5 font-mono text-xs font-medium text-[#F2F4F7] transition-all duration-240 group-hover:border-[#FF5C1A] group-hover:bg-[#FF5C1A]/15 group-hover:text-[#F2F4F7]"
+                      className="flex h-10 w-full items-center justify-between rounded-[12px] border border-lab-border bg-lab-bg px-3.5 font-mono text-xs font-medium text-lab-text transition-all duration-240 group-hover:border-brand group-hover:bg-brand/15 group-hover:text-lab-text"
                     >
                       <span className="flex items-center gap-2">
-                        <SlidersHorizontal className="size-3.5 text-[#FF5C1A]" />
+                        <SlidersHorizontal className="size-3.5 text-brand" />
                         Открыть шаблон в 3D-конфигураторе
                       </span>
-                      <ArrowUpRight className="size-4 text-[#FF5C1A]" />
+                      <ArrowUpRight className="size-4 text-brand" />
                     </CalculatorTrigger>
                   </div>
                 </article>

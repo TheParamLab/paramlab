@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <CalculatorProvider>
-      <div className="min-h-screen bg-[#0E1014] text-[#F2F4F7] selection:bg-[#FF5C1A] selection:text-[#0E1014]">
+      <div className="min-h-screen bg-lab-bg text-lab-text selection:bg-brand selection:text-brand-foreground">
         <script
           type="application/ld+json"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: статический JSON-LD из наших же данных, `<` экранирован
@@ -39,9 +39,9 @@ export default function HomePage() {
         <footer className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-12 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex flex-col gap-2">
             <Logo />
-            <p className="text-sm text-[#8A93A2]">
+            <p className="text-sm text-lab-muted">
               Инженерная лаборатория параметрической 3D-печати · Точность до{" "}
-              <span className="font-mono text-[#00D1FF]">0.1 мм</span>.
+              <span className="font-mono text-lab-cyan">0.1 мм</span>.
             </p>
           </div>
           <nav
@@ -52,7 +52,7 @@ export default function HomePage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-[#8A93A2] transition-colors duration-240 hover:text-[#F2F4F7]"
+                className="text-sm text-lab-muted transition-colors duration-240 hover:text-lab-text"
               >
                 {link.label}
               </a>

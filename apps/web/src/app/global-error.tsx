@@ -13,7 +13,7 @@ export default function GlobalError({
 }) {
   return (
     <html lang="ru" className="dark">
-      <body className="min-h-screen bg-[#0E1014] font-sans text-[#F2F4F7] antialiased">
+      <body className="min-h-screen bg-lab-bg font-sans text-lab-text antialiased">
         <title>500 — ошибка сервиса | ParamLab</title>
         <ErrorRecoveryPage error={error} retry={retry} />
       </body>

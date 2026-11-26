@@ -53,19 +53,19 @@ async function Overview() {
           label="Заказов в работе"
           value={String(summary.active)}
           hint="оплачены и запущены в производство"
-          accent="text-[#FF5C1A]"
+          accent="text-brand"
         />
         <StatCard
           label="Всего заказов"
           value={String(summary.total)}
           hint="за всё время"
-          accent="text-[#F2F4F7]"
+          accent="text-lab-text"
         />
         <StatCard
           label="Деталей в библиотеке"
           value={String(parts.length)}
           hint="готовы к повторному заказу"
-          accent="text-[#00D1FF]"
+          accent="text-lab-cyan"
         />
       </div>
 
@@ -76,7 +76,7 @@ async function Overview() {
           </h2>
           <Link
             href={paths.orders.root}
-            className="font-mono text-xs text-[#00D1FF] underline-offset-4 hover:underline"
+            className="font-mono text-xs text-lab-cyan underline-offset-4 hover:underline"
           >
             Все заказы →
           </Link>

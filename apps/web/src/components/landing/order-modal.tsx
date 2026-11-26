@@ -138,7 +138,7 @@ export function OrderSpecModal() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             onClick={() => setOrderModalOpen(false)}
-            className="fixed inset-0 bg-[#0E1014]/85 backdrop-blur-md"
+            className="fixed inset-0 bg-lab-bg/85 backdrop-blur-md"
           />
 
           <motion.div
@@ -147,17 +147,17 @@ export function OrderSpecModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
             transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[#262B36] bg-[#161920] text-[#F2F4F7] shadow-2xl"
+            className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-lab-border bg-lab-surface text-lab-text shadow-2xl"
           >
             {/* Верхняя шапка спецификации */}
-            <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-[#262B36] bg-[#0E1014]/70 px-6 py-4">
+            <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-lab-border bg-lab-bg/70 px-6 py-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-md border border-[#00D1FF]/30 bg-[#00D1FF]/10 px-2 py-0.5 font-mono text-[11px] font-medium text-[#00D1FF]">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-lab-cyan/30 bg-lab-cyan/10 px-2 py-0.5 font-mono text-[11px] font-medium text-lab-cyan">
                     <ShieldCheck className="size-3.5" />
                     CAD PREVIEW · Допуск ±0.1 мм
                   </span>
-                  <span className="font-mono text-xs text-[#8A93A2]">
+                  <span className="font-mono text-xs text-lab-muted">
                     {part.code}
                   </span>
                 </div>
@@ -173,7 +173,7 @@ export function OrderSpecModal() {
                 type="button"
                 aria-label="Закрыть окно спецификации"
                 onClick={() => setOrderModalOpen(false)}
-                className="flex size-8 items-center justify-center rounded-lg border border-[#262B36] bg-[#161920] text-[#8A93A2] transition-colors hover:border-[#8A93A2] hover:text-[#F2F4F7]"
+                className="flex size-8 items-center justify-center rounded-lg border border-lab-border bg-lab-surface text-lab-muted transition-colors hover:border-lab-muted hover:text-lab-text"
               >
                 <X className="size-4" />
               </button>
@@ -181,71 +181,69 @@ export function OrderSpecModal() {
 
             <div className="flex flex-col gap-5 overflow-y-auto p-6">
               {/* Карточка параметров детали */}
-              <div className="rounded-[12px] border border-[#262B36] bg-[#0E1014] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#262B36] pb-3">
+              <div className="rounded-[12px] border border-lab-border bg-lab-bg p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lab-border pb-3">
                   <div>
-                    <p className="text-xs text-[#8A93A2]">Шаблон CAD</p>
-                    <p className="text-sm font-semibold text-[#F2F4F7]">
+                    <p className="text-xs text-lab-muted">Шаблон CAD</p>
+                    <p className="text-sm font-semibold text-lab-text">
                       {part.label}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-[#8A93A2]">Полимер</p>
-                    <p className="font-mono text-sm font-semibold text-[#00D1FF]">
+                    <p className="text-xs text-lab-muted">Полимер</p>
+                    <p className="font-mono text-sm font-semibold text-lab-cyan">
                       {material.code} ({material.temp})
                     </p>
                   </div>
                 </div>
 
                 <dl className="mt-3 grid grid-cols-3 gap-3 font-mono tabular-nums">
-                  <div className="rounded-lg border border-[#262B36]/80 bg-[#161920]/70 px-3 py-2">
-                    <dt className="text-[11px] text-[#8A93A2]">
+                  <div className="rounded-lg border border-lab-border/80 bg-lab-surface/70 px-3 py-2">
+                    <dt className="text-[11px] text-lab-muted">
                       {part.dimensions.d1.code} · Габарит 1
                     </dt>
-                    <dd className="mt-0.5 text-sm font-semibold text-[#F2F4F7]">
+                    <dd className="mt-0.5 text-sm font-semibold text-lab-text">
                       {dimensions.d1} мм
                     </dd>
                   </div>
-                  <div className="rounded-lg border border-[#262B36]/80 bg-[#161920]/70 px-3 py-2">
-                    <dt className="text-[11px] text-[#8A93A2]">
+                  <div className="rounded-lg border border-lab-border/80 bg-lab-surface/70 px-3 py-2">
+                    <dt className="text-[11px] text-lab-muted">
                       {part.dimensions.d2.code} · Габарит 2
                     </dt>
-                    <dd className="mt-0.5 text-sm font-semibold text-[#F2F4F7]">
+                    <dd className="mt-0.5 text-sm font-semibold text-lab-text">
                       {effectiveD2} мм
                     </dd>
                   </div>
-                  <div className="rounded-lg border border-[#262B36]/80 bg-[#161920]/70 px-3 py-2">
-                    <dt className="text-[11px] text-[#8A93A2]">
+                  <div className="rounded-lg border border-lab-border/80 bg-lab-surface/70 px-3 py-2">
+                    <dt className="text-[11px] text-lab-muted">
                       {part.dimensions.h.code} · Высота
                     </dt>
-                    <dd className="mt-0.5 text-sm font-semibold text-[#F2F4F7]">
+                    <dd className="mt-0.5 text-sm font-semibold text-lab-text">
                       {dimensions.h} мм
                     </dd>
                   </div>
                 </dl>
 
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs text-[#8A93A2] tabular-nums">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-1 font-mono text-xs text-lab-muted tabular-nums">
                   {cleanLabelText && (
-                    <span className="w-full rounded-md border border-[#FF5C1A]/40 bg-[#FF5C1A]/10 px-2.5 py-1 text-[#F2F4F7]">
+                    <span className="w-full rounded-md border border-brand/40 bg-brand/10 px-2.5 py-1 text-lab-text">
                       Надпись рельефа (Z = 2.4..3.0 мм):{" "}
-                      <strong className="text-[#FF5C1A]">
-                        «{cleanLabelText}»
-                      </strong>
+                      <strong className="text-brand">«{cleanLabelText}»</strong>
                     </span>
                   )}
                   <span>
                     Партия:{" "}
-                    <strong className="text-[#F2F4F7]">{quantity} шт.</strong>
+                    <strong className="text-lab-text">{quantity} шт.</strong>
                   </span>
                   <span>
                     Расчетная масса:{" "}
-                    <strong className="text-[#F2F4F7]">
+                    <strong className="text-lab-text">
                       {numberFmt.format(price.totalMass)} г
                     </strong>
                   </span>
                   <span>
                     Время печати:{" "}
-                    <strong className="text-[#F2F4F7]">
+                    <strong className="text-lab-text">
                       ~{price.printHours} ч
                     </strong>
                   </span>
@@ -254,53 +252,53 @@ export function OrderSpecModal() {
 
               {/* Доставка по РФ через Ozon */}
               <div className="flex flex-col gap-2.5">
-                <span className="font-mono text-xs font-medium tracking-wider text-[#8A93A2] uppercase">
+                <span className="font-mono text-xs font-medium tracking-wider text-lab-muted uppercase">
                   Способ доставки по РФ
                 </span>
-                <div className="flex flex-col items-start gap-1.5 rounded-[12px] border border-[#00D1FF] bg-[#00D1FF]/10 p-3.5 text-left">
+                <div className="flex flex-col items-start gap-1.5 rounded-[12px] border border-lab-cyan bg-lab-cyan/10 p-3.5 text-left">
                   <div className="flex w-full items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-sm font-semibold text-[#F2F4F7]">
-                      <Truck className="size-4 text-[#00D1FF]" />
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-lab-text">
+                      <Truck className="size-4 text-lab-cyan" />
                       {OZON_DELIVERY.name}
                     </span>
-                    <CheckCircle2 className="size-4 text-[#00D1FF]" />
+                    <CheckCircle2 className="size-4 text-lab-cyan" />
                   </div>
-                  <span className="text-xs text-[#8A93A2]">
+                  <span className="text-xs text-lab-muted">
                     {OZON_DELIVERY.tag}
                   </span>
-                  <div className="mt-1 flex w-full items-center justify-between border-t border-[#262B36]/80 pt-2 font-mono text-xs tabular-nums">
-                    <span className="text-[#F2F4F7]">
+                  <div className="mt-1 flex w-full items-center justify-between border-t border-lab-border/80 pt-2 font-mono text-xs tabular-nums">
+                    <span className="text-lab-text">
                       +{OZON_DELIVERY.price} ₽
                     </span>
-                    <span className="text-[#10B981]">{OZON_DELIVERY.eta}</span>
+                    <span className="text-lab-ready">{OZON_DELIVERY.eta}</span>
                   </div>
                 </div>
 
-                <div className="mt-1 flex items-center gap-2.5 rounded-[12px] border border-[#262B36] bg-[#0E1014] px-3.5 py-2.5">
-                  <MapPin className="size-4 shrink-0 text-[#FF5C1A]" />
+                <div className="mt-1 flex items-center gap-2.5 rounded-[12px] border border-lab-border bg-lab-bg px-3.5 py-2.5">
+                  <MapPin className="size-4 shrink-0 text-brand" />
                   <input
                     type="text"
                     aria-label="Город и пункт выдачи"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Укажите город или адрес ПВЗ"
-                    className="w-full bg-transparent text-sm text-[#F2F4F7] placeholder:text-[#8A93A2] focus:outline-none"
+                    className="w-full bg-transparent text-sm text-lab-text placeholder:text-lab-muted focus:outline-none"
                   />
                 </div>
-                <p className="flex items-center gap-1.5 font-mono text-[11px] text-[#8A93A2]">
-                  <PackageCheck className="size-3.5 text-[#10B981]" />
+                <p className="flex items-center gap-1.5 font-mono text-[11px] text-lab-muted">
+                  <PackageCheck className="size-3.5 text-lab-ready" />
                   {OZON_DELIVERY.pvzSample}
                 </p>
               </div>
 
               {/* Итоговая сумма и переход к оформлению */}
-              <div className="flex flex-col gap-3 border-t border-[#262B36] pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 border-t border-lab-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-mono text-xs text-[#8A93A2] tabular-nums">
+                  <p className="font-mono text-xs text-lab-muted tabular-nums">
                     Печать {numberFmt.format(price.total)} ₽ + доставка{" "}
                     {OZON_DELIVERY.price} ₽
                   </p>
-                  <p className="font-mono text-2xl font-bold text-[#F2F4F7] tabular-nums">
+                  <p className="font-mono text-2xl font-bold text-lab-text tabular-nums">
                     {numberFmt.format(price.total + OZON_DELIVERY.price)} ₽
                   </p>
                 </div>
@@ -323,7 +321,7 @@ export function OrderSpecModal() {
                     });
                     if (draft) saveDraftPart(draft);
                   }}
-                  className="cta-border-beam inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#FF5C1A] px-6 text-sm font-semibold text-[#0E1014] transition-transform duration-240 outline-none focus-visible:ring-2 focus-visible:ring-[#00D1FF]"
+                  className="cta-border-beam inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand px-6 text-sm font-semibold text-brand-foreground transition-transform duration-240 outline-none focus-visible:ring-2 focus-visible:ring-lab-cyan"
                 >
                   Перейти к оплате и выбору ПВЗ
                   <ArrowRight className="size-4" />

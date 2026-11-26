@@ -12,7 +12,7 @@ export default function OTPPage() {
     <AuthShell width="xs">
       <Suspense
         fallback={
-          <div className="h-[340px] w-full max-w-[400px] animate-pulse rounded-[16px] border border-[#262B36] bg-[#161920]" />
+          <div className="h-[340px] w-full max-w-[400px] animate-pulse rounded-[16px] border border-lab-border bg-lab-surface" />
         }
       >
         <AuthCard initialStep="otp" />
