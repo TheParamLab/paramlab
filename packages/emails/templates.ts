@@ -1,9 +1,11 @@
+import OrderStatusEmail from "./emails/order-status";
 import OtpSignInEmail from "./emails/otp-sign-in";
 import ResetPasswordEmail from "./emails/reset-password";
 import WelcomeEmail from "./emails/welcome";
 import { sendEmail } from "./send";
 
 const templates = {
+  "order-status": OrderStatusEmail,
   "otp-sign-in": OtpSignInEmail,
   "reset-password": ResetPasswordEmail,
   welcome: WelcomeEmail,

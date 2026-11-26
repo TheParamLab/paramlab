@@ -24,6 +24,7 @@
     "@paramlab/auth": "workspace:*",
     "@paramlab/config": "workspace:*",
     "@paramlab/db": "workspace:*",
+    "@paramlab/jobs": "workspace:*",
     "@paramlab/storage": "workspace:*",
     "@paramlab/validators": "workspace:*",
 

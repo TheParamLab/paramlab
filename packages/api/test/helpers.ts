@@ -42,7 +42,12 @@ export async function setupTestApi() {
 
   /** «Загруженные» объекты: ключ → размер. Тест кладет их через `upload`. */
   const objects = new Map<string, number>();
-  const upload = (key: string, size: number) => objects.set(key, size);
+  /** Тела объектов для серверного разбора: ключ → байты. */
+  const contents = new Map<string, Uint8Array>();
+  const upload = (key: string, size: number, content?: Uint8Array) => {
+    objects.set(key, size);
+    if (content) contents.set(key, content);
+  };
 
   const context = (session: Session | null = null) => ({
     ...createORPCContext({ headers: new Headers(), session }),
@@ -53,6 +58,7 @@ export async function setupTestApi() {
         `https://s3.test/put/${key}?size=${size}`,
       objectSize: async (key: string) => objects.get(key) ?? null,
       downloadUrl: async (key: string) => `https://s3.test/get/${key}`,
+      downloadObject: async (key: string) => contents.get(key) ?? null,
     },
   });
 

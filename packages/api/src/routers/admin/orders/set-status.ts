@@ -16,6 +16,7 @@ import {
   ozonConfigured,
   ozonCreateOrder,
 } from "../../../integrations/ozon-delivery";
+import { notifyOrderStatus } from "../../../notifications/order-status";
 import { adminProcedure } from "../../../orpc";
 import { packageDimensions } from "../../order/resolve-quote";
 
@@ -55,6 +56,13 @@ export const setStatus = adminProcedure
     }),
   )
   .handler(async ({ context, input, errors }) => {
+    // Прежний статус нужен, чтобы не слать письмо при повторной установке
+    // того же этапа (например, при исправлении трек-номера).
+    const [previous] = await context.db
+      .select({ status: Order.status })
+      .from(Order)
+      .where(eq(Order.id, input.id));
+
     // При передаче заказа с доставкой Ozon в работу логистики отправление
     // создается в Ozon Delivery API: сначала заказ, затем подтверждение
     // сборки. Трек-номером становится номер отправления Ozon.
@@ -191,5 +199,8 @@ export const setStatus = adminProcedure
       .from(updated);
 
     if (!order) throw errors.NOT_FOUND();
+    if (previous?.status !== input.status) {
+      await notifyOrderStatus(context.db, order, input.note ?? null);
+    }
     return order;
   });

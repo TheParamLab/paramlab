@@ -1,8 +1,11 @@
+import { logger } from "@paramlab/config";
 import { Part } from "@paramlab/db";
 import {
   createPartSchema,
   estimateMassFromVolume,
+  parseStl,
   partFormatFromFileName,
+  STL_SERVER_PARSE_MAX_BYTES,
 } from "@paramlab/validators";
 
 import { protectedProcedure } from "../../orpc";
@@ -48,12 +51,49 @@ export const create = protectedProcedure
 
     // Объем храним, только если масса совпадает с расчетом по нему: массу,
     // исправленную вручную, под другой материал не пересчитываем.
-    const volumeCm3 =
+    // Для STL ниже перезаписывается расчетом из самого файла.
+    let size = input.size;
+    let volumeCm3 =
       input.volumeCm3 != null &&
       estimateMassFromVolume(input.volumeCm3, input.materialId) ===
         input.massGrams
         ? input.volumeCm3
         : null;
+    let massGrams = input.massGrams;
+
+    // Серверный разбор STL: клиентские габариты и массу нельзя доверять —
+    // от объема зависит цена. Файл для нас источник правды: если он
+    // разобрался, размеры и масса перезаписываются расчетными.
+    if (format === "stl") {
+      if (fileSize <= STL_SERVER_PARSE_MAX_BYTES) {
+        let bytes: Uint8Array | null = null;
+        try {
+          bytes = await context.storage.downloadObject(input.fileKey);
+        } catch (error) {
+          // Хранилище временно недоступно — не блокируем сохранение детали.
+          logger.warn("part.analyze_failed", {
+            error: error instanceof Error ? error.message : String(error),
+            fileKey: input.fileKey,
+            fileSize,
+            userId: context.session.user.id,
+          });
+        }
+        if (bytes) {
+          const mesh = parseStl(toArrayBuffer(bytes));
+          // Файл лежит в хранилище, но не читается как STL — изготовить
+          // его все равно нельзя, а принимать клиентские цифры небезопасно.
+          if (!mesh) throw errors.BAD_REQUEST();
+          size = mesh.size;
+          volumeCm3 = mesh.volumeCm3;
+          massGrams = estimateMassFromVolume(mesh.volumeCm3, input.materialId);
+        }
+      } else {
+        // Крупные файлы в память не тянем: без верифицированных габаритов
+        // объем не храним и small-part тариф по ним не применяется.
+        size = null;
+        volumeCm3 = null;
+      }
+    }
 
     const [part] = await context.db
       .insert(Part)
@@ -67,11 +107,11 @@ export const create = protectedProcedure
         format,
         // Превью необязательно: если оно не загрузилось, деталь без картинки.
         previewKey: previewSize == null ? null : input.previewKey,
-        sizeX: input.size?.[0],
-        sizeY: input.size?.[1],
-        sizeZ: input.size?.[2],
+        sizeX: size?.[0],
+        sizeY: size?.[1],
+        sizeZ: size?.[2],
         volumeCm3,
-        massGrams: input.massGrams,
+        massGrams,
         materialId: input.materialId,
       })
       .returning();
@@ -79,3 +119,11 @@ export const create = protectedProcedure
     if (!part) throw new Error("Failed to insert part");
     return part;
   });
+
+/** `transformToByteArray` может вернуть вид на больший пул — отрезаем точно. */
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+}

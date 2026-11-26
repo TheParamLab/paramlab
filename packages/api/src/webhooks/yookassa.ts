@@ -3,6 +3,7 @@ import { and, eq, Order, OrderEvent, PaymentEvent, sql } from "@paramlab/db";
 import { z } from "zod";
 
 import { getYooKassaPayment } from "../integrations/yookassa";
+import { notifyOrderStatus } from "../notifications/order-status";
 
 type Db = typeof import("@paramlab/db").db;
 
@@ -100,7 +101,19 @@ export async function handleYooKassaNotification(
         )
         .returning({ id: OrderEvent.id }),
     );
-    await db.with(updated, event).select({ id: event.id }).from(event);
+    const events = await db
+      .with(updated, event)
+      .select({ id: event.id })
+      .from(event);
+
+    // Переход применился — сообщаем клиенту о новом этапе заказа.
+    if (events.length > 0) {
+      const [order] = await db
+        .select()
+        .from(Order)
+        .where(eq(Order.id, orderId));
+      if (order) await notifyOrderStatus(db, order, transition.note);
+    }
   }
 
   // Журнал webhook-событий — аудит. Уникальный индекс гасит дубликаты.

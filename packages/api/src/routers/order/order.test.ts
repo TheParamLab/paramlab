@@ -28,6 +28,29 @@ beforeAll(async () => {
 });
 afterAll(() => api.close());
 
+/** Бинарный STL-тетраэдр 10×20×30 мм (объем ровно 1 см³), 4 грани. */
+function binaryTetrahedron() {
+  const o = [0, 0, 0];
+  const x = [10, 0, 0];
+  const y = [0, 20, 0];
+  const z = [0, 0, 30];
+  const faces = [
+    [o, y, x],
+    [o, x, z],
+    [o, z, y],
+    [x, y, z],
+  ];
+  const buffer = new ArrayBuffer(84 + faces.length * 50);
+  const view = new DataView(buffer);
+  view.setUint32(80, faces.length, true);
+  faces.forEach((face, i) => {
+    face.flat().forEach((value, j) => {
+      view.setFloat32(84 + i * 50 + 12 + j * 4, value, true);
+    });
+  });
+  return buffer;
+}
+
 /** Полный ввод оформления заказа: реквизиты получателя и ПВЗ для checkout. */
 function checkout<T extends object>(input: T) {
   return {
@@ -123,6 +146,72 @@ describe("part", () => {
     });
     expect(list[0]?.previewUrl).toContain(`parts/${session.user.id}/`);
     expect(list[0]).not.toHaveProperty("fileKey");
+  });
+
+  it("recomputes size, volume and mass from the STL file itself", async () => {
+    const session = await createSession(api.db);
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "tetra.stl", fileSize: 284 },
+      { context: api.context(session) },
+    );
+    api.upload(upload.file.key, 284, new Uint8Array(binaryTetrahedron()));
+
+    // Клиент прислал завышенную массу: файл — источник правды, объем
+    // тетраэдра 10×20×30 мм = 1 см³, то есть 1 г PETG после округления.
+    const part = await call(
+      partRouter.create,
+      {
+        name: "Тетраэдр",
+        fileKey: upload.file.key,
+        fileName: "tetra.stl",
+        fileSize: 284,
+        massGrams: 999,
+        materialId: "petg",
+      },
+      { context: api.context(session) },
+    );
+    expect(part).toMatchObject({
+      sizeX: 10,
+      sizeY: 20,
+      sizeZ: 30,
+      volumeCm3: 1,
+      massGrams: 1,
+    });
+  });
+
+  it("rejects an STL file that does not parse", async () => {
+    const session = await createSession(api.db);
+    const garbage = new TextEncoder().encode("not an stl at all");
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName: "broken.stl", fileSize: garbage.byteLength },
+      { context: api.context(session) },
+    );
+    api.upload(upload.file.key, garbage.byteLength, garbage);
+
+    // Файл в хранилище есть, но не читается как STL: клиентские массу и
+    // габариты принимать нельзя — от них зависит цена.
+    await expect(
+      call(
+        partRouter.create,
+        {
+          name: "Мусор",
+          fileKey: upload.file.key,
+          fileName: "broken.stl",
+          fileSize: garbage.byteLength,
+          massGrams: 1,
+          materialId: "petg",
+        },
+        { context: api.context(session) },
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("keeps client values when the file body is unavailable", async () => {
+    const session = await createSession(api.db);
+    const part = await createPart(session);
+    expect(part).toMatchObject({ sizeX: 40, massGrams: 50 });
   });
 
   it("does not let another user delete a part", async () => {

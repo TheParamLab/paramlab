@@ -16,6 +16,8 @@ export interface Storage {
   objectSize(key: string): Promise<number | null>;
   /** Presigned GET, действует час. */
   downloadUrl(key: string): Promise<string>;
+  /** Тело объекта целиком; `null`, если его нет. */
+  downloadObject(key: string): Promise<Uint8Array | null>;
 }
 
 export const storage: Storage = {
@@ -30,5 +32,9 @@ export const storage: Storage = {
   async downloadUrl(key) {
     const { getDownloadUrl } = await import("@paramlab/storage");
     return getDownloadUrl(key);
+  },
+  async downloadObject(key) {
+    const { downloadObject } = await import("@paramlab/storage");
+    return downloadObject(key);
   },
 };

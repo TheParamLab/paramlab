@@ -109,3 +109,19 @@ export async function getObjectSize(key: string): Promise<number | null> {
     throw error;
   }
 }
+
+/** Тело объекта целиком; `null`, если объекта нет. */
+export async function downloadObject(key: string): Promise<Uint8Array | null> {
+  try {
+    const res = await s3Client.send(
+      new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+    );
+    if (!res.Body) return null;
+    return await res.Body.transformToByteArray();
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })
+      .$metadata?.httpStatusCode;
+    if (status === 404) return null;
+    throw error;
+  }
+}
