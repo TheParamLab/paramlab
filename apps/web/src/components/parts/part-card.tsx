@@ -1,7 +1,6 @@
 "use client";
 
 import type { RouterOutputs } from "@paramlab/api";
-import { paths } from "@paramlab/config";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,11 +25,11 @@ import {
 } from "@paramlab/validators";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileBox, Minus, Plus, Repeat, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { formatNumber, formatRub } from "~/lib/format";
 import { orpc } from "~/orpc/react";
+import { CheckoutSheet } from "./checkout-sheet";
 import { MaterialSelect } from "./material-select";
 
 type Part = RouterOutputs["part"]["list"][number];
@@ -39,12 +38,12 @@ const clampQuantity = (value: number) =>
   Math.min(ORDER_QUANTITY.max, Math.max(ORDER_QUANTITY.min, value));
 
 export function PartCard({ part }: { part: Part }) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [materialId, setMaterialId] = useState<MaterialId>(
     part.lastOrder?.materialId ?? part.materialId,
   );
   const [quantity, setQuantity] = useState(part.lastOrder?.quantity ?? 1);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   // Масса зависит от плотности пластика — как и на сервере при оформлении.
   const massGrams = partMassFor(part, materialId);
@@ -52,19 +51,10 @@ export function PartCard({ part }: { part: Part }) {
     massGrams,
     materialId,
     quantity,
-  });
-
-  const createOrder = useMutation({
-    ...orpc.order.create.mutationOptions(),
-    onSuccess: async (order) => {
-      toast.success(`Заказ № ${order.number} оформлен`);
-      await queryClient.invalidateQueries({ queryKey: orpc.order.key() });
-      await queryClient.invalidateQueries({ queryKey: orpc.part.key() });
-      router.push(paths.orders.byId(order.id));
-    },
-    onError: (error) => {
-      toast.error(error.message || "Не удалось оформить заказ");
-    },
+    size:
+      part.sizeX != null && part.sizeY != null && part.sizeZ != null
+        ? [part.sizeX, part.sizeY, part.sizeZ]
+        : null,
   });
 
   const deletePart = useMutation({
@@ -154,14 +144,11 @@ export function PartCard({ part }: { part: Part }) {
           <Button
             variant="secondary"
             className="h-auto min-h-9 justify-start py-2 text-left whitespace-normal"
-            disabled={createOrder.isPending}
-            onClick={() =>
-              createOrder.mutate({
-                partId: part.id,
-                materialId: last.materialId,
-                quantity: last.quantity,
-              })
-            }
+            onClick={() => {
+              setMaterialId(last.materialId);
+              setQuantity(last.quantity);
+              setCheckoutOpen(true);
+            }}
           >
             <Repeat data-icon="inline-start" />
             Напечатать ещё {formatNumber(last.quantity)} шт. ·{" "}
@@ -226,17 +213,17 @@ export function PartCard({ part }: { part: Part }) {
                   : `от ${SERIES_QUANTITY} шт. — скидка 20%`}
               </p>
             </div>
-            <Button
-              disabled={createOrder.isPending}
-              onClick={() =>
-                createOrder.mutate({ partId: part.id, materialId, quantity })
-              }
-            >
-              {createOrder.isPending ? "Оформляем…" : "Заказать"}
-            </Button>
+            <Button onClick={() => setCheckoutOpen(true)}>Заказать</Button>
           </div>
         </div>
       </div>
+      <CheckoutSheet
+        part={part}
+        materialId={materialId}
+        quantity={quantity}
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+      />
     </article>
   );
 }

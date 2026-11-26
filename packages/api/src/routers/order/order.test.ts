@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it, spyOn } from "bun:test";
 import { call } from "@orpc/server";
 import type { Session } from "@paramlab/auth";
-import { eq, OrderEvent, OrderItem } from "@paramlab/db";
+import { env } from "@paramlab/config";
+import { DeliveryPoint, eq, Order, OrderEvent, OrderItem } from "@paramlab/db";
 
 import { createSession, setupTestApi } from "../../../test/helpers";
+import { handleYooKassaNotification } from "../../webhooks/yookassa";
 import { adminOrdersRouter } from "../admin/orders";
 import { partRouter } from "../part";
 import { orderRouter } from ".";
@@ -12,11 +14,36 @@ let api: Awaited<ReturnType<typeof setupTestApi>>;
 
 beforeAll(async () => {
   api = await setupTestApi();
+  // Локальный справочник ПВЗ Ozon: в тестах методы доставки пусты, поэтому
+  // расчет идет по плоскому тарифу 199 ₽ без вызова Ozon API.
+  await api.db.insert(DeliveryPoint).values({
+    id: "test-point",
+    name: "ПВЗ Тестовый",
+    type: "pvz",
+    city: "Москва",
+    address: "г. Москва, ул. Тестовая, д. 1",
+    active: true,
+    shipmentMethodIds: [],
+  });
 });
 afterAll(() => api.close());
 
+/** Полный ввод оформления заказа: реквизиты получателя и ПВЗ для checkout. */
+function checkout<T extends object>(input: T) {
+  return {
+    ...input,
+    recipientName: "Иван Иванов",
+    recipientPhone: "+79991234567",
+    deliveryPointId: "test-point",
+  };
+}
+
 /** Загружает «файл» и сохраняет деталь массой 50 г. */
-async function createPart(session: Session, fileName = "bushing.stl") {
+async function createPart(
+  session: Session,
+  fileName = "bushing.stl",
+  size: [number, number, number] = [40, 40, 25],
+) {
   const upload = await call(
     partRouter.requestUpload,
     { fileName, fileSize: 1024, previewSize: 2048 },
@@ -32,7 +59,7 @@ async function createPart(session: Session, fileName = "bushing.stl") {
       fileName,
       fileSize: 1024,
       previewKey: upload.preview?.key ?? null,
-      size: [40, 40, 25],
+      size,
       massGrams: 50,
       materialId: "petg",
     },
@@ -116,7 +143,7 @@ describe("order", () => {
 
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 10 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 10 }),
       { context: api.context(session) },
     );
     // 400 + 50 г × 10 шт. × 18 ₽ × 0,8 (серия) = 7 600 ₽
@@ -143,12 +170,46 @@ describe("order", () => {
     expect(parts[0]?.lastOrder).toEqual({ quantity: 10, materialId: "petg" });
   });
 
+  it("reuses the order and payment for a checkout retry", async () => {
+    const session = await createSession(api.db);
+    const part = await createPart(session);
+    const input = checkout({
+      partId: part.id,
+      materialId: "petg" as const,
+      quantity: 1,
+      checkoutId: crypto.randomUUID(),
+    });
+    const context = api.context(session);
+    const [order, duplicate] = await Promise.all([
+      call(orderRouter.create, input, { context }),
+      call(orderRouter.create, input, { context }),
+    ]);
+    const payment = {
+      paymentId: "existing-payment",
+      paymentUrl: "https://pay.test/1",
+    };
+    await api.db.update(Order).set(payment).where(eq(Order.id, order.id));
+    await call(partRouter.delete, { id: part.id }, { context });
+
+    expect(duplicate.id).toBe(order.id);
+    const retry = await call(orderRouter.create, input, { context });
+    expect(retry).toMatchObject({ id: order.id, ...payment });
+    const found = await call(orderRouter.byId, { id: order.id }, { context });
+    expect(found.items).toHaveLength(1);
+    expect(found.events).toHaveLength(1);
+
+    const other = await createSession(api.db);
+    await expect(
+      call(orderRouter.create, input, { context: api.context(other) }),
+    ).rejects.toMatchObject({ code: "CHECKOUT_CONFLICT" });
+  });
+
   it("applies the minimum order price", async () => {
     const session = await createSession(api.db);
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     expect(order.totalRub).toBe(1400);
@@ -162,14 +223,14 @@ describe("order", () => {
     await expect(
       call(
         orderRouter.create,
-        { partId: part.id, materialId: "petg", quantity: 1 },
+        checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
         { context: api.context(other) },
       ),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(owner) },
     );
     await expect(
@@ -186,12 +247,12 @@ describe("order", () => {
     ).toEqual([]);
   });
 
-  it("keeps the order when the part is deleted", async () => {
+  it("keeps the order and its parcel dimensions when the part is deleted", async () => {
     const session = await createSession(api.db);
-    const part = await createPart(session);
+    const part = await createPart(session, "large.stl", [350, 220, 160]);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "tpu", quantity: 2 },
+      checkout({ partId: part.id, materialId: "tpu", quantity: 2 }),
       { context: api.context(session) },
     );
     await call(
@@ -206,6 +267,90 @@ describe("order", () => {
       { context: api.context(session) },
     );
     expect(found.items[0]).toMatchObject({ partId: null, partName: "Втулка" });
+    expect(found.parcelDimensions).toMatchObject({
+      length_mm: 410,
+      width_mm: 280,
+      height_mm: 380,
+      weight_g: 250,
+    });
+  });
+});
+
+describe("YooKassa webhook", () => {
+  it("retries failed verification and records only the verified transition once", async () => {
+    const session = await createSession(api.db);
+    const part = await createPart(session);
+    const context = api.context(session);
+    const order = await call(
+      orderRouter.create,
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
+      { context },
+    );
+    const id = crypto.randomUUID();
+    await api.db
+      .update(Order)
+      .set({ paymentId: id })
+      .where(eq(Order.id, order.id));
+    const shop = env.YOOKASSA_SHOP_ID;
+    const secret = env.YOOKASSA_SECRET_KEY;
+    env.YOOKASSA_SHOP_ID = "test-shop";
+    env.YOOKASSA_SECRET_KEY = "test-secret";
+    const fetch = spyOn(globalThis, "fetch");
+    const notification = {
+      type: "notification" as const,
+      event: "payment.succeeded",
+      object: { id, status: "succeeded" },
+    };
+    function verified(status: string, paid: boolean) {
+      return Response.json({
+        id,
+        status,
+        paid,
+        metadata: { order_id: order.id },
+      });
+    }
+    try {
+      fetch.mockResolvedValueOnce(new Response(null, { status: 400 }));
+      await expect(
+        handleYooKassaNotification(api.db, notification),
+      ).resolves.toBe(false);
+      fetch.mockResolvedValueOnce(new Response(null, { status: 503 }));
+      await expect(
+        handleYooKassaNotification(api.db, notification),
+      ).rejects.toThrow("503");
+      fetch.mockResolvedValueOnce(verified("succeeded", true));
+      await handleYooKassaNotification(api.db, {
+        ...notification,
+        event: "payment.canceled",
+      });
+      expect(
+        (await call(orderRouter.byId, { id: order.id }, { context })).status,
+      ).toBe("pending_payment");
+
+      fetch.mockResolvedValueOnce(verified("succeeded", true));
+      fetch.mockResolvedValueOnce(verified("succeeded", true));
+      await Promise.all([
+        handleYooKassaNotification(api.db, notification),
+        handleYooKassaNotification(api.db, notification),
+      ]);
+      fetch.mockResolvedValueOnce(verified("canceled", false));
+      await handleYooKassaNotification(api.db, {
+        ...notification,
+        event: "payment.canceled",
+        object: { id, status: "canceled" },
+      });
+
+      const found = await call(orderRouter.byId, { id: order.id }, { context });
+      expect(found.status).toBe("paid");
+      expect(found.events.map((event) => event.status)).toEqual([
+        "pending_payment",
+        "paid",
+      ]);
+    } finally {
+      fetch.mockRestore();
+      env.YOOKASSA_SHOP_ID = shop;
+      env.YOOKASSA_SECRET_KEY = secret;
+    }
   });
 });
 
@@ -227,7 +372,7 @@ describe("admin.orders.setStatus", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "pa6cf", quantity: 1 },
+      checkout({ partId: part.id, materialId: "pa6cf", quantity: 1 }),
       { context: api.context(session) },
     );
 
@@ -318,7 +463,7 @@ describe("review fixes", () => {
 
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "asa", quantity: 2 },
+      checkout({ partId: part.id, materialId: "asa", quantity: 2 }),
       { context: api.context(session) },
     );
     // 400 + 54 г × 2 шт. × 24 ₽ = 2 992 → 2 990 ₽
@@ -360,7 +505,7 @@ describe("review fixes", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     await call(
@@ -409,7 +554,7 @@ describe("review fixes", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     const updated = await call(
@@ -517,7 +662,7 @@ describe("second review round", () => {
     for (const quantity of [1, 2, 3]) {
       await call(
         orderRouter.create,
-        { partId: part.id, materialId: "petg", quantity },
+        checkout({ partId: part.id, materialId: "petg", quantity }),
         { context: api.context(session) },
       );
     }
@@ -558,7 +703,7 @@ describe("event order", () => {
     const part = await createPart(session);
     const order = await call(
       orderRouter.create,
-      { partId: part.id, materialId: "petg", quantity: 1 },
+      checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
       { context: api.context(session) },
     );
     // Одинаковое и даже более раннее время не должно менять порядок.
@@ -595,7 +740,7 @@ describe("order summary", () => {
       orders.push(
         await call(
           orderRouter.create,
-          { partId: part.id, materialId: "petg", quantity },
+          checkout({ partId: part.id, materialId: "petg", quantity }),
           { context: api.context(session) },
         ),
       );

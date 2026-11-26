@@ -1,48 +1,114 @@
-import { and, eq, Order, OrderEvent, OrderItem, Part, sql } from "@paramlab/db";
+import { createHash } from "node:crypto";
+import { env } from "@paramlab/config";
+import { eq, Order, OrderEvent, OrderItem, sql } from "@paramlab/db";
 import {
-  calcPartPrice,
   createOrderSchema,
-  partMassFor,
+  normalizeRecipientPhone,
 } from "@paramlab/validators";
+import { z } from "zod";
 
+import {
+  createYooKassaPayment,
+  yookassaConfigured,
+} from "../../integrations/yookassa";
 import { protectedProcedure } from "../../orpc";
+import { resolveQuote } from "./resolve-quote";
 
 /**
- * Оформить заказ на печать детали из библиотеки. Цена считается на сервере
- * по массе детали в выбранном материале и его тарифу; заказ создается в
- * статусе «Ожидает оплаты».
+ * Оформить заказ на печать детали из библиотеки с доставкой в ПВЗ Ozon.
+ * Цена печати и доставки считается на сервере (`resolveQuote`); заказ
+ * создается в статусе «Ожидает оплаты». Если настроена YooKassa, сразу
+ * создается платеж и возвращается `paymentUrl` для редиректа клиента.
  *
  * Заказ, позиция и первое событие пишутся одним SQL-запросом (CTE): либо
  * сохраняется все, либо ничего. Транзакции недоступны на драйвере neon-http.
- *
- * @example client.order.create({ partId, materialId: "petg", quantity: 10 })
  */
 export const create = protectedProcedure
-  .errors({ NOT_FOUND: { message: "Деталь не найдена" } })
-  .input(createOrderSchema)
+  .errors({
+    CHECKOUT_CONFLICT: { message: "Не удалось повторить оформление заказа" },
+    NOT_FOUND: { message: "Деталь или пункт выдачи не найден" },
+    DELIVERY_UNAVAILABLE: {
+      message: "Доставка в этот пункт недоступна, выберите другой",
+    },
+  })
+  .input(createOrderSchema.extend({ checkoutId: z.uuid().optional() }))
   .handler(async ({ context, input, errors }) => {
     const userId = context.session.user.id;
-    const [part] = await context.db
-      .select()
-      .from(Part)
-      .where(and(eq(Part.id, input.partId), eq(Part.userId, userId)));
-
-    if (!part) throw errors.NOT_FOUND();
-
-    const massGrams = partMassFor(part, input.materialId);
-    const price = calcPartPrice({
-      massGrams,
-      materialId: input.materialId,
-      quantity: input.quantity,
-    });
-
     const { db } = context;
-    const created = db
-      .$with("created")
-      .as(
-        db.insert(Order).values({ userId, totalRub: price.total }).returning(),
-      );
-    // Порядок полей совпадает с порядком столбцов таблиц.
+    const orderId = input.checkoutId ?? crypto.randomUUID();
+    async function findExistingOrder() {
+      const [order] = await db
+        .select()
+        .from(Order)
+        .where(eq(Order.id, orderId));
+      if (order && order.userId !== userId) throw errors.CHECKOUT_CONFLICT();
+      return order;
+    }
+
+    if (input.checkoutId) {
+      const existing = await findExistingOrder();
+      if (existing) return existing;
+    }
+
+    const recipientPhone = normalizeRecipientPhone(input.recipientPhone);
+    const resolved = await resolveQuote(context.db, {
+      userId,
+      ...input,
+      recipientPhone,
+    });
+    if (resolved.error === "DELIVERY_UNAVAILABLE") {
+      throw errors.DELIVERY_UNAVAILABLE();
+    }
+    if (resolved.error) throw errors.NOT_FOUND();
+
+    const { part, point, massGrams, printRub, deliveryRub, payableRub } =
+      resolved;
+
+    // Платеж создается до записи заказа; повтор с тем же checkoutId
+    // передает тот же ключ идемпотентности YooKassa.
+    let paymentProvider: "yookassa" | null = null;
+    let paymentId: string | null = null;
+    let paymentUrl: string | null = null;
+    if (yookassaConfigured()) {
+      const payment = await createYooKassaPayment({
+        orderId,
+        description: `Печать «${part.name}»`.slice(0, 128),
+        amountRub: payableRub,
+        returnUrl: `${env.APP_URL}/cabinet/orders/${orderId}`,
+        idempotenceKey: createHash("sha256")
+          .update(JSON.stringify([userId, orderId]))
+          .digest("hex"),
+      });
+      paymentProvider = "yookassa";
+      paymentId = payment.id;
+      paymentUrl = payment.confirmation?.confirmation_url ?? null;
+    }
+
+    const created = db.$with("created").as(
+      db
+        .insert(Order)
+        .values({
+          id: orderId,
+          userId,
+          totalRub: printRub,
+          deliveryRub,
+          payableRub,
+          deliveryMethod: "ozon_pvz",
+          deliveryPointId: point.id,
+          deliveryPointName: point.name,
+          deliveryPointAddress: point.address,
+          deliveryCity: point.city,
+          recipientPhone,
+          recipientName: input.recipientName,
+          deliveryEtaDays: resolved.deliveryEtaDays,
+          parcelDimensions: resolved.parcelDimensions,
+          paymentProvider,
+          paymentId,
+          paymentUrl,
+        })
+        .onConflictDoNothing({ target: Order.id })
+        .returning(),
+    );
     const item = db.$with("item").as(
       db
         .insert(OrderItem)
@@ -60,7 +126,7 @@ export const create = protectedProcedure
               >`${input.materialId}::text`.as("material_id"),
               quantity: sql<number>`${input.quantity}::int`.as("quantity"),
               massGrams: sql<number>`${massGrams}::int`.as("mass_grams"),
-              priceRub: sql<number>`${price.total}::int`.as("price_rub"),
+              priceRub: sql<number>`${printRub}::int`.as("price_rub"),
             })
             .from(created),
         )
@@ -86,7 +152,11 @@ export const create = protectedProcedure
     );
 
     const [order] = await db.with(created, item, event).select().from(created);
-    if (!order) throw new Error("Failed to insert order");
+    if (order) return order;
 
-    return order;
+    // При параллельных запросах проигравший INSERT не создает позицию
+    // или событие. Отдельный SELECT уже видит результат победителя.
+    const existing = await findExistingOrder();
+    if (!existing) throw errors.CHECKOUT_CONFLICT();
+    return existing;
   });

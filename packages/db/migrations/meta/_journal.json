@@ -29,6 +29,20 @@
       "when": 1794465440181,
       "tag": "0003_order_event_seq",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795635672805,
+      "tag": "0004_checkout_payments_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795670144306,
+      "tag": "0005_order_parcel_dimensions",
+      "breakpoints": true
     }
   ]
 }

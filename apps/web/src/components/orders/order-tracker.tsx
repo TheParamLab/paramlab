@@ -89,10 +89,20 @@ export function OrderTracker({ initialOrder }: { initialOrder: Order }) {
           </div>
         )}
         {order.status === "pending_payment" && (
-          <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm">
-            Заказ оформлен и ожидает оплаты. После оплаты он попадёт в очередь
-            печати.
-          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 text-sm">
+            <p>
+              Заказ оформлен и ожидает оплаты. После оплаты он попадёт в очередь
+              печати.
+            </p>
+            {order.paymentUrl && (
+              <a
+                href={order.paymentUrl}
+                className="inline-flex h-9 items-center rounded-md bg-primary px-4 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Оплатить {formatRub(order.payableRub)}
+              </a>
+            )}
+          </div>
         )}
         {order.status === "cancelled" && (
           <p
@@ -235,15 +245,44 @@ export function OrderTracker({ initialOrder }: { initialOrder: Order }) {
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex items-baseline justify-between border-t pt-3">
-          <span className="text-sm text-muted-foreground">Печать</span>
-          <span className="font-mono text-lg font-semibold">
-            {formatRub(order.totalRub)}
-          </span>
+        <div className="mt-4 flex flex-col gap-2 border-t pt-3">
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm text-muted-foreground">Печать</span>
+            <span className="font-mono">{formatRub(order.totalRub)}</span>
+          </div>
+          {order.deliveryRub > 0 && (
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">
+                Доставка до ПВЗ
+                {order.deliveryEtaDays != null &&
+                  ` · ${order.deliveryEtaDays} дн.`}
+              </span>
+              <span className="font-mono">{formatRub(order.deliveryRub)}</span>
+            </div>
+          )}
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-medium">Итого</span>
+            <span className="font-mono text-lg font-semibold">
+              {formatRub(order.payableRub || order.totalRub)}
+            </span>
+          </div>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Доставка в пункт выдачи рассчитывается отдельно.
-        </p>
+        {order.deliveryPointAddress && (
+          <div className="mt-3 rounded-lg bg-muted/60 px-3 py-2 text-sm">
+            <p className="font-medium">
+              {order.deliveryPointName ?? "Пункт выдачи Ozon"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {order.deliveryPointAddress}
+            </p>
+            {order.recipientName && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {order.recipientName}
+                {order.recipientPhone ? ` · ${order.recipientPhone}` : ""}
+              </p>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );

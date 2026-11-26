@@ -78,8 +78,32 @@ const MACHINE_START = 400;
 export const SERIES_QUANTITY = 10;
 const SERIES_FACTOR = 0.8;
 
+/**
+ * Отдельный входной тариф для одной компактной детали. Он нужен, чтобы
+ * заказ простой мелочи не стоил как серьезная производственная заявка.
+ * Ограничение по габариту обязательно: крупная полая модель может весить
+ * мало, но занимать стол принтера несколько часов.
+ */
+export const SMALL_PART_PRICE = 990;
+export const SMALL_PART_MAX_MASS_GRAMS = 30;
+export const SMALL_PART_MAX_DIMENSION_MM = 100;
+
 export const PART_MASS = { min: 1, max: 5000 } as const;
 export const ORDER_QUANTITY = { min: 1, max: 100 } as const;
+
+export function qualifiesForSmallPartTariff(input: {
+  massGrams: number;
+  quantity: number;
+  /** Габариты X × Y × Z, мм. Без них тариф консервативно не применяется. */
+  size?: readonly [number, number, number] | null;
+}) {
+  return (
+    input.quantity === 1 &&
+    input.massGrams <= SMALL_PART_MAX_MASS_GRAMS &&
+    input.size != null &&
+    Math.max(...input.size) <= SMALL_PART_MAX_DIMENSION_MM
+  );
+}
 
 /** Стоимость печати партии одной детали, ₽. */
 export function calcPartPrice(input: {
@@ -87,15 +111,20 @@ export function calcPartPrice(input: {
   massGrams: number;
   materialId: MaterialId;
   quantity: number;
+  /** Габариты X × Y × Z, мм — для тарифа мелких деталей. */
+  size?: readonly [number, number, number] | null;
 }) {
   const series = input.quantity >= SERIES_QUANTITY;
   const totalMass = input.massGrams * input.quantity;
+  const smallPart = qualifiesForSmallPartTariff(input);
   const raw =
     MACHINE_START +
     totalMass *
       getMaterial(input.materialId).rate *
       (series ? SERIES_FACTOR : 1);
-  const total = Math.max(MIN_ORDER, Math.round(raw / 10) * 10);
+  const total = smallPart
+    ? SMALL_PART_PRICE
+    : Math.max(MIN_ORDER, Math.round(raw / 10) * 10);
 
-  return { total, series, totalMass };
+  return { total, series, totalMass, smallPart };
 }
