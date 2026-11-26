@@ -19,8 +19,7 @@ export const STL_PARSE_MAX_BYTES = 25 * 1024 * 1024;
 
 /**
  * Потолок для серверного разбора в `part.create`: файл скачивается из
- * хранилища в память целиком, поэтому совсем большие пропускаем — деталь
- * сохраняется с данными, введенными вручную.
+ * хранилища в память целиком, поэтому более крупные STL отклоняются.
  */
 export const STL_SERVER_PARSE_MAX_BYTES = 50 * 1024 * 1024;
 
@@ -51,26 +50,28 @@ export function parseStl(buffer: ArrayBuffer): StlMesh | null {
 
 function parseAsciiStl(buffer: ArrayBuffer): StlMesh | null {
   const text = new TextDecoder().decode(buffer);
-  const lines = text.split(/\r?\n/);
-  let firstIndex = 0;
-  while (firstIndex < lines.length && lines[firstIndex]?.trim() === "") {
-    firstIndex += 1;
-  }
-  const first = lines[firstIndex]?.trim().toLowerCase();
-  if (!first || !/^solid(?:\s|$)/.test(first)) return null;
-
   const values: number[] = [];
   let state: "body" | "outer-loop" | "vertices" | "end-facet" = "body";
   let vertexCount = 0;
   let triangleCount = 0;
   let ended = false;
+  let hasHeader = false;
 
-  for (let i = firstIndex + 1; i < lines.length; i++) {
-    const line = lines[i]?.trim() ?? "";
+  let start = 0;
+  while (start < text.length) {
+    const newline = text.indexOf("\n", start);
+    const end = newline === -1 ? text.length : newline;
+    const line = text.slice(start, end).trim();
+    start = end + 1;
     if (!line) continue;
     // Непустые строки после endsolid — файл склеен или поврежден.
     if (ended) return null;
     const keyword = line.toLowerCase();
+    if (!hasHeader) {
+      if (!/^solid(?:\s|$)/.test(keyword)) return null;
+      hasHeader = true;
+      continue;
+    }
 
     if (state === "body") {
       if (/^facet\s+normal\s+\S+\s+\S+\s+\S+$/.test(keyword)) {

@@ -64,7 +64,11 @@ const cors = {
 async function main() {
   console.log(`Applying CORS to bucket '${bucket}' at ${endpoint} ...`);
   await client.send(
-    new PutBucketCorsCommand({ Bucket: bucket, CORSConfiguration: cors }),
+    new PutBucketCorsCommand({
+      Bucket: bucket,
+      CORSConfiguration: cors,
+      ChecksumAlgorithm: "MD5",
+    }),
   );
   // Object Storage консистентен не сразу: GET сразу после PUT может еще
   // отвечать NoSuchCORSConfiguration — дочитываем с ретраями.

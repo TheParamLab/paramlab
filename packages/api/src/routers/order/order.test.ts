@@ -2,7 +2,15 @@ import { afterAll, beforeAll, describe, expect, it, spyOn } from "bun:test";
 import { call } from "@orpc/server";
 import type { Session } from "@paramlab/auth";
 import { env } from "@paramlab/config";
-import { DeliveryPoint, eq, Order, OrderEvent, OrderItem } from "@paramlab/db";
+import {
+  DeliveryPoint,
+  eq,
+  Order,
+  OrderEvent,
+  OrderItem,
+  Part,
+} from "@paramlab/db";
+import { STL_SERVER_PARSE_MAX_BYTES } from "@paramlab/validators";
 
 import { createSession, setupTestApi } from "../../../test/helpers";
 import { handleYooKassaNotification } from "../../webhooks/yookassa";
@@ -64,7 +72,7 @@ function checkout<T extends object>(input: T) {
 /** Загружает «файл» и сохраняет деталь массой 50 г. */
 async function createPart(
   session: Session,
-  fileName = "bushing.stl",
+  fileName = "bushing.step",
   size: [number, number, number] = [40, 40, 25],
 ) {
   const upload = await call(
@@ -139,7 +147,7 @@ describe("part", () => {
     });
     expect(list.map((p) => p.id)).toEqual([part.id]);
     expect(list[0]).toMatchObject({
-      format: "stl",
+      format: "step",
       sizeX: 40,
       massGrams: 50,
       lastOrder: null,
@@ -208,11 +216,48 @@ describe("part", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
-  it("keeps client values when the file body is unavailable", async () => {
-    const session = await createSession(api.db);
-    const part = await createPart(session);
-    expect(part).toMatchObject({ sizeX: 40, massGrams: 50 });
-  });
+  it.each(["missing", "unreadable", "oversized"] as const)(
+    "rejects an STL with a %s body without persisting client values",
+    async (reason) => {
+      const session = await createSession(api.db);
+      const context = api.context(session);
+      const fileSize =
+        reason === "oversized" ? STL_SERVER_PARSE_MAX_BYTES + 1 : 284;
+      const upload = await call(
+        partRouter.requestUpload,
+        { fileName: "tetra.stl", fileSize },
+        { context },
+      );
+      api.upload(upload.file.key, fileSize);
+      const download = spyOn(context.storage, "downloadObject");
+      if (reason === "unreadable") {
+        download.mockRejectedValueOnce(new Error("Storage unavailable"));
+      }
+
+      await expect(
+        call(
+          partRouter.create,
+          {
+            name: "Тетраэдр",
+            fileKey: upload.file.key,
+            fileName: "tetra.stl",
+            fileSize,
+            size: [40, 40, 25],
+            massGrams: 50,
+            materialId: "petg",
+          },
+          { context },
+        ),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      if (reason === "oversized") expect(download).not.toHaveBeenCalled();
+      expect(
+        await api.db
+          .select()
+          .from(Part)
+          .where(eq(Part.userId, session.user.id)),
+      ).toEqual([]);
+    },
+  );
 
   it("does not let another user delete a part", async () => {
     const session = await createSession(api.db);
@@ -338,7 +383,7 @@ describe("order", () => {
 
   it("keeps the order and its parcel dimensions when the part is deleted", async () => {
     const session = await createSession(api.db);
-    const part = await createPart(session, "large.stl", [350, 220, 160]);
+    const part = await createPart(session, "large.step", [350, 220, 160]);
     const order = await call(
       orderRouter.create,
       checkout({ partId: part.id, materialId: "tpu", quantity: 2 }),
@@ -530,7 +575,7 @@ describe("review fixes", () => {
     const session = await createSession(api.db);
     const upload = await call(
       partRouter.requestUpload,
-      { fileName: "a.stl", fileSize: 10 },
+      { fileName: "a.step", fileSize: 10 },
       { context: api.context(session) },
     );
     api.upload(upload.file.key, 10);
@@ -540,7 +585,7 @@ describe("review fixes", () => {
       {
         name: "Корпус",
         fileKey: upload.file.key,
-        fileName: "a.stl",
+        fileName: "a.step",
         fileSize: 10,
         volumeCm3: 100,
         massGrams: 64,
@@ -569,7 +614,7 @@ describe("review fixes", () => {
     const session = await createSession(api.db);
     const upload = await call(
       partRouter.requestUpload,
-      { fileName: "a.stl", fileSize: 10 },
+      { fileName: "a.step", fileSize: 10 },
       { context: api.context(session) },
     );
     api.upload(upload.file.key, 10);
@@ -578,7 +623,7 @@ describe("review fixes", () => {
       {
         name: "Корпус",
         fileKey: upload.file.key,
-        fileName: "a.stl",
+        fileName: "a.step",
         fileSize: 10,
         volumeCm3: 100,
         massGrams: 80,
@@ -589,19 +634,41 @@ describe("review fixes", () => {
     expect(part.volumeCm3).toBeNull();
   });
 
-  it("snapshots the model file on the order item", async () => {
+  it("keeps the verified STL bytes on the order after the upload is overwritten", async () => {
     const session = await createSession(api.db);
-    const part = await createPart(session);
+    const context = api.context(session);
+    const bytes = new Uint8Array(binaryTetrahedron());
+    const fileName = "tetra.stl";
+    const upload = await call(
+      partRouter.requestUpload,
+      { fileName, fileSize: bytes.byteLength },
+      { context },
+    );
+    api.upload(upload.file.key, bytes.byteLength, bytes);
+    const part = await call(
+      partRouter.create,
+      {
+        name: "Тетраэдр",
+        fileKey: upload.file.key,
+        fileName,
+        fileSize: bytes.byteLength,
+        massGrams: 50,
+        materialId: "petg",
+      },
+      { context },
+    );
+    api.upload(
+      upload.file.key,
+      bytes.byteLength,
+      new Uint8Array(bytes.byteLength),
+    );
+
     const order = await call(
       orderRouter.create,
       checkout({ partId: part.id, materialId: "petg", quantity: 1 }),
-      { context: api.context(session) },
+      { context },
     );
-    await call(
-      partRouter.delete,
-      { id: part.id },
-      { context: api.context(session) },
-    );
+    await call(partRouter.delete, { id: part.id }, { context });
 
     const [item] = await api.db
       .select()
@@ -610,15 +677,16 @@ describe("review fixes", () => {
     expect(item).toMatchObject({
       partId: null,
       fileKey: part.fileKey,
-      fileName: "bushing.stl",
+      fileName,
+      massGrams: 1,
     });
+    expect(part.fileKey).not.toBe(upload.file.key);
+    expect(
+      await context.storage.downloadObject(part.fileKey, bytes.byteLength),
+    ).toEqual(bytes);
 
     // Клиенту ключ S3 не отдаем.
-    const found = await call(
-      orderRouter.byId,
-      { id: order.id },
-      { context: api.context(session) },
-    );
+    const found = await call(orderRouter.byId, { id: order.id }, { context });
     expect(found.items[0]).not.toHaveProperty("fileKey");
   });
 
@@ -670,13 +738,13 @@ describe("second review round", () => {
     const session = await createSession(api.db);
     const upload = await call(
       partRouter.requestUpload,
-      { fileName: "b.stl", fileSize: 10 },
+      { fileName: "b.step", fileSize: 10 },
       { context: api.context(session) },
     );
     const input = {
       name: "Без файла",
       fileKey: upload.file.key,
-      fileName: "b.stl",
+      fileName: "b.step",
       fileSize: 10,
       massGrams: 10,
       materialId: "petg" as const,
@@ -725,7 +793,7 @@ describe("second review round", () => {
     const session = await createSession(api.db);
     const upload = await call(
       partRouter.requestUpload,
-      { fileName: "b.stl", fileSize: 10, previewSize: 5 },
+      { fileName: "b.step", fileSize: 10, previewSize: 5 },
       { context: api.context(session) },
     );
     api.upload(upload.file.key, 10);
@@ -734,7 +802,7 @@ describe("second review round", () => {
       {
         name: "Без превью",
         fileKey: upload.file.key,
-        fileName: "b.stl",
+        fileName: "b.step",
         fileSize: 10,
         previewKey: upload.preview?.key ?? null,
         massGrams: 10,

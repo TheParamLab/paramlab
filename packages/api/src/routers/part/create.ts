@@ -41,6 +41,7 @@ export const create = protectedProcedure
       throw errors.BAD_REQUEST();
     }
 
+    let fileKey = input.fileKey;
     const [fileSize, previewSize] = await Promise.all([
       context.storage.objectSize(input.fileKey),
       input.previewKey ? context.storage.objectSize(input.previewKey) : null,
@@ -61,38 +62,33 @@ export const create = protectedProcedure
         : null;
     let massGrams = input.massGrams;
 
-    // Серверный разбор STL: клиентские габариты и массу нельзя доверять —
-    // от объема зависит цена. Файл для нас источник правды: если он
-    // разобрался, размеры и масса перезаписываются расчетными.
+    // Цена STL зависит только от измерений, полученных из самого файла.
     if (format === "stl") {
-      if (fileSize <= STL_SERVER_PARSE_MAX_BYTES) {
-        let bytes: Uint8Array | null = null;
-        try {
-          bytes = await context.storage.downloadObject(input.fileKey);
-        } catch (error) {
-          // Хранилище временно недоступно — не блокируем сохранение детали.
-          logger.warn("part.analyze_failed", {
-            error: error instanceof Error ? error.message : String(error),
-            fileKey: input.fileKey,
-            fileSize,
-            userId: context.session.user.id,
-          });
-        }
-        if (bytes) {
-          const mesh = parseStl(toArrayBuffer(bytes));
-          // Файл лежит в хранилище, но не читается как STL — изготовить
-          // его все равно нельзя, а принимать клиентские цифры небезопасно.
-          if (!mesh) throw errors.BAD_REQUEST();
-          size = mesh.size;
-          volumeCm3 = mesh.volumeCm3;
-          massGrams = estimateMassFromVolume(mesh.volumeCm3, input.materialId);
-        }
-      } else {
-        // Крупные файлы в память не тянем: без верифицированных габаритов
-        // объем не храним и small-part тариф по ним не применяется.
-        size = null;
-        volumeCm3 = null;
+      if (fileSize > STL_SERVER_PARSE_MAX_BYTES) throw errors.BAD_REQUEST();
+
+      let bytes: Uint8Array | null;
+      try {
+        bytes = await context.storage.downloadObject(fileKey, fileSize);
+      } catch (error) {
+        logger.warn("part.analyze_failed", {
+          error: error instanceof Error ? error.message : String(error),
+          fileKey,
+          fileSize,
+          userId: context.session.user.id,
+        });
+        throw errors.BAD_REQUEST();
       }
+      if (!bytes || bytes.byteLength !== fileSize) throw errors.BAD_REQUEST();
+      const mesh = parseStl(toArrayBuffer(bytes));
+      if (!mesh) throw errors.BAD_REQUEST();
+
+      // Ссылку для загрузки можно использовать повторно. Заказ ссылается
+      // на проверенные байты под ключом, для которого PUT-ссылок нет.
+      fileKey = `verified-parts/${crypto.randomUUID()}.stl`;
+      await context.storage.storeObject(fileKey, bytes);
+      size = mesh.size;
+      volumeCm3 = mesh.volumeCm3;
+      massGrams = estimateMassFromVolume(mesh.volumeCm3, input.materialId);
     }
 
     const [part] = await context.db
@@ -101,7 +97,7 @@ export const create = protectedProcedure
         userId: context.session.user.id,
         name: input.name,
         source: "upload",
-        fileKey: input.fileKey,
+        fileKey,
         fileName: input.fileName,
         fileSize,
         format,

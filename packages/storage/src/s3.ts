@@ -110,14 +110,24 @@ export async function getObjectSize(key: string): Promise<number | null> {
   }
 }
 
-/** Тело объекта целиком; `null`, если объекта нет. */
-export async function downloadObject(key: string): Promise<Uint8Array | null> {
+/** Тело объекта; `null`, если объекта нет или он больше лимита. */
+export async function downloadObject(
+  key: string,
+  maxBytes?: number,
+): Promise<Uint8Array | null> {
   try {
     const res = await s3Client.send(
-      new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        // Верхняя граница включительна: один лишний байт выявляет замену
+        // объекта на более крупный между HEAD и GET.
+        Range: maxBytes == null ? undefined : `bytes=0-${maxBytes}`,
+      }),
     );
     if (!res.Body) return null;
-    return await res.Body.transformToByteArray();
+    const bytes = await res.Body.transformToByteArray();
+    return maxBytes != null && bytes.byteLength > maxBytes ? null : bytes;
   } catch (error) {
     const status = (error as { $metadata?: { httpStatusCode?: number } })
       .$metadata?.httpStatusCode;

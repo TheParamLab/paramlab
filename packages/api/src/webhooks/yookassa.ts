@@ -81,7 +81,13 @@ export async function handleYooKassaNotification(
             eq(Order.status, "pending_payment"),
           ),
         )
-        .returning({ id: Order.id, status: Order.status }),
+        .returning({
+          id: Order.id,
+          number: Order.number,
+          userId: Order.userId,
+          status: Order.status,
+          trackingUrl: Order.trackingUrl,
+        }),
     );
     const event = db.$with("event").as(
       db
@@ -99,21 +105,22 @@ export async function handleYooKassaNotification(
             })
             .from(updated),
         )
-        .returning({ id: OrderEvent.id }),
+        .returning({ orderId: OrderEvent.orderId }),
     );
-    const events = await db
+    const [order] = await db
       .with(updated, event)
-      .select({ id: event.id })
-      .from(event);
+      .select({
+        id: updated.id,
+        number: updated.number,
+        userId: updated.userId,
+        status: updated.status,
+        trackingUrl: updated.trackingUrl,
+      })
+      .from(updated)
+      .innerJoin(event, eq(event.orderId, updated.id));
 
     // Переход применился — сообщаем клиенту о новом этапе заказа.
-    if (events.length > 0) {
-      const [order] = await db
-        .select()
-        .from(Order)
-        .where(eq(Order.id, orderId));
-      if (order) await notifyOrderStatus(db, order, transition.note);
-    }
+    if (order) await notifyOrderStatus(db, order, transition.note);
   }
 
   // Журнал webhook-событий — аудит. Уникальный индекс гасит дубликаты.

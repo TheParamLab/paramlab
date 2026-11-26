@@ -47,6 +47,7 @@ export async function setupTestApi() {
   const upload = (key: string, size: number, content?: Uint8Array) => {
     objects.set(key, size);
     if (content) contents.set(key, content);
+    else contents.delete(key);
   };
 
   const context = (session: Session | null = null) => ({
@@ -58,7 +59,13 @@ export async function setupTestApi() {
         `https://s3.test/put/${key}?size=${size}`,
       objectSize: async (key: string) => objects.get(key) ?? null,
       downloadUrl: async (key: string) => `https://s3.test/get/${key}`,
-      downloadObject: async (key: string) => contents.get(key) ?? null,
+      downloadObject: async (key: string, maxBytes: number) => {
+        const bytes = contents.get(key);
+        return bytes && bytes.byteLength <= maxBytes ? bytes : null;
+      },
+      storeObject: async (key: string, bytes: Uint8Array) => {
+        upload(key, bytes.byteLength, bytes.slice());
+      },
     },
   });
 
