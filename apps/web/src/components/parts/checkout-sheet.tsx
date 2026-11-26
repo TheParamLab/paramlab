@@ -23,10 +23,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapPin, PackageCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { formatRub } from "~/lib/format";
-import { orpc } from "~/orpc/react";
+import { client, orpc } from "~/orpc/react";
 
 type Part = RouterOutputs["part"]["list"][number];
 type Point = RouterOutputs["deliveryPoint"]["search"]["points"][number];
@@ -62,6 +62,7 @@ export function CheckoutSheet({
   const [recipientName, setRecipientName] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [pointQuery, setPointQuery] = useState("");
+  const pendingCheckoutIds = useRef(new Map<string, string>());
   const [point, setPoint] = useState<Point | null>(null);
 
   const debouncedQuery = useDebounced(pointQuery);
@@ -94,10 +95,40 @@ export function CheckoutSheet({
   });
 
   const createOrder = useMutation({
-    ...orpc.order.create.mutationOptions(),
-    onSuccess: async (order) => {
+    mutationKey: orpc.order.create.mutationOptions().mutationKey,
+    mutationFn: async (input: NonNullable<typeof quoteInput>) => {
+      // Persist only an opaque fingerprint and ID so a reload can retry
+      // the same checkout without storing the recipient's contact details.
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(JSON.stringify(input)),
+      );
+      const key = `checkout:${Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+      let checkoutId = pendingCheckoutIds.current.get(key);
+      if (!checkoutId) {
+        checkoutId = crypto.randomUUID();
+        try {
+          checkoutId = sessionStorage.getItem(key) ?? checkoutId;
+          sessionStorage.setItem(key, checkoutId);
+        } catch {
+          // Storage can be disabled; retries still work within this sheet.
+        }
+        pendingCheckoutIds.current.set(key, checkoutId);
+      }
+      return {
+        order: await client.order.create({ ...input, checkoutId }),
+        key,
+      };
+    },
+    onSuccess: async ({ order, key }) => {
       await queryClient.invalidateQueries({ queryKey: orpc.order.key() });
       await queryClient.invalidateQueries({ queryKey: orpc.part.key() });
+      pendingCheckoutIds.current.delete(key);
+      try {
+        sessionStorage.removeItem(key);
+      } catch {
+        // An in-memory key was used if storage was disabled.
+      }
       if (order.paymentUrl) {
         toast.success("Заказ создан — переходим к оплате");
         window.location.href = order.paymentUrl;
@@ -222,13 +253,13 @@ export function CheckoutSheet({
 
           {quoteInput && (
             <div className="flex flex-col gap-2 rounded-lg border bg-muted/40 p-4">
-              {quote.isFetching || !quote.data ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner className="size-4" /> Считаем стоимость…
-                </p>
-              ) : quote.isError ? (
+              {quote.isError ? (
                 <p className="text-sm text-destructive">
                   {quote.error.message}
+                </p>
+              ) : quote.isFetching || !quote.data ? (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Spinner className="size-4" /> Считаем стоимость…
                 </p>
               ) : (
                 <>

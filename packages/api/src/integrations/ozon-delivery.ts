@@ -1,4 +1,5 @@
 import { env } from "@paramlab/config";
+import { z } from "zod";
 
 const TOKEN_URL = "https://xapi.ozon.ru/oauth/token";
 const API_URL = "https://api-delivery.ozon.ru";
@@ -79,8 +80,16 @@ export function ozonConfigured() {
  * а координаты/веса/деньги и так либо дробные, либо маленькие.
  */
 function parseOzonJson<T>(text: string): T {
-  const safe = text.replace(/([:[,]\s*)(-?\d{15,})(?=\s*[,}\]])/g, '$1"$2"');
-  return JSON.parse(safe) as T;
+  // Node 24 и Bun передают исходный токен примитива третьим аргументом.
+  return JSON.parse(
+    text,
+    (_key, value: unknown, context?: { source?: string }) => {
+      const source = context?.source;
+      return typeof value === "number" && source && /^-?\d{15,}$/.test(source)
+        ? source
+        : value;
+    },
+  ) as T;
 }
 
 async function getAccessToken(): Promise<string> {
@@ -159,11 +168,11 @@ async function ozonFetch<T>(
 }
 
 export async function ozonCheckClient(phone: string): Promise<boolean> {
-  const data = await ozonFetch<{ can_be_delivered: boolean }>(
-    "/v1/delivery/check-client",
-    { phone_number: phone },
-  );
-  return data.can_be_delivered;
+  const data = await ozonFetch<unknown>("/v1/delivery/check-client", {
+    phone_number: phone,
+  });
+  return z.object({ can_be_delivered: z.boolean() }).parse(data)
+    .can_be_delivered;
 }
 
 export async function ozonListDeliveryPoints(input: {

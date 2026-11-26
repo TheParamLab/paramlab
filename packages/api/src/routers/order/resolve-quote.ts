@@ -95,6 +95,7 @@ export async function resolveQuote(
     size,
   });
 
+  const parcelDimensions = packageDimensions(massGrams, input.quantity, size);
   let deliveryRub = FLAT_DELIVERY_RUB;
   let etaDays: number | null = null;
   let estimated = true;
@@ -109,7 +110,7 @@ export async function resolveQuote(
         deliveryPointId: point.id,
         shipmentMethodId: point.shipmentMethodIds[0] ?? "",
         declaredValueRub: price.total,
-        dimensions: packageDimensions(massGrams, input.quantity, size),
+        dimensions: parcelDimensions,
       });
       const posting = results[0]?.posting;
       const cost = posting?.estimated_delivery_cost;
@@ -133,6 +134,7 @@ export async function resolveQuote(
     part,
     point,
     massGrams,
+    parcelDimensions,
     printRub: price.total,
     deliveryRub,
     payableRub: price.total + deliveryRub,

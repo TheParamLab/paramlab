@@ -21,13 +21,14 @@ export async function POST(request: Request) {
   const notification = body as {
     type?: unknown;
     event?: unknown;
-    object?: { id?: unknown };
+    object?: { id?: unknown; status?: unknown };
   } | null;
   if (
     notification?.type !== "notification" ||
     typeof notification.event !== "string" ||
     !notification.event.startsWith("payment.") ||
-    typeof notification.object?.id !== "string"
+    typeof notification.object?.id !== "string" ||
+    typeof notification.object.status !== "string"
   ) {
     return Response.json({ ok: true });
   }

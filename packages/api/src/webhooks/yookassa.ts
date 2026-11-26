@@ -1,5 +1,6 @@
 import { logger } from "@paramlab/config";
-import { and, eq, Order, OrderEvent, PaymentEvent } from "@paramlab/db";
+import { and, eq, Order, OrderEvent, PaymentEvent, sql } from "@paramlab/db";
+import { z } from "zod";
 
 import { getYooKassaPayment } from "../integrations/yookassa";
 
@@ -18,8 +19,8 @@ export interface YooKassaNotification {
 /**
  * Обработать webhook YooKassa. Доверять телу нельзя: платеж всегда
  * перезапрашивается в API YooKassa серверным ключом, а заказ ищется по
- * metadata.order_id. Идемпотентность — уникальный индекс PaymentEvent
- * (provider, paymentId, event): повторные доставки webhook отбрасываются.
+ * metadata.order_id. Переход и запись истории применяются только к
+ * pending_payment; уникальный индекс PaymentEvent убирает дубли аудита.
  *
  * Возвращает true, если событие обработано (или уже было обработано).
  */
@@ -35,11 +36,12 @@ export async function handleYooKassaNotification(
     payment = await getYooKassaPayment(paymentId);
   } catch (error) {
     logger.error("yookassa.webhook_verify_failed", error);
-    return false;
+    throw error;
   }
 
+  if (payment?.id !== paymentId) return false;
   const orderId = payment.metadata?.order_id;
-  if (typeof orderId !== "string") {
+  if (typeof orderId !== "string" || !z.uuid().safeParse(orderId).success) {
     logger.error("yookassa.webhook_no_order", new Error(paymentId));
     return false;
   }
@@ -53,37 +55,52 @@ export async function handleYooKassaNotification(
     return false;
   }
 
-  const [order] = await db
-    .select()
-    .from(Order)
-    .where(and(eq(Order.id, orderId), eq(Order.paymentId, paymentId)));
+  const transition =
+    payment.status === "succeeded" &&
+    payment.paid === true &&
+    notification.event === "payment.succeeded"
+      ? ({ status: "paid", note: "Оплата подтверждена YooKassa" } as const)
+      : payment.status === "canceled" &&
+          notification.event === "payment.canceled"
+        ? ({ status: "cancelled", note: "Платеж отменен или истек" } as const)
+        : null;
 
-  // Сначала применяем эффект к заказу. Если это повторный webhook или заказ
-  // уже обработан — статус не pending_payment и обновление пропускается;
-  // идемпотентность держится на состоянии заказа, а не на журнале событий,
-  // иначе сбой после записи события навсегда блокировал бы обработку.
-  if (order?.status === "pending_payment") {
-    if (notification.event === "payment.succeeded" && payment.paid) {
-      await db
+  if (transition) {
+    const updated = db.$with("updated").as(
+      db
         .update(Order)
-        .set({ status: "paid", paidAt: new Date() })
-        .where(eq(Order.id, order.id));
-      await db.insert(OrderEvent).values({
-        orderId: order.id,
-        status: "paid",
-        note: "Оплата подтверждена YooKassa",
-      });
-    } else if (notification.event === "payment.canceled") {
-      await db
-        .update(Order)
-        .set({ status: "cancelled" })
-        .where(eq(Order.id, order.id));
-      await db.insert(OrderEvent).values({
-        orderId: order.id,
-        status: "cancelled",
-        note: "Платеж отменен или истек",
-      });
-    }
+        .set({
+          status: transition.status,
+          paidAt: transition.status === "paid" ? new Date() : undefined,
+        })
+        .where(
+          and(
+            eq(Order.id, orderId),
+            eq(Order.paymentId, paymentId),
+            eq(Order.status, "pending_payment"),
+          ),
+        )
+        .returning({ id: Order.id, status: Order.status }),
+    );
+    const event = db.$with("event").as(
+      db
+        .insert(OrderEvent)
+        .select(
+          db
+            .select({
+              id: sql<string>`gen_random_uuid()`.as("id"),
+              orderId: updated.id,
+              status: updated.status,
+              note: sql<string>`${transition.note}`.as("note"),
+              photoKey: sql<null>`null`.as("photo_key"),
+              createdAt: sql<Date>`clock_timestamp()`.as("created_at"),
+              seq: sql<number>`nextval('order_events_seq_seq')`.as("seq"),
+            })
+            .from(updated),
+        )
+        .returning({ id: OrderEvent.id }),
+    );
+    await db.with(updated, event).select({ id: event.id }).from(event);
   }
 
   // Журнал webhook-событий — аудит. Уникальный индекс гасит дубликаты.

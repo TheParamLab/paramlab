@@ -121,7 +121,10 @@ export function Hero() {
     rate: material.rate,
     quantity,
     extras: 0,
-    maxDimensionMm: Math.max(dimensions.d1, dimensions.h),
+    maxDimensionMm:
+      partType === "adapter"
+        ? Math.max(dimensions.d1, dimensions.d2, dimensions.h)
+        : Math.max(dimensions.d1, dimensions.h),
   });
 
   // Инженерная валидация параметров (контроль толщины стенки и посадки)

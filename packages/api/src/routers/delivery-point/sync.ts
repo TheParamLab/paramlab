@@ -18,6 +18,9 @@ const MAX_PAGES = 400;
  */
 export const sync = adminProcedure
   .errors({
+    PAGE_LIMIT: {
+      message: "Справочник ПВЗ не загружен полностью: превышен лимит страниц",
+    },
     UNAVAILABLE: { message: "Ozon Delivery API не настроен" },
   })
   .handler(async ({ context, errors }) => {
@@ -30,7 +33,6 @@ export const sync = adminProcedure
     for (let page = 0; page < MAX_PAGES; page++) {
       const list = await ozonListDeliveryPoints({ cursor, limit: BATCH });
       const ids = list.delivery_points.map((p) => String(p.delivery_point_id));
-      if (ids.length === 0) break;
 
       const methodById = new Map(
         list.delivery_points.map((p) => [
@@ -91,9 +93,11 @@ export const sync = adminProcedure
         }
       }
 
-      if (!list.next_cursor) break;
-      cursor = list.next_cursor;
+      cursor = list.next_cursor || undefined;
+      if (!cursor) break;
     }
+
+    if (cursor) throw errors.PAGE_LIMIT();
 
     // Точки, которых Ozon больше не отдает (или закрыл), деактивируем,
     // чтобы их нельзя было выбрать при оформлении заказа.

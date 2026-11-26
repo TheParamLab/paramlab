@@ -5,6 +5,7 @@ import {
   Order,
   OrderEvent,
   OrderItem,
+  Part,
   sql,
 } from "@paramlab/db";
 import { ORDER_STATUSES } from "@paramlab/validators";
@@ -30,6 +31,10 @@ import { packageDimensions } from "../../order/resolve-quote";
 export const setStatus = adminProcedure
   .errors({
     NOT_FOUND: { message: "Заказ не найден" },
+    NO_SHIPMENT_METHOD: {
+      message:
+        "У пункта выдачи нет метода доставки — синхронизируйте справочник ПВЗ",
+    },
     OZON_FAILED: {
       message:
         "Не удалось создать отправление в Ozon — проверьте интеграцию и повторите",
@@ -85,10 +90,29 @@ export const setStatus = adminProcedure
           .from(DeliveryPoint)
           .where(eq(DeliveryPoint.id, existing.deliveryPointId));
         const shipmentMethodId = point?.shipmentMethodIds[0];
-        if (!shipmentMethodId) {
-          throw new Error(
-            "У пункта выдачи нет метода доставки — синхронизируйте справочник ПВЗ",
-          );
+        if (!shipmentMethodId) throw errors.NO_SHIPMENT_METHOD();
+
+        let dimensions = existing.parcelDimensions;
+        if (!dimensions) {
+          // У старых заказов снимка нет; берем габариты из библиотеки, если деталь сохранилась.
+          const item = items.length === 1 ? items[0] : undefined;
+          const [part] = item?.partId
+            ? await context.db
+                .select()
+                .from(Part)
+                .where(eq(Part.id, item.partId))
+            : [];
+          dimensions =
+            item &&
+            part?.sizeX != null &&
+            part.sizeY != null &&
+            part.sizeZ != null
+              ? packageDimensions(item.massGrams, item.quantity, [
+                  part.sizeX,
+                  part.sizeY,
+                  part.sizeZ,
+                ])
+              : packageDimensions(totalMass, 1);
         }
         // ID точек и методов Ozon — int64 и хранятся строками: передаем как есть.
         try {
@@ -105,7 +129,7 @@ export const setStatus = adminProcedure
               .join(", ")
               .slice(0, 200),
             declaredValueRub: existing.totalRub,
-            dimensions: packageDimensions(totalMass, 1),
+            dimensions,
           });
           const posting = created.postings?.[0];
           if (!posting) throw new Error("Ozon не вернул отправление");

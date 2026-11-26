@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import { env } from "@paramlab/config";
-import { Order, OrderEvent, OrderItem, sql } from "@paramlab/db";
+import { eq, Order, OrderEvent, OrderItem, sql } from "@paramlab/db";
 import {
   createOrderSchema,
   normalizeRecipientPhone,
 } from "@paramlab/validators";
+import { z } from "zod";
 
 import {
   createYooKassaPayment,
@@ -23,14 +25,31 @@ import { resolveQuote } from "./resolve-quote";
  */
 export const create = protectedProcedure
   .errors({
+    CHECKOUT_CONFLICT: { message: "Не удалось повторить оформление заказа" },
     NOT_FOUND: { message: "Деталь или пункт выдачи не найден" },
     DELIVERY_UNAVAILABLE: {
       message: "Доставка в этот пункт недоступна, выберите другой",
     },
   })
-  .input(createOrderSchema)
+  .input(createOrderSchema.extend({ checkoutId: z.uuid().optional() }))
   .handler(async ({ context, input, errors }) => {
     const userId = context.session.user.id;
+    const { db } = context;
+    const orderId = input.checkoutId ?? crypto.randomUUID();
+    async function findExistingOrder() {
+      const [order] = await db
+        .select()
+        .from(Order)
+        .where(eq(Order.id, orderId));
+      if (order && order.userId !== userId) throw errors.CHECKOUT_CONFLICT();
+      return order;
+    }
+
+    if (input.checkoutId) {
+      const existing = await findExistingOrder();
+      if (existing) return existing;
+    }
+
     const recipientPhone = normalizeRecipientPhone(input.recipientPhone);
     const resolved = await resolveQuote(context.db, {
       userId,
@@ -45,11 +64,8 @@ export const create = protectedProcedure
     const { part, point, massGrams, printRub, deliveryRub, payableRub } =
       resolved;
 
-    // Платеж создается ДО вставки заказа: id заказа генерируем заранее, ключ
-    // идемпотентности YooKassa ему равен. Если создание платежа упадет —
-    // заказа в базе не будет и клиент просто повторит оформление; если упадет
-    // вставка — повторная попытка получит тот же платеж по ключу.
-    const orderId = crypto.randomUUID();
+    // Платеж создается до записи заказа; повтор с тем же checkoutId
+    // передает тот же ключ идемпотентности YooKassa.
     let paymentProvider: "yookassa" | null = null;
     let paymentId: string | null = null;
     let paymentUrl: string | null = null;
@@ -59,14 +75,15 @@ export const create = protectedProcedure
         description: `Печать «${part.name}»`.slice(0, 128),
         amountRub: payableRub,
         returnUrl: `${env.APP_URL}/cabinet/orders/${orderId}`,
-        idempotenceKey: orderId,
+        idempotenceKey: createHash("sha256")
+          .update(JSON.stringify([userId, orderId]))
+          .digest("hex"),
       });
       paymentProvider = "yookassa";
       paymentId = payment.id;
       paymentUrl = payment.confirmation?.confirmation_url ?? null;
     }
 
-    const { db } = context;
     const created = db.$with("created").as(
       db
         .insert(Order)
@@ -84,10 +101,12 @@ export const create = protectedProcedure
           recipientPhone,
           recipientName: input.recipientName,
           deliveryEtaDays: resolved.deliveryEtaDays,
+          parcelDimensions: resolved.parcelDimensions,
           paymentProvider,
           paymentId,
           paymentUrl,
         })
+        .onConflictDoNothing({ target: Order.id })
         .returning(),
     );
     const item = db.$with("item").as(
@@ -133,7 +152,11 @@ export const create = protectedProcedure
     );
 
     const [order] = await db.with(created, item, event).select().from(created);
-    if (!order) throw new Error("Failed to insert order");
+    if (order) return order;
 
-    return { ...order, paymentUrl };
+    // При параллельных запросах проигравший INSERT не создает позицию
+    // или событие. Отдельный SELECT уже видит результат победителя.
+    const existing = await findExistingOrder();
+    if (!existing) throw errors.CHECKOUT_CONFLICT();
+    return existing;
   });

@@ -32,12 +32,14 @@ interface Estimate {
  * Файл никуда не уходит до регистрации: разбор локальный.
  */
 export function UploadHero() {
+  const attemptRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
   async function analyze(file: File) {
+    const attempt = ++attemptRef.current;
     setError(null);
     setEstimate(null);
     if (!file.name.toLowerCase().endsWith(".stl")) {
@@ -52,7 +54,9 @@ export function UploadHero() {
       );
       return;
     }
-    const mesh = parseBinaryStl(await file.arrayBuffer());
+    const buffer = await file.arrayBuffer().catch(() => null);
+    if (attempt !== attemptRef.current) return;
+    const mesh = buffer && parseBinaryStl(buffer);
     if (!mesh) {
       setError(
         "Не удалось прочитать STL (возможно, он в ASCII-формате) — загрузите файл в кабинете.",

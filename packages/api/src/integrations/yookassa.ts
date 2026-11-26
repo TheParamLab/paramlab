@@ -71,7 +71,7 @@ export async function createYooKassaPayment(input: {
 
 export async function getYooKassaPayment(
   paymentId: string,
-): Promise<YooKassaPayment> {
+): Promise<YooKassaPayment | null> {
   const response = await fetch(
     `${API_URL}/payments/${encodeURIComponent(paymentId)}`,
     {
@@ -79,5 +79,7 @@ export async function getYooKassaPayment(
       signal: AbortSignal.timeout(10_000),
     },
   );
+  // Invalid or unknown payment IDs do not become valid on redelivery.
+  if (response.status === 400 || response.status === 404) return null;
   return parsePayment(response);
 }

@@ -35,6 +35,13 @@ export const Order = pgTable(
     recipientPhone: t.varchar({ length: 16 }),
     recipientName: t.varchar({ length: 120 }),
     deliveryEtaDays: t.integer(),
+    /** Габариты и вес посылки, использованные при расчете доставки. */
+    parcelDimensions: t.jsonb().$type<{
+      weight_g: number;
+      length_mm: number;
+      width_mm: number;
+      height_mm: number;
+    }>(),
     paymentProvider: t.text().$type<"yookassa">(),
     paymentId: t.text(),
     paymentUrl: t.text(),
